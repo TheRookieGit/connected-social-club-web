@@ -1,0 +1,38 @@
+{
+  "name": "social-club-web",
+  "version": "1.0.0",
+  "description": "现代化的网页版交友软件",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "autoprefixer": "^10.4.0",
+    "crypto": "^1.0.1",
+    "date-fns": "^2.30.0",
+    "framer-motion": "^10.16.0",
+    "lucide-react": "^0.292.0",
+    "next": "^14.0.0",
+    "nodemailer": "^6.10.1",
+    "postcss": "^8.4.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "react-hook-form": "^7.47.0",
+    "socket.io-client": "^4.7.0",
+    "tailwindcss": "^3.3.0",
+    "twilio": "^4.23.0",
+    "typescript": "^5.0.0",
+    "zustand": "^4.4.0"
+  },
+  "devDependencies": {
+    "@types/nodemailer": "^6.4.17",
+    "eslint": "^8.0.0",
+    "eslint-config-next": "^14.0.0"
+  }
+}
