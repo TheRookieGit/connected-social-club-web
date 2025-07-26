@@ -6,13 +6,27 @@ import { createClient } from '@supabase/supabase-js'
 // 禁用静态生成
 export const dynamic = 'force-dynamic'
 
+// 创建 Supabase 客户端
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ckhxivbcnagwgpzljzrl.supabase.co'
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNraHhpdmJjbmFnd2dwemxqenJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MjQwMzgsImV4cCI6MjA2OTEwMDAzOH0.ZxoO8QQ9G3tggQFRCHjdnulgv45KtVyx6B7TnqrdHx4'
 
-const supabase = createClient(supabaseUrl, supabaseAnonKey)
+let supabase: any = null
+
+try {
+  supabase = createClient(supabaseUrl, supabaseAnonKey)
+} catch (error) {
+  console.error('Supabase client creation failed:', error)
+}
 
 export async function POST(request: NextRequest) {
   try {
+    if (!supabase) {
+      return NextResponse.json(
+        { success: false, error: '数据库连接失败' },
+        { status: 500 }
+      )
+    }
+
     const { name, email, phone, password, birthDate, gender } = await request.json()
 
     // 验证输入
