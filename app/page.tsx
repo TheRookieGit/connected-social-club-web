@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Heart, Users, MessageCircle, Star } from 'lucide-react'
 import LoginForm from '@/components/LoginForm'
@@ -8,6 +8,19 @@ import RegisterForm from '@/components/RegisterForm'
 
 export default function Home() {
   const [isLogin, setIsLogin] = useState(true)
+
+  useEffect(() => {
+    // 检查URL参数来决定显示哪个表单
+    const urlParams = new URLSearchParams(window.location.search)
+    const register = urlParams.get('register')
+    const login = urlParams.get('login')
+    
+    if (register === 'true') {
+      setIsLogin(false)
+    } else if (login === 'true') {
+      setIsLogin(true)
+    }
+  }, [])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-50 via-red-50 to-orange-50">

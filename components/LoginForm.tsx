@@ -9,22 +9,49 @@ export default function LoginForm() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError('')
     
-    // 模拟登录过程
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // 保存token到localStorage
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        
+        // 跳转到仪表板
+        router.push('/dashboard')
+      } else {
+        setError(data.error || '登录失败')
+      }
+    } catch (error) {
+      setError('网络错误，请稍后重试')
+    } finally {
       setIsLoading(false)
-      // 这里应该调用实际的登录API
-      router.push('/dashboard')
-    }, 2000)
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
       <div>
         <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">
           邮箱地址
@@ -102,9 +129,13 @@ export default function LoginForm() {
 
       <div className="text-center">
         <span className="text-sm text-gray-600">还没有账号？</span>
-        <a href="#" className="text-sm text-red-500 hover:text-red-600 ml-1">
+        <button
+          type="button"
+          onClick={() => window.location.href = '/?register=true'}
+          className="text-sm text-red-500 hover:text-red-600 ml-1 bg-transparent border-none cursor-pointer"
+        >
           立即注册
-        </a>
+        </button>
       </div>
     </form>
   )

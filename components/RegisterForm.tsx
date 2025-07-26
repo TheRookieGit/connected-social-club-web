@@ -113,6 +113,7 @@ export default function RegisterForm() {
   const [isSendingEmailCode, setIsSendingEmailCode] = useState(false)
   const [isSendingPhoneCode, setIsSendingPhoneCode] = useState(false)
   const [countdown, setCountdown] = useState({ email: 0, phone: 0 })
+  const [error, setError] = useState('')
   const router = useRouter()
 
   useEffect(() => {
@@ -290,22 +291,63 @@ export default function RegisterForm() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    setError('')
     
-    if (!verificationStatus.emailVerified || !verificationStatus.phoneVerified) {
-      alert('请先完成邮箱和手机验证')
+    // 验证密码
+    if (formData.password !== formData.confirmPassword) {
+      setError('两次输入的密码不一致')
+      return
+    }
+    
+    if (formData.password.length < 6) {
+      setError('密码至少需要6位字符')
       return
     }
     
     setIsLoading(true)
     
-    setTimeout(() => {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          phone: selectedCountry.code + formData.phone,
+          password: formData.password,
+          birthDate: formData.birthDate,
+          gender: formData.gender
+        }),
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        // 保存token到localStorage
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        
+        // 跳转到仪表板
+        router.push('/dashboard')
+      } else {
+        setError(data.error || '注册失败')
+      }
+    } catch (error) {
+      setError('网络错误，请稍后重试')
+    } finally {
       setIsLoading(false)
-      router.push('/dashboard')
-    }, 2000)
+    }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
+      {error && (
+        <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-lg">
+          {error}
+        </div>
+      )}
       <div>
         <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
           姓名
@@ -580,7 +622,7 @@ export default function RegisterForm() {
 
       <button
         type="submit"
-        disabled={isLoading || !verificationStatus.emailVerified || !verificationStatus.phoneVerified}
+        disabled={isLoading}
         className="w-full flex justify-center py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-red-500 hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
       >
         {isLoading ? '注册中...' : '立即注册'}
@@ -588,9 +630,13 @@ export default function RegisterForm() {
 
       <div className="text-center">
         <span className="text-sm text-gray-600">已有账号？</span>
-        <a href="#" className="text-sm text-red-500 hover:text-red-600 ml-1">
+        <button
+          type="button"
+          onClick={() => window.location.href = '/?login=true'}
+          className="text-sm text-red-500 hover:text-red-600 ml-1 bg-transparent border-none cursor-pointer"
+        >
           立即登录
-        </a>
+        </button>
       </div>
     </form>
   )

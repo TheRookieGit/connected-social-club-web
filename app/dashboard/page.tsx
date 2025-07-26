@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Heart, MessageCircle, User, Settings, LogOut, Star, MapPin, Calendar } from 'lucide-react'
 import UserCard from '@/components/UserCard'
@@ -25,9 +26,35 @@ export default function Dashboard() {
   const [showChat, setShowChat] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
   const [matchedUsers, setMatchedUsers] = useState<User[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
+
+  // 检查用户认证
+  useEffect(() => {
+    const token = localStorage.getItem('token')
+    const user = localStorage.getItem('user')
+    
+    if (!token || !user) {
+      router.push('/')
+      return
+    }
+    
+    try {
+      const userData = JSON.parse(user)
+      setCurrentUser(userData)
+    } catch (error) {
+      localStorage.removeItem('token')
+      localStorage.removeItem('user')
+      router.push('/')
+      return
+    }
+    
+    setIsLoading(false)
+  }, [router])
 
   // 模拟用户数据
   useEffect(() => {
+    if (isLoading) return
     const mockUsers: User[] = [
       {
         id: '1',
@@ -88,6 +115,23 @@ export default function Dashboard() {
     setCurrentIndex(prev => prev + 1)
   }
 
+  const handleLogout = () => {
+    localStorage.removeItem('token')
+    localStorage.removeItem('user')
+    router.push('/')
+  }
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* 顶部导航栏 */}
@@ -123,7 +167,10 @@ export default function Dashboard() {
                 <Settings className="h-6 w-6" />
               </button>
               
-              <button className="p-2 text-gray-600 hover:text-red-500 transition-colors">
+              <button 
+                onClick={handleLogout}
+                className="p-2 text-gray-600 hover:text-red-500 transition-colors"
+              >
                 <LogOut className="h-6 w-6" />
               </button>
             </div>

@@ -10,10 +10,14 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.52.1",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^20.0.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
     "autoprefixer": "^10.4.0",
+    "bcryptjs": "^3.0.2",
     "crypto": "^1.0.1",
     "date-fns": "^2.30.0",
     "framer-motion": "^10.16.0",
