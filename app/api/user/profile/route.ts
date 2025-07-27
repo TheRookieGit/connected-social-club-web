@@ -1,42 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { createClient } from '@supabase/supabase-js'
+import { createSupabaseClient } from '@/lib/supabase'
 
 // 禁用静态生成
 export const dynamic = 'force-dynamic'
-
-// 创建 Supabase 客户端的函数 - 强制刷新连接
-function createSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ckhxivbcnagwgpzljzrl.supabase.co'
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNraHhpdmJjbmFnd2dwemxqenJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MjQwMzgsImV4cCI6MjA2OTEwMDAzOH0.ZxoO8QQ9G3tggQFRCHjdnulgv45KtVyx6B7TnqrdHx4'
-
-  try {
-    // 创建新的客户端实例，避免缓存问题
-    const client = createClient(supabaseUrl, supabaseAnonKey, {
-      auth: {
-        persistSession: false // 禁用会话持久化
-      }
-    })
-    return client
-  } catch (error) {
-    console.error('Supabase client creation failed:', error)
-    return null
-  }
-}
 
 // 验证 JWT token
 function verifyToken(authHeader: string | null) {
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return null
   }
-  
+
   const token = authHeader.substring(7)
-  
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
-    return decoded
+    return jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
   } catch (error) {
-    console.error('Token verification failed:', error)
+    console.error('Token验证失败:', error)
     return null
   }
 }
