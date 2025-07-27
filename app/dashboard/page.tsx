@@ -8,6 +8,7 @@ import useSWR from 'swr'
 import UserCard from '@/components/UserCard'
 import ChatPanel from '@/components/ChatPanel'
 import ProfileModal from '@/components/ProfileModal'
+import { syncUserDataToLocalStorage } from '@/lib/hooks'
 
 // 推荐用户的类型定义
 interface RecommendedUser {
@@ -42,7 +43,7 @@ export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [users, setUsers] = useState<User[]>([])
 
-  // 检查登录状态
+  // 检查登录状态并获取最新用户数据
   useEffect(() => {
     const token = localStorage.getItem('token')
     const user = localStorage.getItem('user')
@@ -52,15 +53,56 @@ export default function Dashboard() {
       return
     }
     
-    try {
-      const userData = JSON.parse(user)
-      setCurrentUser(userData)
-      setIsLoading(false)
-    } catch (error) {
-      localStorage.removeItem('token')
-      localStorage.removeItem('user')
-      router.push('/')
+    // 验证token并获取最新用户数据
+    const initializeUserData = async () => {
+      try {
+        // 先设置临时用户数据，避免白屏
+        const userData = JSON.parse(user)
+        setCurrentUser(userData)
+        
+        // 立即从API获取最新数据
+        console.log('Dashboard初始化: 从API获取最新用户数据...')
+        const response = await fetch(`/api/user/profile?t=${Date.now()}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
+          }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            console.log('Dashboard初始化: 获取到最新用户数据:', data.user)
+            // 更新组件状态
+            setCurrentUser(data.user)
+            // 同步更新localStorage
+            syncUserDataToLocalStorage(data.user, 'Dashboard初始化')
+          } else {
+            console.error('Dashboard初始化: API返回错误:', data.error)
+          }
+        } else {
+          console.error('Dashboard初始化: API请求失败:', response.status)
+          // 如果API请求失败，token可能已过期
+          if (response.status === 401) {
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            router.push('/')
+            return
+          }
+        }
+      } catch (error) {
+        console.error('Dashboard初始化: 解析用户数据失败:', error)
+        localStorage.removeItem('token')
+        localStorage.removeItem('user')
+        router.push('/')
+        return
+      } finally {
+        setIsLoading(false)
+      }
     }
+
+    initializeUserData()
   }, [router])
 
   // 计算年龄的辅助函数
@@ -77,32 +119,10 @@ export default function Dashboard() {
     return age
   }
 
-  // 获取真实用户数据
+  // 获取推荐用户数据
   useEffect(() => {
-    if (isLoading) return
+    if (isLoading || !currentUser) return
     
-    const fetchUserProfile = async () => {
-      try {
-        const token = localStorage.getItem('token')
-        if (!token) return
-
-        const response = await fetch('/api/user/profile', {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        })
-
-        if (response.ok) {
-          const data = await response.json()
-          if (data.success) {
-            setCurrentUser(data.user)
-          }
-        }
-      } catch (error) {
-        console.error('获取用户资料失败:', error)
-      }
-    }
-
     const fetchRecommendedUsers = async () => {
       try {
         const token = localStorage.getItem('token')
@@ -136,9 +156,8 @@ export default function Dashboard() {
       }
     }
 
-    fetchUserProfile()
     fetchRecommendedUsers()
-  }, [isLoading])
+  }, [isLoading, currentUser])
 
   // 处理喜欢操作
   const handleLike = async () => {
@@ -354,9 +373,11 @@ export default function Dashboard() {
                 if (!token) return
 
                 console.log('Dashboard: 重新获取用户资料...')
-                const response = await fetch('/api/user/profile', {
+                const response = await fetch(`/api/user/profile?t=${Date.now()}`, {
                   headers: {
-                    'Authorization': `Bearer ${token}`
+                    'Authorization': `Bearer ${token}`,
+                    'Cache-Control': 'no-cache',
+                    'Pragma': 'no-cache'
                   }
                 })
 
@@ -365,6 +386,9 @@ export default function Dashboard() {
                   if (data.success) {
                     console.log('Dashboard: 获取到最新用户资料:', data.user)
                     setCurrentUser(data.user)
+                    
+                                         // 重要：同步更新localStorage中的用户数据
+                     syncUserDataToLocalStorage(data.user, 'Dashboard关闭ProfileModal')
                   }
                 }
               } catch (error) {

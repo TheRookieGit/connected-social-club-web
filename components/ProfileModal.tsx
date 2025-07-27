@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { X, Camera, Edit, Save } from 'lucide-react'
 import { User } from '@/types/user'
-import { useProfile } from '@/lib/hooks'
+import { useProfile, syncUserDataToLocalStorage } from '@/lib/hooks'
 
 interface ProfileModalProps {
   onClose: () => void
@@ -24,9 +24,11 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
         if (!token) return
 
         console.log('ProfileModal: 开始获取用户资料...')
-        const response = await fetch('/api/user/profile', {
+        const response = await fetch(`/api/user/profile?t=${Date.now()}`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
           }
         })
 
@@ -76,9 +78,11 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
         if (data.success) {
           // 保存成功后，重新获取最新的用户资料
           console.log('保存成功，重新获取用户资料...')
-          const refreshResponse = await fetch('/api/user/profile', {
+          const refreshResponse = await fetch(`/api/user/profile?t=${Date.now()}`, {
             headers: {
-              'Authorization': `Bearer ${token}`
+              'Authorization': `Bearer ${token}`,
+              'Cache-Control': 'no-cache',
+              'Pragma': 'no-cache'
             }
           })
           
@@ -88,6 +92,9 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
               console.log('获取到的最新数据:', refreshData.user)
               setProfile(refreshData.user)
               setEditForm(refreshData.user)
+              
+              // 重要：同步更新localStorage中的用户数据
+              syncUserDataToLocalStorage(refreshData.user, 'ProfileModal保存')
             }
           }
           
@@ -227,9 +234,11 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
                     const token = localStorage.getItem('token')
                     if (!token) return
                     
-                    const response = await fetch('/api/user/profile', {
+                    const response = await fetch(`/api/user/profile?t=${Date.now()}`, {
                       headers: {
-                        'Authorization': `Bearer ${token}`
+                        'Authorization': `Bearer ${token}`,
+                        'Cache-Control': 'no-cache',
+                        'Pragma': 'no-cache'
                       }
                     })
                     
@@ -238,6 +247,10 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
                       if (data.success) {
                         setProfile(data.user)
                         setEditForm(data.user)
+                        
+                                                 // 同步更新localStorage中的用户数据
+                         syncUserDataToLocalStorage(data.user, 'ProfileModal刷新')
+                        
                         alert('数据已刷新！')
                       }
                     }

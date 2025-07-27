@@ -1,30 +1,48 @@
 import useSWR from 'swr'
 import { User } from '@/types/user'
 
-// 数据获取函数
-const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
+// 通用的用户数据同步函数
+export const syncUserDataToLocalStorage = (newUserData: any, source: string = '') => {
+  try {
+    const currentUser = localStorage.getItem('user')
+    if (currentUser && newUserData) {
+      const userData = JSON.parse(currentUser)
+      const updatedUserData = {
+        ...userData,
+        ...newUserData
+      }
+      localStorage.setItem('user', JSON.stringify(updatedUserData))
+      console.log(`${source}: localStorage中的用户数据已更新:`, updatedUserData)
+      return updatedUserData
+    }
+  } catch (error) {
+    console.error(`${source}: 更新localStorage失败:`, error)
+  }
+  return null
+}
+
+// 带验证的 fetch 函数
+async function fetchWithAuth(url: string) {
   const token = localStorage.getItem('token')
-  if (!token) throw new Error('No token found')
+  if (!token) {
+    throw new Error('No token found')
+  }
 
   const response = await fetch(url, {
-    ...options,
     headers: {
-      'Authorization': `Bearer ${token}`,
-      'Cache-Control': 'no-cache',
-      'Pragma': 'no-cache',
-      ...options.headers
+      'Authorization': `Bearer ${token}`
     }
   })
 
-  if (!response.ok) throw new Error('Failed to fetch')
-  const data = await response.json()
-  if (!data.success) throw new Error(data.error)
-  
-  return data
+  if (!response.ok) {
+    throw new Error('Failed to fetch')
+  }
+
+  return response.json()
 }
 
 export function useProfile() {
-  const { data, error, mutate } = useSWR<{ user: User }>(
+  const { data, error, mutate } = useSWR<{ success: boolean; user: any }>(
     '/api/user/profile',
     fetchWithAuth,
     {

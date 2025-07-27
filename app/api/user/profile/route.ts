@@ -112,6 +112,7 @@ export async function GET(request: NextRequest) {
     return new NextResponse(
       JSON.stringify({
         success: true,
+        timestamp: new Date().toISOString(),
         user: {
           ...user,
           interests: interests?.map((i: any) => i.interest) || [],
@@ -121,7 +122,10 @@ export async function GET(request: NextRequest) {
       {
         status: 200,
         headers: {
-          'Cache-Control': 'no-store'
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'Surrogate-Control': 'no-store'
         }
       }
     )
@@ -276,6 +280,7 @@ export async function PUT(request: NextRequest) {
       JSON.stringify({
         success: true,
         message: '更新成功',
+        timestamp: new Date().toISOString(),
         user: {
           ...updatedUser,
           interests: latestInterests?.map(i => i.interest) || [],
@@ -285,7 +290,10 @@ export async function PUT(request: NextRequest) {
       {
         status: 200,
         headers: {
-          'Cache-Control': 'no-store'
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'Surrogate-Control': 'no-store'
         }
       }
     )
