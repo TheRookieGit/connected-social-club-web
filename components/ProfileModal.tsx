@@ -1,7 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { X, Camera, Edit, Save } from 'lucide-react'
+import { User } from '@/types/user'
+import { useProfile } from '@/lib/hooks'
 
 interface ProfileModalProps {
   onClose: () => void
@@ -9,41 +11,183 @@ interface ProfileModalProps {
 
 export default function ProfileModal({ onClose }: ProfileModalProps) {
   const [isEditing, setIsEditing] = useState(false)
-  const [profile, setProfile] = useState({
-    name: '张三',
-    age: 26,
-    location: '北京',
-    bio: '热爱生活，喜欢旅行和摄影，寻找有趣的灵魂。',
-    interests: ['旅行', '摄影', '音乐', '美食', '健身'],
-    photos: ['/api/placeholder/200/200']
-  })
+  const [isLoading, setIsLoading] = useState(true)
+  const [profile, setProfile] = useState<any>(null)
+  const [editForm, setEditForm] = useState<Partial<any>>({})
 
-  const [editForm, setEditForm] = useState(profile)
+  // 获取用户资料
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setIsLoading(true)
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) return
 
-  const handleSave = () => {
-    setProfile(editForm)
-    setIsEditing(false)
+        console.log('ProfileModal: 开始获取用户资料...')
+        const response = await fetch('/api/user/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            console.log('ProfileModal: 获取到用户资料:', data.user)
+            setProfile(data.user)
+            setEditForm(data.user)
+          } else {
+            console.error('ProfileModal: 获取用户资料失败:', data.error)
+          }
+        } else {
+          console.error('ProfileModal: 获取用户资料请求失败:', response.status)
+        }
+      } catch (error) {
+        console.error('ProfileModal: 获取用户资料异常:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [])
+
+  const handleSave = async () => {
+    if (!profile) return
+
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      console.log('前端发送的数据:', editForm)
+      console.log('bio字段值:', editForm.bio)
+
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(editForm)
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          // 保存成功后，重新获取最新的用户资料
+          console.log('保存成功，重新获取用户资料...')
+          const refreshResponse = await fetch('/api/user/profile', {
+            headers: {
+              'Authorization': `Bearer ${token}`
+            }
+          })
+          
+          if (refreshResponse.ok) {
+            const refreshData = await refreshResponse.json()
+            if (refreshData.success) {
+              console.log('获取到的最新数据:', refreshData.user)
+              setProfile(refreshData.user)
+              setEditForm(refreshData.user)
+            }
+          }
+          
+          setIsEditing(false)
+          alert('保存成功！')
+        } else {
+          alert(data.error || '保存失败')
+        }
+      } else {
+        alert('保存失败，请稍后重试')
+      }
+    } catch (error) {
+      console.error('保存用户资料失败:', error)
+      alert('保存失败，请稍后重试')
+    }
   }
 
   const handleCancel = () => {
-    setEditForm(profile)
+    if (profile) {
+      setEditForm(profile)
+    }
     setIsEditing(false)
   }
 
   const addInterest = (interest: string) => {
-    if (interest.trim() && !editForm.interests.includes(interest.trim())) {
-      setEditForm(prev => ({
-        ...prev,
-        interests: [...prev.interests, interest.trim()]
-      }))
+    if (interest.trim()) {
+      const currentInterests = editForm.interests || []
+      if (!currentInterests.includes(interest.trim())) {
+        setEditForm((prev: any) => ({
+          ...prev,
+          interests: [...currentInterests, interest.trim()]
+        }))
+      }
     }
   }
 
   const removeInterest = (index: number) => {
+    const currentInterests = editForm.interests || []
     setEditForm(prev => ({
       ...prev,
-      interests: prev.interests.filter((_, i) => i !== index)
+      interests: currentInterests.filter((_: any, i: number) => i !== index)
     }))
+  }
+
+  // 计算年龄
+  const calculateAge = (birthDate: string) => {
+    const today = new Date()
+    const birth = new Date(birthDate)
+    let age = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--
+    }
+    
+    return age
+  }
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">加载中...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isLoading) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">加载中...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!profile) {
+    return (
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8">
+          <div className="text-center">
+            <p className="text-gray-600">无法加载用户资料</p>
+            <button
+              onClick={onClose}
+              className="mt-4 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+            >
+              关闭
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -70,13 +214,39 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="flex items-center space-x-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
-              >
-                <Edit className="h-4 w-4" />
-                <span>编辑</span>
-              </button>
+              <>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center space-x-1 px-3 py-1 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>编辑</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    const token = localStorage.getItem('token')
+                    if (!token) return
+                    
+                    const response = await fetch('/api/user/profile', {
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      }
+                    })
+                    
+                    if (response.ok) {
+                      const data = await response.json()
+                      if (data.success) {
+                        setProfile(data.user)
+                        setEditForm(data.user)
+                        alert('数据已刷新！')
+                      }
+                    }
+                  }}
+                  className="flex items-center space-x-1 px-3 py-1 bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors"
+                >
+                  <span>刷新</span>
+                </button>
+              </>
             )}
             <button
               onClick={onClose}
@@ -116,7 +286,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={editForm.name}
+                    value={editForm.name || ''}
                     onChange={(e) => setEditForm(prev => ({ ...prev, name: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
@@ -129,16 +299,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   年龄
                 </label>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    value={editForm.age}
-                    onChange={(e) => setEditForm(prev => ({ ...prev, age: parseInt(e.target.value) || 0 }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-                  />
-                ) : (
-                  <p className="text-gray-900">{profile.age}岁</p>
-                )}
+                <p className="text-gray-900">{calculateAge(profile.birth_date)}岁</p>
               </div>
               
               <div className="col-span-2">
@@ -148,12 +309,12 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
                 {isEditing ? (
                   <input
                     type="text"
-                    value={editForm.location}
+                    value={editForm.location || ''}
                     onChange={(e) => setEditForm(prev => ({ ...prev, location: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
                   />
                 ) : (
-                  <p className="text-gray-900">{profile.location}</p>
+                  <p className="text-gray-900">{profile.location || '未设置'}</p>
                 )}
               </div>
             </div>
@@ -166,14 +327,14 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
             </label>
             {isEditing ? (
               <textarea
-                value={editForm.bio}
+                value={editForm.bio || ''}
                 onChange={(e) => setEditForm(prev => ({ ...prev, bio: e.target.value }))}
                 rows={4}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
                 placeholder="介绍一下你自己..."
               />
             ) : (
-              <p className="text-gray-700 leading-relaxed">{profile.bio}</p>
+              <p className="text-gray-700 leading-relaxed">{profile.bio || '这个人很神秘...'}</p>
             )}
           </div>
 
@@ -185,7 +346,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
             {isEditing ? (
               <div className="space-y-3">
                 <div className="flex flex-wrap gap-2">
-                  {editForm.interests.map((interest, index) => (
+                  {(editForm.interests || []).map((interest: any, index: number) => (
                     <span
                       key={index}
                       className="flex items-center space-x-1 px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full"
@@ -226,7 +387,7 @@ export default function ProfileModal({ onClose }: ProfileModalProps) {
               </div>
             ) : (
               <div className="flex flex-wrap gap-2">
-                {profile.interests.map((interest, index) => (
+                {(profile.interests || []).map((interest: any, index: number) => (
                   <span
                     key={index}
                     className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full"

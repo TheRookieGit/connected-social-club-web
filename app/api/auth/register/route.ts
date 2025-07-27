@@ -8,16 +8,11 @@ export const dynamic = 'force-dynamic'
 
 // 创建 Supabase 客户端的函数
 function createSupabaseClient() {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://ckhxivbcnagwgpzljzrl.supabase.co'
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNraHhpdmJjbmFnd2dwemxqenJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MjQwMzgsImV4cCI6MjA2OTEwMDAzOH0.ZxoO8QQ9G3tggQFRCHjdnulgv45KtVyx6B7TnqrdHx4'
 
   console.log('Supabase URL:', supabaseUrl)
   console.log('Supabase Anon Key exists:', !!supabaseAnonKey)
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('Missing Supabase environment variables')
-    return null
-  }
 
   try {
     const client = createClient(supabaseUrl, supabaseAnonKey)

@@ -3,10 +3,23 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Heart, MessageCircle, User, Settings, LogOut, Star, MapPin, Calendar } from 'lucide-react'
+import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar } from 'lucide-react'
+import useSWR from 'swr'
 import UserCard from '@/components/UserCard'
 import ChatPanel from '@/components/ChatPanel'
 import ProfileModal from '@/components/ProfileModal'
+
+// 推荐用户的类型定义
+interface RecommendedUser {
+  id: string
+  name: string
+  age: number
+  location: string
+  bio: string
+  interests: string[]
+  photos: string[]
+  isOnline: boolean
+}
 
 interface User {
   id: string
@@ -20,16 +33,16 @@ interface User {
 }
 
 export default function Dashboard() {
-  const [currentUser, setCurrentUser] = useState<User | null>(null)
-  const [users, setUsers] = useState<User[]>([])
+  const router = useRouter()
+  const [isLoading, setIsLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showChat, setShowChat] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
-  const [matchedUsers, setMatchedUsers] = useState<User[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const router = useRouter()
+  const [matchedUsers, setMatchedUsers] = useState<RecommendedUser[]>([])
+  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [users, setUsers] = useState<User[]>([])
 
-  // 检查用户认证
+  // 检查登录状态
   useEffect(() => {
     const token = localStorage.getItem('token')
     const user = localStorage.getItem('user')
@@ -42,15 +55,27 @@ export default function Dashboard() {
     try {
       const userData = JSON.parse(user)
       setCurrentUser(userData)
+      setIsLoading(false)
     } catch (error) {
       localStorage.removeItem('token')
       localStorage.removeItem('user')
       router.push('/')
-      return
+    }
+  }, [router])
+
+  // 计算年龄的辅助函数
+  const calculateAge = (birthDate: string) => {
+    const today = new Date()
+    const birth = new Date(birthDate)
+    let age = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--
     }
     
-    setIsLoading(false)
-  }, [router])
+    return age
+  }
 
   // 获取真实用户数据
   useEffect(() => {
@@ -115,20 +140,7 @@ export default function Dashboard() {
     fetchRecommendedUsers()
   }, [isLoading])
 
-  // 计算年龄的辅助函数
-  const calculateAge = (birthDate: string) => {
-    const today = new Date()
-    const birth = new Date(birthDate)
-    let age = today.getFullYear() - birth.getFullYear()
-    const monthDiff = today.getMonth() - birth.getMonth()
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--
-    }
-    
-    return age
-  }
-
+  // 处理喜欢操作
   const handleLike = async () => {
     const currentUser = users[currentIndex]
     if (!currentUser) return
@@ -151,11 +163,9 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json()
-        if (data.success) {
-          if (data.isMatch) {
-            setMatchedUsers(prev => [...prev, currentUser])
-            alert(`恭喜！你和${currentUser.name}匹配成功了！`)
-          }
+        if (data.success && data.isMatch) {
+          setMatchedUsers(prev => [...prev, currentUser])
+          alert(`恭喜！你和${currentUser.name}匹配成功了！`)
         }
       }
     } catch (error) {
@@ -213,9 +223,9 @@ export default function Dashboard() {
 
       if (response.ok) {
         const data = await response.json()
-        if (data.success) {
+        if (data.success && data.isMatch) {
           setMatchedUsers(prev => [...prev, currentUser])
-          alert(`超级喜欢！你和${currentUser.name}匹配成功了！`)
+          alert(`恭喜！你和${currentUser.name}匹配成功了！`)
         }
       }
     } catch (error) {
@@ -233,7 +243,7 @@ export default function Dashboard() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100 flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
           <p className="text-gray-600">加载中...</p>
@@ -242,144 +252,86 @@ export default function Dashboard() {
     )
   }
 
+  const currentUserCard = users[currentIndex]
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100">
       {/* 顶部导航栏 */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <nav className="bg-white shadow-lg">
+        <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
-              <Heart className="h-8 w-8 text-red-500" />
-              <span className="text-xl font-bold text-gray-900">社交俱乐部</span>
+            <div className="flex items-center space-x-4">
+              <h1 className="text-2xl font-bold text-red-500">社交俱乐部</h1>
             </div>
             
             <div className="flex items-center space-x-4">
               <button
-                onClick={() => setShowChat(!showChat)}
-                className="relative p-2 text-gray-600 hover:text-red-500 transition-colors"
+                onClick={() => setShowChat(true)}
+                className="p-2 text-gray-600 hover:text-red-500 transition-colors"
               >
-                <MessageCircle className="h-6 w-6" />
-                {matchedUsers.length > 0 && (
-                  <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {matchedUsers.length}
-                  </span>
-                )}
+                <MessageCircle size={24} />
               </button>
               
               <button
                 onClick={() => setShowProfile(true)}
                 className="p-2 text-gray-600 hover:text-red-500 transition-colors"
               >
-                <User className="h-6 w-6" />
+                <UserIcon size={24} />
               </button>
               
-              <button className="p-2 text-gray-600 hover:text-red-500 transition-colors">
-                <Settings className="h-6 w-6" />
-              </button>
-              
-              <button 
+              <button
                 onClick={handleLogout}
                 className="p-2 text-gray-600 hover:text-red-500 transition-colors"
               >
-                <LogOut className="h-6 w-6" />
+                <LogOut size={24} />
               </button>
             </div>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid lg:grid-cols-3 gap-8">
-          {/* 主内容区域 - 用户卡片 */}
-          <div className="lg:col-span-2">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">发现新朋友</h2>
+      {/* 主要内容区域 */}
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        {currentUserCard ? (
+          <div className="flex flex-col items-center">
+            <UserCard user={currentUserCard} />
+            
+            {/* 操作按钮 */}
+            <div className="flex justify-center space-x-8 mt-8">
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handlePass}
+                className="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-gray-500 transition-colors"
+              >
+                ✕
+              </motion.button>
               
-              {currentIndex < users.length ? (
-                <motion.div
-                  key={users[currentIndex].id}
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  exit={{ opacity: 0, scale: 0.8 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <UserCard user={users[currentIndex]} />
-                </motion.div>
-              ) : (
-                <div className="text-center py-12">
-                  <Heart className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-600 mb-2">
-                    暂时没有更多推荐
-                  </h3>
-                  <p className="text-gray-500">
-                    稍后再来看看吧，或者调整你的偏好设置
-                  </p>
-                </div>
-              )}
-
-              {/* 操作按钮 */}
-              {currentIndex < users.length && (
-                <div className="flex justify-center space-x-4 mt-6">
-                  <button
-                    onClick={handlePass}
-                    className="p-4 bg-gray-100 hover:bg-gray-200 rounded-full transition-colors"
-                  >
-                    <span className="text-2xl">✕</span>
-                  </button>
-                  
-                  <button
-                    onClick={handleSuperLike}
-                    className="p-4 bg-blue-100 hover:bg-blue-200 rounded-full transition-colors"
-                  >
-                    <Star className="h-6 w-6 text-blue-500" />
-                  </button>
-                  
-                  <button
-                    onClick={handleLike}
-                    className="p-4 bg-red-100 hover:bg-red-200 rounded-full transition-colors"
-                  >
-                    <Heart className="h-6 w-6 text-red-500" />
-                  </button>
-                </div>
-              )}
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleSuperLike}
+                className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-600 transition-colors"
+              >
+                <Star size={24} />
+              </motion.button>
+              
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={handleLike}
+                className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-red-600 transition-colors"
+              >
+                <Heart size={24} />
+              </motion.button>
             </div>
           </div>
-
-          {/* 侧边栏 - 匹配列表 */}
-          <div className="lg:col-span-1">
-            <div className="bg-white rounded-2xl shadow-lg p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">我的匹配</h3>
-              
-              {matchedUsers.length > 0 ? (
-                <div className="space-y-4">
-                  {matchedUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                      onClick={() => setShowChat(true)}
-                    >
-                      <div className="w-12 h-12 bg-red-200 rounded-full flex items-center justify-center">
-                        <User className="h-6 w-6 text-red-500" />
-                      </div>
-                      <div className="flex-1">
-                        <h4 className="font-medium text-gray-900">{user.name}</h4>
-                        <p className="text-sm text-gray-500">{user.age}岁 · {user.location}</p>
-                      </div>
-                      {user.isOnline && (
-                        <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center py-8">
-                  <Heart className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-                  <p className="text-gray-500">还没有匹配，继续探索吧！</p>
-                </div>
-              )}
-            </div>
+        ) : (
+          <div className="text-center py-20">
+            <h2 className="text-2xl font-bold text-gray-700 mb-4">没有更多推荐了</h2>
+            <p className="text-gray-500">稍后再来看看吧！</p>
           </div>
-        </div>
+        )}
       </div>
 
       {/* 聊天面板 */}
@@ -393,7 +345,35 @@ export default function Dashboard() {
       {/* 个人资料模态框 */}
       {showProfile && (
         <ProfileModal
-          onClose={() => setShowProfile(false)}
+          onClose={() => {
+            setShowProfile(false)
+            // 关闭个人资料模态框后，重新获取用户资料
+            const refreshUserProfile = async () => {
+              try {
+                const token = localStorage.getItem('token')
+                if (!token) return
+
+                console.log('Dashboard: 重新获取用户资料...')
+                const response = await fetch('/api/user/profile', {
+                  headers: {
+                    'Authorization': `Bearer ${token}`
+                  }
+                })
+
+                if (response.ok) {
+                  const data = await response.json()
+                  if (data.success) {
+                    console.log('Dashboard: 获取到最新用户资料:', data.user)
+                    setCurrentUser(data.user)
+                  }
+                }
+              } catch (error) {
+                console.error('Dashboard: 重新获取用户资料失败:', error)
+              }
+            }
+            
+            refreshUserProfile()
+          }}
         />
       )}
     </div>

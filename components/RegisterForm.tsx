@@ -389,6 +389,8 @@ export default function RegisterForm() {
           />
         </div>
         
+        {/* 暂时取消邮箱验证环节 - 保留代码以便之后使用 */}
+        {/*
         <div className="mt-3 flex space-x-2">
           <input
             name="emailCode"
@@ -416,6 +418,7 @@ export default function RegisterForm() {
             {verificationStatus.emailVerified ? '已验证' : '验证'}
           </button>
         </div>
+        */}
       </div>
 
       <div>
@@ -472,6 +475,8 @@ export default function RegisterForm() {
           </div>
         </div>
         
+        {/* 暂时取消手机验证环节 - 保留代码以便之后使用 */}
+        {/*
         <div className="mt-3 flex space-x-2">
           <input
             name="phoneCode"
@@ -499,6 +504,7 @@ export default function RegisterForm() {
             {verificationStatus.phoneVerified ? '已验证' : '验证'}
           </button>
         </div>
+        */}
       </div>
 
       <div className="grid grid-cols-2 gap-4">
