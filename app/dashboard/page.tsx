@@ -52,66 +52,176 @@ export default function Dashboard() {
     setIsLoading(false)
   }, [router])
 
-  // 模拟用户数据
+  // 获取真实用户数据
   useEffect(() => {
     if (isLoading) return
-    const mockUsers: User[] = [
-      {
-        id: '1',
-        name: '小雨',
-        age: 25,
-        location: '北京',
-        bio: '喜欢旅行和摄影，寻找有趣的灵魂',
-        interests: ['旅行', '摄影', '音乐', '美食'],
-        photos: ['/api/placeholder/400/600'],
-        isOnline: true
-      },
-      {
-        id: '2',
-        name: '小明',
-        age: 28,
-        location: '上海',
-        bio: '程序员一枚，热爱技术，也喜欢户外运动',
-        interests: ['编程', '健身', '电影', '咖啡'],
-        photos: ['/api/placeholder/400/600'],
-        isOnline: false
-      },
-      {
-        id: '3',
-        name: '小红',
-        age: 23,
-        location: '深圳',
-        bio: '设计师，喜欢艺术和创意，寻找志同道合的人',
-        interests: ['设计', '艺术', '阅读', '瑜伽'],
-        photos: ['/api/placeholder/400/600'],
-        isOnline: true
-      }
-    ]
-    setUsers(mockUsers)
-  }, [])
+    
+    const fetchUserProfile = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) return
 
-  const handleLike = () => {
-    const currentUser = users[currentIndex]
-    if (currentUser) {
-      setMatchedUsers(prev => [...prev, currentUser])
-      // 模拟匹配成功
-      if (Math.random() > 0.5) {
-        alert(`恭喜！你和${currentUser.name}匹配成功了！`)
+        const response = await fetch('/api/user/profile', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            setCurrentUser(data.user)
+          }
+        }
+      } catch (error) {
+        console.error('获取用户资料失败:', error)
       }
     }
+
+    const fetchRecommendedUsers = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) return
+
+        const response = await fetch('/api/user/matches?limit=10', {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            // 转换数据格式以匹配现有组件
+            const formattedUsers: User[] = data.users.map((user: any) => ({
+              id: user.id.toString(),
+              name: user.name,
+              age: calculateAge(user.birth_date),
+              location: user.location || '未知',
+              bio: user.bio || '这个人很神秘...',
+              interests: user.interests || [],
+              photos: [user.avatar_url || '/api/placeholder/400/600'],
+              isOnline: user.is_online || false
+            }))
+            setUsers(formattedUsers)
+          }
+        }
+      } catch (error) {
+        console.error('获取推荐用户失败:', error)
+      }
+    }
+
+    fetchUserProfile()
+    fetchRecommendedUsers()
+  }, [isLoading])
+
+  // 计算年龄的辅助函数
+  const calculateAge = (birthDate: string) => {
+    const today = new Date()
+    const birth = new Date(birthDate)
+    let age = today.getFullYear() - birth.getFullYear()
+    const monthDiff = today.getMonth() - birth.getMonth()
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
+      age--
+    }
+    
+    return age
+  }
+
+  const handleLike = async () => {
+    const currentUser = users[currentIndex]
+    if (!currentUser) return
+
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      const response = await fetch('/api/user/matches', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          matchedUserId: currentUser.id,
+          action: 'like'
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          if (data.isMatch) {
+            setMatchedUsers(prev => [...prev, currentUser])
+            alert(`恭喜！你和${currentUser.name}匹配成功了！`)
+          }
+        }
+      }
+    } catch (error) {
+      console.error('处理喜欢失败:', error)
+    }
+
     setCurrentIndex(prev => prev + 1)
   }
 
-  const handlePass = () => {
+  const handlePass = async () => {
+    const currentUser = users[currentIndex]
+    if (!currentUser) return
+
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      await fetch('/api/user/matches', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          matchedUserId: currentUser.id,
+          action: 'pass'
+        })
+      })
+    } catch (error) {
+      console.error('处理跳过失败:', error)
+    }
+
     setCurrentIndex(prev => prev + 1)
   }
 
-  const handleSuperLike = () => {
+  const handleSuperLike = async () => {
     const currentUser = users[currentIndex]
-    if (currentUser) {
-      setMatchedUsers(prev => [...prev, currentUser])
-      alert(`超级喜欢！你和${currentUser.name}匹配成功了！`)
+    if (!currentUser) return
+
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      const response = await fetch('/api/user/matches', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          matchedUserId: currentUser.id,
+          action: 'super_like'
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setMatchedUsers(prev => [...prev, currentUser])
+          alert(`超级喜欢！你和${currentUser.name}匹配成功了！`)
+        }
+      }
+    } catch (error) {
+      console.error('处理超级喜欢失败:', error)
     }
+
     setCurrentIndex(prev => prev + 1)
   }
 

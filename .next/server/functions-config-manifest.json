@@ -1,1 +1,1 @@
-{"version":1,"functions":{"/api/auth/login":{},"/api/auth/register":{}}}
+{"version":1,"functions":{"/api/auth/register":{},"/api/auth/login":{},"/api/user/profile":{},"/api/user/matches":{}}}

@@ -1,9 +1,11 @@
 {
   "/_not-found/page": "app/_not-found/page.js",
-  "/api/auth/send-email-code/route": "app/api/auth/send-email-code/route.js",
+  "/dashboard/page": "app/dashboard/page.js",
   "/page": "app/page.js",
   "/api/auth/send-sms-code/route": "app/api/auth/send-sms-code/route.js",
-  "/dashboard/page": "app/dashboard/page.js",
+  "/api/auth/send-email-code/route": "app/api/auth/send-email-code/route.js",
+  "/api/user/matches/route": "app/api/user/matches/route.js",
+  "/api/user/profile/route": "app/api/user/profile/route.js",
   "/api/auth/register/route": "app/api/auth/register/route.js",
   "/api/auth/login/route": "app/api/auth/login/route.js"
 }
