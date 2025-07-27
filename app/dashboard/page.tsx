@@ -296,9 +296,17 @@ export default function Dashboard() {
     const currentUser = users[currentIndex]
     if (!currentUser) return
 
+    console.log(`💖 [前端] 用户点击喜欢按钮 - 目标用户:`, currentUser)
+
     try {
       const token = localStorage.getItem('token')
-      if (!token) return
+      if (!token) {
+        console.error('❌ [前端] 没有找到登录token')
+        return
+      }
+
+      const currentUserId = JSON.parse(localStorage.getItem('user') || '{}').id
+      console.log(`📤 [前端] 发送喜欢请求 - 当前用户ID: ${currentUserId}, 目标用户ID: ${currentUser.id}`)
 
       const response = await fetch('/api/user/matches', {
         method: 'POST',
@@ -312,16 +320,45 @@ export default function Dashboard() {
         })
       })
 
+      console.log(`📡 [前端] API响应状态:`, response.status)
+
       if (response.ok) {
         const data = await response.json()
-        if (data.success && data.isMatch) {
-          // 重新获取已匹配用户列表
-          fetchMatchedUsers()
-          alert(`恭喜！你和${currentUser.name}匹配成功了！`)
+        console.log(`📨 [前端] API响应数据:`, data)
+        
+        if (data.success) {
+          if (data.isMatch) {
+            console.log(`🎉 [前端] 匹配成功！与${currentUser.name}形成双向匹配`)
+            // 重新获取已匹配用户列表
+            fetchMatchedUsers()
+            alert(`🎉 恭喜！你和${currentUser.name}匹配成功了！`)
+          } else {
+            console.log(`💌 [前端] 喜欢请求已发送给${currentUser.name}，等待对方回应`)
+            if (data.pendingMatch) {
+              console.log(`📋 [前端] 创建的待匹配记录:`, data.pendingMatch)
+            }
+            // 显示友好的提示信息
+            const notification = document.createElement('div')
+            notification.className = 'fixed top-20 right-4 bg-purple-500 text-white px-6 py-3 rounded-lg shadow-lg z-50'
+            notification.innerHTML = `💌 已向${currentUser.name}发送喜欢请求`
+            document.body.appendChild(notification)
+            setTimeout(() => {
+              document.body.removeChild(notification)
+            }, 3000)
+          }
+        } else {
+          console.error('❌ [前端] API返回错误:', data.error)
+          alert('操作失败: ' + data.error)
         }
+      } else {
+        console.error('❌ [前端] API请求失败，状态码:', response.status)
+        const errorText = await response.text()
+        console.error('❌ [前端] 错误详情:', errorText)
+        alert('请求失败，请重试')
       }
     } catch (error) {
-      console.error('处理喜欢失败:', error)
+      console.error('❌ [前端] 处理喜欢操作失败:', error)
+      alert('网络错误，请重试')
     }
 
     setCurrentIndex(prev => prev + 1)
@@ -331,11 +368,16 @@ export default function Dashboard() {
     const currentUser = users[currentIndex]
     if (!currentUser) return
 
+    console.log(`👎 [前端] 用户点击跳过按钮 - 目标用户:`, currentUser)
+
     try {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      await fetch('/api/user/matches', {
+      const currentUserId = JSON.parse(localStorage.getItem('user') || '{}').id
+      console.log(`📤 [前端] 发送跳过请求 - 当前用户ID: ${currentUserId}, 目标用户ID: ${currentUser.id}`)
+
+      const response = await fetch('/api/user/matches', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -346,8 +388,15 @@ export default function Dashboard() {
           action: 'pass'
         })
       })
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log(`📨 [前端] 跳过操作响应:`, data)
+      } else {
+        console.error('❌ [前端] 跳过操作失败')
+      }
     } catch (error) {
-      console.error('处理跳过失败:', error)
+      console.error('❌ [前端] 处理跳过失败:', error)
     }
 
     setCurrentIndex(prev => prev + 1)
@@ -357,9 +406,14 @@ export default function Dashboard() {
     const currentUser = users[currentIndex]
     if (!currentUser) return
 
+    console.log(`⭐ [前端] 用户点击超级喜欢按钮 - 目标用户:`, currentUser)
+
     try {
       const token = localStorage.getItem('token')
       if (!token) return
+
+      const currentUserId = JSON.parse(localStorage.getItem('user') || '{}').id
+      console.log(`📤 [前端] 发送超级喜欢请求 - 当前用户ID: ${currentUserId}, 目标用户ID: ${currentUser.id}`)
 
       const response = await fetch('/api/user/matches', {
         method: 'POST',
@@ -373,16 +427,43 @@ export default function Dashboard() {
         })
       })
 
+      console.log(`📡 [前端] 超级喜欢API响应状态:`, response.status)
+
       if (response.ok) {
         const data = await response.json()
-        if (data.success && data.isMatch) {
-          // 重新获取已匹配用户列表
-          fetchMatchedUsers()
-          alert(`恭喜！你和${currentUser.name}匹配成功了！`)
+        console.log(`📨 [前端] 超级喜欢API响应数据:`, data)
+        
+        if (data.success) {
+          if (data.isMatch) {
+            console.log(`🎉 [前端] 超级喜欢匹配成功！与${currentUser.name}形成双向匹配`)
+            // 重新获取已匹配用户列表
+            fetchMatchedUsers()
+            alert(`🎉 恭喜！你的超级喜欢生效了，你和${currentUser.name}匹配成功！`)
+          } else {
+            console.log(`⭐ [前端] 超级喜欢请求已发送给${currentUser.name}，等待对方回应`)
+            if (data.pendingMatch) {
+              console.log(`📋 [前端] 创建的超级喜欢待匹配记录:`, data.pendingMatch)
+            }
+            // 显示友好的提示信息
+            const notification = document.createElement('div')
+            notification.className = 'fixed top-20 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50'
+            notification.innerHTML = `⭐ 已向${currentUser.name}发送超级喜欢请求`
+            document.body.appendChild(notification)
+            setTimeout(() => {
+              document.body.removeChild(notification)
+            }, 3000)
+          }
+        } else {
+          console.error('❌ [前端] 超级喜欢API返回错误:', data.error)
+          alert('操作失败: ' + data.error)
         }
+      } else {
+        console.error('❌ [前端] 超级喜欢API请求失败')
+        alert('请求失败，请重试')
       }
     } catch (error) {
-      console.error('处理超级喜欢失败:', error)
+      console.error('❌ [前端] 处理超级喜欢失败:', error)
+      alert('网络错误，请重试')
     }
 
     setCurrentIndex(prev => prev + 1)
@@ -395,9 +476,16 @@ export default function Dashboard() {
   }
 
   // 当接受匹配后的回调函数
-  const handleMatchAccepted = () => {
-    fetchMatchedUsers() // 刷新已匹配用户列表
-    fetchPendingMatchesCount() // 刷新待接受匹配数量
+  const handleMatchAccepted = async () => {
+    console.log('🔄 [前端] 匹配被接受，开始刷新数据...')
+    
+    // 立即刷新已匹配用户列表
+    await fetchMatchedUsers()
+    
+    // 刷新待接受匹配数量
+    await fetchPendingMatchesCount()
+    
+    console.log('✅ [前端] 数据刷新完成')
   }
 
   if (isLoading) {

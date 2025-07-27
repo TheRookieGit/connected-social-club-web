@@ -57,27 +57,68 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('获取匹配用户 - 当前用户ID:', decoded.userId)
+    console.log('🔍 获取已匹配用户 - 当前用户ID:', decoded.userId)
     
-    // 获取当前用户的所有已接受的匹配
-    const { data: acceptedMatches, error: matchesError } = await supabase
+    // 查找双向匹配：
+    // 1. 当前用户发起的已接受匹配
+    // 2. 其他用户发起且当前用户接受的匹配
+    const { data: myInitiatedMatches, error: error1 } = await supabase
       .from('user_matches')
       .select('matched_user_id, match_score, created_at')
       .eq('user_id', decoded.userId)
       .eq('match_status', 'accepted')
 
-    console.log('匹配查询结果:', { acceptedMatches, matchesError })
+    const { data: othersInitiatedMatches, error: error2 } = await supabase
+      .from('user_matches')
+      .select('user_id, match_score, created_at')
+      .eq('matched_user_id', decoded.userId)
+      .eq('match_status', 'accepted')
 
-    if (matchesError) {
-      console.error('获取匹配记录错误:', matchesError)
+    console.log('🔍 匹配查询结果:')
+    console.log('  - 我发起的匹配:', myInitiatedMatches)
+    console.log('  - 别人发起的匹配:', othersInitiatedMatches)
+    console.log('  - 查询错误:', { error1, error2 })
+
+    if (error1 || error2) {
+      console.error('❌ 获取匹配记录错误:', { error1, error2 })
       return NextResponse.json(
         { success: false, error: '获取匹配记录失败' },
         { status: 500 }
       )
     }
 
-    if (!acceptedMatches || acceptedMatches.length === 0) {
-      console.log('没有找到已接受的匹配记录')
+    // 合并所有匹配的用户ID
+    const matchedUserIds = new Set<number>()
+    const matchDetails = new Map<number, any>()
+
+    // 处理我发起的匹配
+    if (myInitiatedMatches) {
+      myInitiatedMatches.forEach(match => {
+        matchedUserIds.add(match.matched_user_id)
+        matchDetails.set(match.matched_user_id, {
+          match_score: match.match_score,
+          created_at: match.created_at,
+          initiated_by_me: true
+        })
+      })
+    }
+
+    // 处理别人发起的匹配
+    if (othersInitiatedMatches) {
+      othersInitiatedMatches.forEach(match => {
+        matchedUserIds.add(match.user_id)
+        matchDetails.set(match.user_id, {
+          match_score: match.match_score,
+          created_at: match.created_at,
+          initiated_by_me: false
+        })
+      })
+    }
+
+    console.log('🎯 所有匹配的用户ID:', Array.from(matchedUserIds))
+
+    if (matchedUserIds.size === 0) {
+      console.log('📭 没有找到已匹配的用户')
       return NextResponse.json({
         success: true,
         matchedUsers: [],
@@ -86,24 +127,24 @@ export async function GET(request: NextRequest) {
     }
 
     // 获取匹配用户的详细信息
-    const matchedUserIds = acceptedMatches.map(match => match.matched_user_id)
     const { data: matchedUsersData, error: usersError } = await supabase
       .from('users')
       .select('id, name, birth_date, gender, avatar_url, bio, location, occupation, is_online, last_seen')
-      .in('id', matchedUserIds)
+      .in('id', Array.from(matchedUserIds))
 
     if (usersError) {
-      console.error('获取用户信息错误:', usersError)
+      console.error('❌ 获取用户信息错误:', usersError)
       return NextResponse.json(
         { success: false, error: '获取用户信息失败' },
         { status: 500 }
       )
     }
 
+    console.log('👥 获取到的用户数据:', matchedUsersData)
+
     // 格式化匹配用户数据
     const matchedUsers = matchedUsersData?.map((user: any) => {
-      // 找到对应的匹配记录
-      const matchRecord = acceptedMatches.find(match => match.matched_user_id === user.id)
+      const details = matchDetails.get(user.id)
       
       return {
         id: user.id,
@@ -116,13 +157,16 @@ export async function GET(request: NextRequest) {
         avatar_url: user.avatar_url,
         isOnline: user.is_online || false,
         lastSeen: user.last_seen,
-        matchScore: Math.round((matchRecord?.match_score || 0) * 100),
-        matchedAt: matchRecord?.created_at
+        matchScore: Math.round((details?.match_score || 0) * 100),
+        matchedAt: details?.created_at,
+        initiatedByMe: details?.initiated_by_me || false
       }
     }) || []
 
     // 按匹配时间排序（最新的在前）
     matchedUsers.sort((a, b) => new Date(b.matchedAt).getTime() - new Date(a.matchedAt).getTime())
+
+    console.log('✅ 格式化后的匹配用户:', matchedUsers)
 
     // 记录活动日志
     await supabase
@@ -140,7 +184,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('获取已匹配用户错误:', error)
+    console.error('❌ 获取已匹配用户错误:', error)
     return NextResponse.json(
       { success: false, error: '服务器错误' },
       { status: 500 }

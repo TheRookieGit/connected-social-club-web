@@ -251,6 +251,8 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    console.log(`🎯 用户 ${decoded.userId} 对用户 ${matchedUserId} 执行操作: ${action}`)
+
     // 检查是否已经存在匹配
     const { data: existingMatch } = await supabase
       .from('user_matches')
@@ -260,6 +262,7 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (existingMatch) {
+      console.log(`❌ 用户 ${decoded.userId} 已经对用户 ${matchedUserId} 进行过操作:`, existingMatch)
       return NextResponse.json(
         { success: false, error: '已经对该用户进行过操作' },
         { status: 400 }
@@ -267,28 +270,36 @@ export async function POST(request: NextRequest) {
     }
 
     // 创建匹配记录
+    const matchRecord = {
+      user_id: decoded.userId,
+      matched_user_id: matchedUserId,
+      match_status: action === 'like' || action === 'super_like' ? 'pending' : 'rejected',
+      match_score: action === 'super_like' ? 0.9 : 0.5 // 超级喜欢给更高分数
+    }
+
+    console.log(`📝 正在创建匹配记录:`, matchRecord)
+
     const { data: newMatch, error: matchError } = await supabase
       .from('user_matches')
-      .insert({
-        user_id: decoded.userId,
-        matched_user_id: matchedUserId,
-        match_status: action === 'like' ? 'pending' : 'rejected',
-        match_score: 0.5 // 默认分数
-      })
+      .insert(matchRecord)
       .select()
       .single()
 
     if (matchError) {
-      console.error('创建匹配错误:', matchError)
+      console.error('❌ 创建匹配错误:', matchError)
       return NextResponse.json(
-        { success: false, error: '创建匹配失败' },
+        { success: false, error: '创建匹配失败: ' + matchError.message },
         { status: 500 }
       )
     }
 
+    console.log(`✅ 成功创建匹配记录:`, newMatch)
+
     // 检查是否形成双向匹配
     let isMatch = false
-    if (action === 'like') {
+    if (action === 'like' || action === 'super_like') {
+      console.log(`🔍 检查是否存在反向匹配 (用户 ${matchedUserId} 是否喜欢用户 ${decoded.userId})`)
+      
       const { data: reverseMatch } = await supabase
         .from('user_matches')
         .select('*')
@@ -297,19 +308,30 @@ export async function POST(request: NextRequest) {
         .eq('match_status', 'pending')
         .single()
 
+      console.log(`🔍 反向匹配查询结果:`, reverseMatch)
+
       if (reverseMatch) {
+        console.log(`🎉 发现双向匹配！正在更新状态为 accepted`)
+        
         // 更新两个匹配记录为已接受
-        await supabase
+        const { error: updateError1 } = await supabase
           .from('user_matches')
           .update({ match_status: 'accepted' })
           .eq('id', newMatch.id)
 
-        await supabase
+        const { error: updateError2 } = await supabase
           .from('user_matches')
           .update({ match_status: 'accepted' })
           .eq('id', reverseMatch.id)
 
-        isMatch = true
+        if (updateError1 || updateError2) {
+          console.error('❌ 更新匹配状态错误:', { updateError1, updateError2 })
+        } else {
+          console.log(`✅ 成功更新双向匹配状态为 accepted`)
+          isMatch = true
+        }
+      } else {
+        console.log(`📋 没有找到反向匹配，匹配状态保持为 pending`)
       }
     }
 
@@ -322,19 +344,31 @@ export async function POST(request: NextRequest) {
         activity_data: { 
           action, 
           target_user_id: matchedUserId,
-          is_match: isMatch 
+          is_match: isMatch,
+          match_id: newMatch.id
         }
       })
 
+    const responseMessage = isMatch ? 
+      `🎉 匹配成功！你和用户 ${matchedUserId} 互相喜欢！` : 
+      `📝 操作完成，已向用户 ${matchedUserId} 发送${action === 'super_like' ? '超级' : ''}喜欢请求`
+
+    console.log(`📤 返回响应:`, { success: true, message: responseMessage, isMatch })
+
     return NextResponse.json({
       success: true,
-      message: isMatch ? '匹配成功！' : '操作完成',
+      message: responseMessage,
       isMatch,
-      match: newMatch
+      match: newMatch,
+      pendingMatch: !isMatch ? {
+        id: newMatch.id,
+        status: newMatch.match_status,
+        target_user_id: matchedUserId
+      } : null
     })
 
   } catch (error) {
-    console.error('创建匹配错误:', error)
+    console.error('❌ 创建匹配错误:', error)
     return NextResponse.json(
       { success: false, error: '服务器错误' },
       { status: 500 }
