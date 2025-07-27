@@ -43,6 +43,59 @@ export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [users, setUsers] = useState<User[]>([])
 
+  // 获取已匹配的用户
+  const fetchMatchedUsers = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        console.log('fetchMatchedUsers: 没有token，跳过')
+        return
+      }
+
+      console.log('fetchMatchedUsers: 开始获取已匹配用户...')
+      const response = await fetch('/api/user/matched-users', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      console.log('fetchMatchedUsers: API响应状态:', response.status)
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('fetchMatchedUsers: API返回数据:', data)
+        
+        if (data.success) {
+          if (data.matchedUsers && data.matchedUsers.length > 0) {
+            const formattedUsers: RecommendedUser[] = data.matchedUsers.map((user: any) => ({
+              id: user.id.toString(),
+              name: user.name,
+              age: user.age,
+              location: user.location,
+              bio: user.bio,
+              interests: [], // 可以后续添加兴趣获取
+              photos: [user.avatar_url || '/api/placeholder/400/600'],
+              isOnline: user.isOnline
+            }))
+            setMatchedUsers(formattedUsers)
+            console.log('✅ 成功获取到已匹配用户:', formattedUsers)
+          } else {
+            console.log('📭 没有找到已匹配的用户')
+            setMatchedUsers([])
+          }
+        } else {
+          console.error('❌ API返回失败:', data.error)
+        }
+      } else {
+        console.error('❌ API请求失败，状态码:', response.status)
+        const errorText = await response.text()
+        console.error('❌ 错误详情:', errorText)
+      }
+    } catch (error) {
+      console.error('❌ 获取已匹配用户失败:', error)
+    }
+  }
+
   // 检查登录状态并获取最新用户数据
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -103,6 +156,46 @@ export default function Dashboard() {
     }
 
     initializeUserData()
+    fetchMatchedUsers() // 获取已匹配的用户
+    
+    // 更新在线状态
+    const updateOnlineStatus = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (token) {
+          await fetch('/api/user/online-status', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({ isOnline: true })
+          })
+        }
+      } catch (error) {
+        console.error('更新在线状态失败:', error)
+      }
+    }
+    
+    updateOnlineStatus()
+
+    // 定期更新在线状态（每30秒）
+    const onlineInterval = setInterval(updateOnlineStatus, 30000)
+
+    // 页面卸载时设置为离线
+    const handleBeforeUnload = () => {
+      const token = localStorage.getItem('token')
+      if (token) {
+        navigator.sendBeacon('/api/user/online-status', JSON.stringify({ isOnline: false }))
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      clearInterval(onlineInterval)
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
   }, [router])
 
   // 计算年龄的辅助函数
@@ -183,7 +276,8 @@ export default function Dashboard() {
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.isMatch) {
-          setMatchedUsers(prev => [...prev, currentUser])
+          // 重新获取已匹配用户列表
+          fetchMatchedUsers()
           alert(`恭喜！你和${currentUser.name}匹配成功了！`)
         }
       }
@@ -243,7 +337,8 @@ export default function Dashboard() {
       if (response.ok) {
         const data = await response.json()
         if (data.success && data.isMatch) {
-          setMatchedUsers(prev => [...prev, currentUser])
+          // 重新获取已匹配用户列表
+          fetchMatchedUsers()
           alert(`恭喜！你和${currentUser.name}匹配成功了！`)
         }
       }
@@ -297,6 +392,26 @@ export default function Dashboard() {
               >
                 <UserIcon size={24} />
               </button>
+              
+              {/* 管理员控制台入口 */}
+              {(() => {
+                console.log('Dashboard: 检查管理员权限...')
+                console.log('Dashboard: currentUser:', currentUser)
+                console.log('Dashboard: currentUser.email:', currentUser?.email)
+                console.log('Dashboard: 是否为管理员:', currentUser?.email === 'admin@socialclub.com')
+                return currentUser?.email === 'admin@socialclub.com'
+              })() && (
+                <button
+                  onClick={() => {
+                    console.log('Dashboard: 点击管理员控制台按钮')
+                    router.push('/admin')
+                  }}
+                  className="p-2 text-gray-600 hover:text-purple-500 transition-colors"
+                  title="管理员控制台"
+                >
+                  <Settings size={24} />
+                </button>
+              )}
               
               <button
                 onClick={handleLogout}

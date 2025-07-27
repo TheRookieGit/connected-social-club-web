@@ -1,12 +1,8 @@
 {
-  "/_not-found/page": "app/_not-found/page.js",
-  "/api/auth/send-email-code/route": "app/api/auth/send-email-code/route.js",
-  "/page": "app/page.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/api/user/matches/route": "app/api/user/matches/route.js",
-  "/api/user/profile/route": "app/api/user/profile/route.js",
-  "/api/auth/register/route": "app/api/auth/register/route.js",
-  "/api/auth/send-sms-code/route": "app/api/auth/send-sms-code/route.js",
-  "/api/test-db/route": "app/api/test-db/route.js",
-  "/api/auth/login/route": "app/api/auth/login/route.js"
+  "/api/debug/matches/route": "app/api/debug/matches/route.js",
+  "/api/admin/force-fix/route": "app/api/admin/force-fix/route.js",
+  "/api/admin/fix-matches/route": "app/api/admin/fix-matches/route.js",
+  "/admin/page": "app/admin/page.js",
+  "/debug-admin/page": "app/debug-admin/page.js",
+  "/dashboard/page": "app/dashboard/page.js"
 }

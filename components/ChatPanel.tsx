@@ -32,71 +32,133 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState<string>('')
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // 模拟消息数据
+  // 获取当前用户ID
   useEffect(() => {
-    if (selectedUser) {
-      const mockMessages: Message[] = [
-        {
-          id: '1',
-          senderId: selectedUser.id,
-          receiverId: 'current-user',
-          content: '你好！很高兴认识你 😊',
-          timestamp: new Date(Date.now() - 3600000),
-          type: 'text'
-        },
-        {
-          id: '2',
-          senderId: 'current-user',
-          receiverId: selectedUser.id,
-          content: '你好！我也很高兴认识你',
-          timestamp: new Date(Date.now() - 3500000),
-          type: 'text'
-        },
-        {
-          id: '3',
-          senderId: selectedUser.id,
-          receiverId: 'current-user',
-          content: '看到你的资料，我们有很多共同的兴趣爱好呢',
-          timestamp: new Date(Date.now() - 3000000),
-          type: 'text'
-        }
-      ]
-      setMessages(mockMessages)
+    const user = localStorage.getItem('user')
+    if (user) {
+      const userData = JSON.parse(user)
+      setCurrentUserId(userData.id?.toString() || '')
     }
-  }, [selectedUser])
+  }, [])
+
+  // 加载聊天记录
+  const loadMessages = async (userId: string) => {
+    if (!userId || !currentUserId) return
+    
+    setLoading(true)
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch(`/api/messages/conversation?userId=${userId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          const formattedMessages: Message[] = data.messages.map((msg: any) => ({
+            id: msg.id.toString(),
+            senderId: msg.senderId,
+            receiverId: msg.receiverId,
+            content: msg.content,
+            timestamp: new Date(msg.timestamp),
+            type: msg.messageType || 'text'
+          }))
+          setMessages(formattedMessages)
+          console.log('✅ 加载聊天记录:', formattedMessages)
+        } else {
+          console.error('❌ 加载聊天记录失败:', data.error)
+        }
+      }
+    } catch (error) {
+      console.error('❌ 加载聊天记录错误:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // 当选择用户时加载聊天记录
+  useEffect(() => {
+    if (selectedUser && currentUserId) {
+      console.log('🔄 选择用户，加载聊天记录:', selectedUser.name, selectedUser.id)
+      loadMessages(selectedUser.id)
+    }
+  }, [selectedUser, currentUserId])
+
+  // 定期刷新消息（每10秒）
+  useEffect(() => {
+    if (!selectedUser || !currentUserId) return
+
+    const interval = setInterval(() => {
+      console.log('🔄 定期刷新消息...')
+      loadMessages(selectedUser.id)
+    }, 10000) // 每10秒刷新一次
+
+    return () => clearInterval(interval)
+  }, [selectedUser, currentUserId])
 
   // 自动滚动到底部
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
-  const handleSendMessage = () => {
-    if (newMessage.trim() && selectedUser) {
-      const message: Message = {
-        id: Date.now().toString(),
-        senderId: 'current-user',
-        receiverId: selectedUser.id,
-        content: newMessage.trim(),
-        timestamp: new Date(),
-        type: 'text'
-      }
-      setMessages(prev => [...prev, message])
-      setNewMessage('')
-      
-      // 模拟回复
-      setTimeout(() => {
-        const reply: Message = {
-          id: (Date.now() + 1).toString(),
-          senderId: selectedUser.id,
-          receiverId: 'current-user',
-          content: '收到你的消息了！我正在回复...',
-          timestamp: new Date(),
-          type: 'text'
+  const handleSendMessage = async () => {
+    if (!newMessage.trim() || !selectedUser || !currentUserId || loading) return
+
+    const messageContent = newMessage.trim()
+    setNewMessage('')
+    setLoading(true)
+
+    try {
+      const token = localStorage.getItem('token')
+      const response = await fetch('/api/messages/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          receiverId: parseInt(selectedUser.id),
+          message: messageContent,
+          messageType: 'text'
+        })
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          // 添加新消息到本地状态
+          const newMessage: Message = {
+            id: data.data.id.toString(),
+            senderId: currentUserId,
+            receiverId: selectedUser.id,
+            content: messageContent,
+            timestamp: new Date(data.data.timestamp),
+            type: 'text'
+          }
+          setMessages(prev => [...prev, newMessage])
+          console.log('✅ 消息发送成功:', newMessage)
+        } else {
+          console.error('❌ 发送消息失败:', data.error)
+          alert('发送消息失败: ' + data.error)
+          setNewMessage(messageContent) // 恢复消息内容
         }
-        setMessages(prev => [...prev, reply])
-      }, 2000)
+      } else {
+        console.error('❌ 发送消息请求失败')
+        alert('发送消息失败，请重试')
+        setNewMessage(messageContent) // 恢复消息内容
+      }
+    } catch (error) {
+      console.error('❌ 发送消息错误:', error)
+      alert('网络错误，请重试')
+      setNewMessage(messageContent) // 恢复消息内容
+    } finally {
+      setLoading(false)
     }
   }
 
@@ -187,23 +249,28 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
 
                 {/* 消息列表 */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                  {loading && messages.length === 0 && (
+                    <div className="flex justify-center py-4">
+                      <div className="text-gray-500">加载聊天记录中...</div>
+                    </div>
+                  )}
                   {messages.map((message) => (
                     <div
                       key={message.id}
                       className={`flex ${
-                        message.senderId === 'current-user' ? 'justify-end' : 'justify-start'
+                        message.senderId === currentUserId ? 'justify-end' : 'justify-start'
                       }`}
                     >
                       <div
                         className={`max-w-xs lg:max-w-md px-4 py-2 rounded-2xl ${
-                          message.senderId === 'current-user'
+                          message.senderId === currentUserId
                             ? 'bg-red-500 text-white'
                             : 'bg-gray-200 text-gray-900'
                         }`}
                       >
                         <p className="text-sm">{message.content}</p>
                         <p className={`text-xs mt-1 ${
-                          message.senderId === 'current-user' 
+                          message.senderId === currentUserId 
                             ? 'text-red-100' 
                             : 'text-gray-500'
                         }`}>
@@ -236,10 +303,14 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                     </button>
                     <button
                       onClick={handleSendMessage}
-                      disabled={!newMessage.trim()}
+                      disabled={!newMessage.trim() || loading}
                       className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Send className="h-5 w-5" />
+                      {loading ? (
+                        <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+                      ) : (
+                        <Send className="h-5 w-5" />
+                      )}
                     </button>
                   </div>
                 </div>
