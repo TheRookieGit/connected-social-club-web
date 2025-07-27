@@ -3,11 +3,12 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar } from 'lucide-react'
+import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock } from 'lucide-react'
 import useSWR from 'swr'
 import UserCard from '@/components/UserCard'
 import ChatPanel from '@/components/ChatPanel'
 import ProfileModal from '@/components/ProfileModal'
+import PendingMatchesPanel from '@/components/PendingMatchesPanel'
 import { syncUserDataToLocalStorage } from '@/lib/hooks'
 
 // 推荐用户的类型定义
@@ -39,7 +40,9 @@ export default function Dashboard() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showChat, setShowChat] = useState(false)
   const [showProfile, setShowProfile] = useState(false)
+  const [showPendingMatches, setShowPendingMatches] = useState(false)
   const [matchedUsers, setMatchedUsers] = useState<RecommendedUser[]>([])
+  const [pendingMatchesCount, setPendingMatchesCount] = useState(0)
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [users, setUsers] = useState<User[]>([])
 
@@ -93,6 +96,38 @@ export default function Dashboard() {
       }
     } catch (error) {
       console.error('❌ 获取已匹配用户失败:', error)
+    }
+  }
+
+  // 获取待接受匹配数量
+  const fetchPendingMatchesCount = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        console.log('fetchPendingMatchesCount: 没有token，跳过')
+        return
+      }
+
+      console.log('fetchPendingMatchesCount: 开始获取待接受匹配数量...')
+      const response = await fetch('/api/user/pending-matches', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success) {
+          setPendingMatchesCount(data.total || 0)
+          console.log('✅ 成功获取待接受匹配数量:', data.total)
+        } else {
+          console.error('❌ 获取待接受匹配数量失败:', data.error)
+        }
+      } else {
+        console.error('❌ 获取待接受匹配数量请求失败，状态码:', response.status)
+      }
+    } catch (error) {
+      console.error('❌ 获取待接受匹配数量失败:', error)
     }
   }
 
@@ -157,6 +192,7 @@ export default function Dashboard() {
 
     initializeUserData()
     fetchMatchedUsers() // 获取已匹配的用户
+    fetchPendingMatchesCount() // 获取待接受匹配数量
     
     // 更新在线状态
     const updateOnlineStatus = async () => {
@@ -179,8 +215,11 @@ export default function Dashboard() {
     
     updateOnlineStatus()
 
-    // 定期更新在线状态（每30秒）
-    const onlineInterval = setInterval(updateOnlineStatus, 30000)
+    // 定期更新在线状态和匹配数据（每30秒）
+    const dataRefreshInterval = setInterval(() => {
+      updateOnlineStatus()
+      fetchPendingMatchesCount() // 定期检查新的待接受匹配
+    }, 30000)
 
     // 页面卸载时设置为离线
     const handleBeforeUnload = () => {
@@ -193,7 +232,7 @@ export default function Dashboard() {
     window.addEventListener('beforeunload', handleBeforeUnload)
 
     return () => {
-      clearInterval(onlineInterval)
+      clearInterval(dataRefreshInterval)
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
   }, [router])
@@ -355,6 +394,12 @@ export default function Dashboard() {
     router.push('/')
   }
 
+  // 当接受匹配后的回调函数
+  const handleMatchAccepted = () => {
+    fetchMatchedUsers() // 刷新已匹配用户列表
+    fetchPendingMatchesCount() // 刷新待接受匹配数量
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100 flex items-center justify-center">
@@ -379,12 +424,43 @@ export default function Dashboard() {
             </div>
             
             <div className="flex items-center space-x-4">
-              <button
-                onClick={() => setShowChat(true)}
-                className="p-2 text-gray-600 hover:text-red-500 transition-colors"
+              {/* 待接受匹配按钮 */}
+              <motion.button
+                onClick={() => setShowPendingMatches(true)}
+                className="relative p-3 bg-purple-500 text-white rounded-full hover:bg-purple-600 transition-colors shadow-lg"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
               >
-                <MessageCircle size={24} />
-              </button>
+                <Clock size={20} />
+                {pendingMatchesCount > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 bg-orange-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold"
+                  >
+                    {pendingMatchesCount > 9 ? '9+' : pendingMatchesCount}
+                  </motion.span>
+                )}
+              </motion.button>
+
+              {/* 我的匹配按钮 - 更明显的设计 */}
+              <motion.button
+                onClick={() => setShowChat(true)}
+                className="relative p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <Users size={20} />
+                {matchedUsers.length > 0 && (
+                  <motion.span
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="absolute -top-1 -right-1 bg-yellow-500 text-black text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold"
+                  >
+                    {matchedUsers.length}
+                  </motion.span>
+                )}
+              </motion.button>
               
               <button
                 onClick={() => setShowProfile(true)}
@@ -426,47 +502,180 @@ export default function Dashboard() {
 
       {/* 主要内容区域 */}
       <div className="max-w-6xl mx-auto px-4 py-8">
-        {currentUserCard ? (
-          <div className="flex flex-col items-center">
-            <UserCard user={currentUserCard} />
-            
-            {/* 操作按钮 */}
-            <div className="flex justify-center space-x-8 mt-8">
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handlePass}
-                className="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-gray-500 transition-colors"
-              >
-                ✕
-              </motion.button>
+        {/* 我的匹配概览区域 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="bg-white rounded-2xl shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+                  <Users className="text-red-500" size={24} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">我的匹配</h2>
+                  <p className="text-gray-500">
+                    {matchedUsers.length > 0 
+                      ? `你有 ${matchedUsers.length} 个已匹配用户`
+                      : '还没有匹配，继续浏览寻找你的另一半吧！'
+                    }
+                    {pendingMatchesCount > 0 && (
+                      <span className="text-purple-600 font-medium ml-2">
+                        • {pendingMatchesCount} 个待处理
+                      </span>
+                    )}
+                  </p>
+                </div>
+              </div>
               
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handleSuperLike}
-                className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-600 transition-colors"
-              >
-                <Star size={24} />
-              </motion.button>
-              
-              <motion.button
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
-                onClick={handleLike}
-                className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-red-600 transition-colors"
-              >
-                <Heart size={24} />
-              </motion.button>
+              <div className="flex space-x-3">
+                {pendingMatchesCount > 0 && (
+                  <motion.button
+                    onClick={() => setShowPendingMatches(true)}
+                    className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium text-sm"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    处理待匹配 ({pendingMatchesCount})
+                  </motion.button>
+                )}
+                
+                {matchedUsers.length > 0 && (
+                  <motion.button
+                    onClick={() => setShowChat(true)}
+                    className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    开始聊天
+                  </motion.button>
+                )}
+              </div>
             </div>
+            
+            {/* 匹配用户预览 */}
+            {matchedUsers.length > 0 && (
+              <div className="flex space-x-4 overflow-x-auto pb-2">
+                {matchedUsers.slice(0, 5).map((user) => (
+                  <motion.div
+                    key={user.id}
+                    className="flex-shrink-0 w-20 text-center cursor-pointer"
+                    onClick={() => setShowChat(true)}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="w-16 h-16 bg-red-200 rounded-full flex items-center justify-center mx-auto mb-2 relative">
+                      <span className="text-red-600 font-medium text-lg">
+                        {user.name.charAt(0)}
+                      </span>
+                      {user.isOnline && (
+                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                      )}
+                    </div>
+                    <p className="text-xs text-gray-600 font-medium truncate">{user.name}</p>
+                  </motion.div>
+                ))}
+                {matchedUsers.length > 5 && (
+                  <motion.div
+                    className="flex-shrink-0 w-20 text-center cursor-pointer"
+                    onClick={() => setShowChat(true)}
+                    whileHover={{ scale: 1.05 }}
+                  >
+                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
+                      <span className="text-gray-500 font-medium">+{matchedUsers.length - 5}</span>
+                    </div>
+                    <p className="text-xs text-gray-600">更多</p>
+                  </motion.div>
+                )}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="text-center py-20">
-            <h2 className="text-2xl font-bold text-gray-700 mb-4">没有更多推荐了</h2>
-            <p className="text-gray-500">稍后再来看看吧！</p>
+        </motion.div>
+
+        {/* 推荐用户区域 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="mb-6">
+            <h2 className="text-xl font-bold text-gray-900 mb-2">为你推荐</h2>
+            <p className="text-gray-500">根据你的喜好为你推荐的用户</p>
           </div>
-        )}
+
+          {currentUserCard ? (
+            <div className="flex flex-col items-center">
+              <UserCard user={currentUserCard} />
+              
+              {/* 操作按钮 */}
+              <div className="flex justify-center space-x-8 mt-8">
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handlePass}
+                  className="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-gray-500 transition-colors"
+                >
+                  ✕
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleSuperLike}
+                  className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-600 transition-colors"
+                >
+                  <Star size={24} />
+                </motion.button>
+                
+                <motion.button
+                  whileHover={{ scale: 1.1 }}
+                  whileTap={{ scale: 0.9 }}
+                  onClick={handleLike}
+                  className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-red-600 transition-colors"
+                >
+                  <Heart size={24} />
+                </motion.button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-20">
+              <h3 className="text-2xl font-bold text-gray-700 mb-4">没有更多推荐了</h3>
+              <p className="text-gray-500 mb-6">稍后再来看看吧！</p>
+              <div className="flex justify-center space-x-4">
+                {pendingMatchesCount > 0 && (
+                  <motion.button
+                    onClick={() => setShowPendingMatches(true)}
+                    className="px-8 py-3 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors font-medium"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    处理待匹配 ({pendingMatchesCount})
+                  </motion.button>
+                )}
+                {matchedUsers.length > 0 && (
+                  <motion.button
+                    onClick={() => setShowChat(true)}
+                    className="px-8 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    查看我的匹配
+                  </motion.button>
+                )}
+              </div>
+            </div>
+          )}
+        </motion.div>
       </div>
+
+      {/* 待接受匹配面板 */}
+      {showPendingMatches && (
+        <PendingMatchesPanel
+          onClose={() => setShowPendingMatches(false)}
+          onMatchAccepted={handleMatchAccepted}
+        />
+      )}
 
       {/* 聊天面板 */}
       {showChat && (
@@ -502,8 +711,8 @@ export default function Dashboard() {
                     console.log('Dashboard: 获取到最新用户资料:', data.user)
                     setCurrentUser(data.user)
                     
-                                         // 重要：同步更新localStorage中的用户数据
-                     syncUserDataToLocalStorage(data.user, 'Dashboard关闭ProfileModal')
+                    // 重要：同步更新localStorage中的用户数据
+                    syncUserDataToLocalStorage(data.user, 'Dashboard关闭ProfileModal')
                   }
                 }
               } catch (error) {

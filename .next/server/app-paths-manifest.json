@@ -1,8 +1,8 @@
 {
-  "/api/debug/matches/route": "app/api/debug/matches/route.js",
-  "/api/admin/force-fix/route": "app/api/admin/force-fix/route.js",
-  "/api/admin/fix-matches/route": "app/api/admin/fix-matches/route.js",
-  "/admin/page": "app/admin/page.js",
-  "/debug-admin/page": "app/debug-admin/page.js",
+  "/api/user/profile/route": "app/api/user/profile/route.js",
+  "/page": "app/page.js",
+  "/api/user/matches/route": "app/api/user/matches/route.js",
+  "/api/user/online-status/route": "app/api/user/online-status/route.js",
+  "/api/user/pending-matches/route": "app/api/user/pending-matches/route.js",
   "/dashboard/page": "app/dashboard/page.js"
 }
