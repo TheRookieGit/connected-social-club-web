@@ -1,14 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { createClient } from '@supabase/supabase-js'
+import { createSupabaseClient } from '@/lib/supabase'
 
 const JWT_SECRET = process.env.JWT_SECRET || 'your-jwt-secret'
-
-// 创建Supabase客户端
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-)
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -24,6 +18,9 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // 创建Supabase客户端
+    const supabase = createSupabaseClient()
+
     // 1. 用code交换access token
     const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
       method: 'POST',

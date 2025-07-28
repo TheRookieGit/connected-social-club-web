@@ -6,10 +6,16 @@ import { motion } from 'framer-motion'
 import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock } from 'lucide-react'
 import useSWR from 'swr'
 import UserCard from '@/components/UserCard'
-import ChatPanel from '@/components/ChatPanel'
 import ProfileModal from '@/components/ProfileModal'
 import PendingMatchesPanel from '@/components/PendingMatchesPanel'
 import { syncUserDataToLocalStorage } from '@/lib/hooks'
+import dynamic from 'next/dynamic'
+
+// 动态导入Stream Chat组件，避免SSR问题
+const StreamChatPanel = dynamic(() => import('@/components/StreamChatPanel'), {
+  ssr: false,
+  loading: () => <div>加载专业聊天中...</div>
+})
 
 // 推荐用户的类型定义
 interface RecommendedUser {
@@ -584,12 +590,13 @@ export default function Dashboard() {
                 )}
               </motion.button>
 
-              {/* 我的匹配按钮 - 更明显的设计 */}
+              {/* 专业聊天按钮（已升级为Stream Chat） */}
               <motion.button
                 onClick={() => setShowChat(true)}
                 className="relative p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
+                title="专业级实时聊天 - 已升级！"
               >
                 <Users size={20} />
                 {matchedUsers.length > 0 && (
@@ -601,7 +608,17 @@ export default function Dashboard() {
                     {matchedUsers.length}
                   </motion.span>
                 )}
+                {/* 升级标识 */}
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  className="absolute -top-2 -left-2 bg-green-500 text-white text-[8px] rounded-full px-1.5 py-0.5 font-bold"
+                >
+                  升级
+                </motion.div>
               </motion.button>
+
+
               
               <button
                 onClick={() => setShowProfile(true)}
@@ -839,9 +856,9 @@ export default function Dashboard() {
         />
       )}
 
-      {/* 聊天面板 */}
+      {/* 专业聊天面板（已替代原来的ChatPanel） */}
       {showChat && (
-        <ChatPanel
+        <StreamChatPanel
           matchedUsers={matchedUsers}
           onClose={() => setShowChat(false)}
         />

@@ -27,6 +27,6 @@ export function createSupabaseClient() {
     return client
   } catch (error) {
     console.error('Supabase客户端创建失败:', error)
-    return null
+    throw new Error('无法创建Supabase客户端')
   }
 } 
