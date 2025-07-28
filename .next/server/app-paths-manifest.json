@@ -1,11 +1,11 @@
 {
-  "/dashboard/page": "app/dashboard/page.js",
   "/api/user/online-status/route": "app/api/user/online-status/route.js",
-  "/page": "app/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/api/messages/conversation/route": "app/api/messages/conversation/route.js",
   "/api/user/pending-matches/route": "app/api/user/pending-matches/route.js",
-  "/api/user/profile/route": "app/api/user/profile/route.js",
+  "/admin-chat/page": "app/admin-chat/page.js",
+  "/page": "app/page.js",
+  "/test-chat/page": "app/test-chat/page.js",
   "/api/messages/send/route": "app/api/messages/send/route.js",
-  "/api/user/matches/route": "app/api/user/matches/route.js",
-  "/api/user/matched-users/route": "app/api/user/matched-users/route.js",
-  "/api/messages/conversation/route": "app/api/messages/conversation/route.js"
+  "/api/admin/chat-records/route": "app/api/admin/chat-records/route.js"
 }

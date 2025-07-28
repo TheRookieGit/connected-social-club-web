@@ -138,125 +138,158 @@ export default function AdminPanel() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-purple-50 p-6">
+    <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-6xl mx-auto">
-        <div className="bg-white rounded-lg shadow-lg p-8">
-          <div className="flex justify-between items-center mb-6">
-            <h1 className="text-3xl font-bold text-gray-800">管理员控制台</h1>
-            <button 
-              onClick={() => router.push('/dashboard')}
-              className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">管理员控制面板</h1>
+          <p className="text-gray-600">社交俱乐部管理后台</p>
+        </div>
+
+        {/* 快速操作卡片 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-2">用户管理</h3>
+            <p className="text-gray-600 text-sm mb-4">管理所有注册用户</p>
+            <div className="text-2xl font-bold text-blue-600">{users.length}</div>
+            <div className="text-sm text-gray-500">总用户数</div>
+          </div>
+
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-2">聊天记录</h3>
+            <p className="text-gray-600 text-sm mb-4">查看所有聊天记录</p>
+            <a 
+              href="/admin-chat" 
+              className="inline-block px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 text-sm"
             >
-              返回仪表板
-            </button>
+              管理聊天记录
+            </a>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* 强制匹配功能 */}
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h2 className="text-xl font-semibold mb-4">强制匹配用户</h2>
-              
-              {/* 用户选择 */}
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    选择用户1
-                  </label>
-                  <select
-                    value={selectedUser1 || ''}
-                    onChange={(e) => setSelectedUser1(Number(e.target.value) || null)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                  >
-                    <option value="">请选择用户</option>
-                    {users.map(user => (
-                      <option key={user.id} value={user.id}>
-                        {user.name} ({user.email}) - {user.gender} - {user.location}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-2">调试工具</h3>
+            <p className="text-gray-600 text-sm mb-4">系统调试和测试</p>
+            <a 
+              href="/debug-admin" 
+              className="inline-block px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 text-sm"
+            >
+              调试工具
+            </a>
+          </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    选择用户2
-                  </label>
-                  <select
-                    value={selectedUser2 || ''}
-                    onChange={(e) => setSelectedUser2(Number(e.target.value) || null)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                  >
-                    <option value="">请选择用户</option>
-                    {users.map(user => (
-                      <option key={user.id} value={user.id}>
-                        {user.name} ({user.email}) - {user.gender} - {user.location}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h3 className="text-lg font-semibold mb-2">系统状态</h3>
+            <p className="text-gray-600 text-sm mb-4">系统运行状态</p>
+            <div className="text-2xl font-bold text-green-600">运行中</div>
+            <div className="text-sm text-gray-500">系统正常</div>
+          </div>
+        </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    匹配分数 (0-1)
-                  </label>
-                  <input
-                    type="number"
-                    min="0"
-                    max="1"
-                    step="0.01"
-                    value={matchScore}
-                    onChange={(e) => setMatchScore(parseFloat(e.target.value))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
-                  />
-                </div>
-
-                <button
-                  onClick={handleForceMatch}
-                  disabled={loading || !selectedUser1 || !selectedUser2}
-                  className="w-full bg-pink-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-pink-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* 强制匹配功能 */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold mb-4">强制匹配用户</h2>
+            
+            {/* 用户选择 */}
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  选择用户1
+                </label>
+                <select
+                  value={selectedUser1 || ''}
+                  onChange={(e) => setSelectedUser1(Number(e.target.value) || null)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
                 >
-                  {loading ? '处理中...' : '强制匹配'}
-                </button>
-              </div>
-
-              {message && (
-                <div className={`mt-4 p-3 rounded-lg ${
-                  message.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}>
-                  {message}
-                </div>
-              )}
-            </div>
-
-            {/* 用户列表 */}
-            <div className="bg-gray-50 p-6 rounded-lg">
-              <h2 className="text-xl font-semibold mb-4">用户列表</h2>
-              <div className="max-h-96 overflow-y-auto">
-                <div className="space-y-2">
+                  <option value="">请选择用户</option>
                   {users.map(user => (
-                    <div key={user.id} className="bg-white p-3 rounded border">
-                      <div className="font-medium">{user.name}</div>
-                      <div className="text-sm text-gray-600">{user.email}</div>
-                      <div className="text-xs text-gray-500">
-                        {user.gender} · {user.location} · ID: {user.id}
-                      </div>
-                    </div>
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.email}) - {user.gender} - {user.location}
+                    </option>
                   ))}
-                </div>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  选择用户2
+                </label>
+                <select
+                  value={selectedUser2 || ''}
+                  onChange={(e) => setSelectedUser2(Number(e.target.value) || null)}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+                >
+                  <option value="">请选择用户</option>
+                  {users.map(user => (
+                    <option key={user.id} value={user.id}>
+                      {user.name} ({user.email}) - {user.gender} - {user.location}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  匹配分数 (0-1)
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={matchScore}
+                  onChange={(e) => setMatchScore(parseFloat(e.target.value))}
+                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500"
+                />
+              </div>
+
+              <button
+                onClick={handleForceMatch}
+                disabled={loading || !selectedUser1 || !selectedUser2}
+                className="w-full bg-pink-500 text-white py-3 px-4 rounded-lg font-semibold hover:bg-pink-600 disabled:bg-gray-300 disabled:cursor-not-allowed"
+              >
+                {loading ? '处理中...' : '强制匹配'}
+              </button>
+            </div>
+
+            {message && (
+              <div className={`mt-4 p-3 rounded-lg ${
+                message.includes('✅') ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+              }`}>
+                {message}
+              </div>
+            )}
+          </div>
+
+          {/* 用户列表 */}
+          <div className="bg-white p-6 rounded-lg shadow">
+            <h2 className="text-xl font-semibold mb-4">用户列表</h2>
+            <div className="max-h-96 overflow-y-auto">
+              <div className="space-y-2">
+                {users.map(user => (
+                  <div key={user.id} className="bg-gray-50 p-3 rounded border">
+                    <div className="font-medium">{user.name}</div>
+                    <div className="text-sm text-gray-600">{user.email}</div>
+                    <div className="text-xs text-gray-500">
+                      {user.gender} · {user.location} · ID: {user.id}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
+        </div>
 
-          {/* 使用说明 */}
-          <div className="mt-8 bg-blue-50 p-6 rounded-lg">
-            <h3 className="text-lg font-semibold text-blue-800 mb-2">使用说明</h3>
-            <ul className="text-blue-700 space-y-1">
-              <li>• 选择两个不同的用户进行强制匹配</li>
-              <li>• 匹配分数范围是 0-1，默认为 0.95</li>
-              <li>• 强制匹配会创建双向的 "accepted" 状态匹配记录</li>
-              <li>• 系统会检查用户是否已经存在匹配关系</li>
-              <li>• 所有操作都会记录在活动日志中</li>
-            </ul>
-          </div>
+        {/* 使用说明 */}
+        <div className="mt-8 bg-blue-50 p-6 rounded-lg">
+          <h3 className="text-lg font-semibold text-blue-800 mb-2">使用说明</h3>
+          <ul className="text-blue-700 space-y-1">
+            <li>• 选择两个不同的用户进行强制匹配</li>
+            <li>• 匹配分数范围是 0-1，默认为 0.95</li>
+            <li>• 强制匹配会创建双向的 "accepted" 状态匹配记录</li>
+            <li>• 系统会检查用户是否已经存在匹配关系</li>
+            <li>• 所有操作都会记录在活动日志中</li>
+            <li>• 点击"管理聊天记录"可以查看和管理所有用户的聊天内容</li>
+          </ul>
         </div>
       </div>
     </div>

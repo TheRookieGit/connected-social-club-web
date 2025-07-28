@@ -21,6 +21,7 @@ interface Message {
   content: string
   timestamp: Date
   type: 'text' | 'image'
+  isRead: boolean // 新增已读状态
 }
 
 interface ChatPanelProps {
@@ -45,21 +46,40 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
     }
   }, [])
 
-  // 加载聊天记录
-  const loadMessages = async (userId: string) => {
-    if (!userId || !currentUserId) return
+  // 加载聊天记录 - 智能合并，避免覆盖本地新消息
+  const loadMessages = async (userId: string, forceRefresh: boolean = false) => {
+    if (!userId || !currentUserId) {
+      console.log('❌ [聊天面板] 加载消息条件不满足:', {
+        hasUserId: !!userId,
+        hasCurrentUserId: !!currentUserId
+      })
+      return
+    }
     
+    console.log(`📥 [聊天面板] 开始加载与用户 ${userId} 的聊天记录${forceRefresh ? ' (强制刷新)' : ''}`)
     setLoading(true)
+    
     try {
       const token = localStorage.getItem('token')
+      if (!token) {
+        console.error('❌ [聊天面板] 没有找到token')
+        return
+      }
+
+      console.log(`📤 [聊天面板] 发送API请求到 /api/messages/conversation?userId=${userId}`)
+
       const response = await fetch(`/api/messages/conversation?userId=${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
 
+      console.log(`📡 [聊天面板] 获取聊天记录API响应状态:`, response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log(`📨 [聊天面板] 获取聊天记录API响应数据:`, data)
+        
         if (data.success) {
           const formattedMessages: Message[] = data.messages.map((msg: any) => ({
             id: msg.id.toString(),
@@ -67,39 +87,132 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
             receiverId: msg.receiverId,
             content: msg.content,
             timestamp: new Date(msg.timestamp),
-            type: msg.messageType || 'text'
+            type: msg.messageType || 'text',
+            isRead: msg.isRead || false // 添加isRead属性
           }))
-          setMessages(formattedMessages)
-          console.log('✅ 加载聊天记录:', formattedMessages)
+          
+          console.log(`✅ [聊天面板] 成功加载 ${formattedMessages.length} 条聊天记录`)
+          console.log(`📋 [聊天面板] 当前本地消息数量: ${messages.length}`)
+          console.log(`📋 [聊天面板] 服务器消息数量: ${formattedMessages.length}`)
+          
+          if (forceRefresh) {
+            // 强制刷新时直接覆盖
+            setMessages(formattedMessages)
+            console.log(`🔄 [聊天面板] 强制刷新 - 直接更新本地消息状态`)
+          } else {
+            // 智能合并：简化逻辑，优先保证消息不丢失
+            console.log(`🔄 [聊天面板] 开始简化智能合并`)
+            console.log(`📋 [聊天面板] 本地消息数: ${messages.length}, 服务器消息数: ${formattedMessages.length}`)
+            
+            // 如果服务器消息数量更多，直接使用服务器消息
+            if (formattedMessages.length >= messages.length) {
+              console.log(`✅ [聊天面板] 服务器消息更多，直接使用服务器数据`)
+              setMessages(formattedMessages)
+            } else {
+              // 如果本地消息更多，保持本地消息不变
+              console.log(`⚠️ [聊天面板] 本地消息更多，保持本地状态`)
+              // 但是更新已读状态
+              const updatedMessages = messages.map(localMsg => {
+                const serverMsg = formattedMessages.find(sm => sm.id === localMsg.id)
+                if (serverMsg && serverMsg.isRead !== localMsg.isRead) {
+                  console.log(`📖 [聊天面板] 更新消息 ${localMsg.id} 已读状态: ${localMsg.isRead} → ${serverMsg.isRead}`)
+                  return { ...localMsg, isRead: serverMsg.isRead }
+                }
+                return localMsg
+              })
+              setMessages(updatedMessages)
+            }
+          }
         } else {
-          console.error('❌ 加载聊天记录失败:', data.error)
+          console.error('❌ [聊天面板] 加载聊天记录失败:', data.error)
         }
+      } else {
+        console.error('❌ [聊天面板] 加载聊天记录请求失败，状态:', response.status)
+        const errorText = await response.text()
+        console.error('❌ [聊天面板] 错误详情:', errorText)
       }
     } catch (error) {
-      console.error('❌ 加载聊天记录错误:', error)
+      console.error('❌ [聊天面板] 加载聊天记录异常:', error)
     } finally {
       setLoading(false)
     }
   }
 
-  // 当选择用户时加载聊天记录
-  useEffect(() => {
-    if (selectedUser && currentUserId) {
-      console.log('🔄 选择用户，加载聊天记录:', selectedUser.name, selectedUser.id)
-      loadMessages(selectedUser.id)
-    }
-  }, [selectedUser, currentUserId])
-
-  // 定期刷新消息（每10秒）
+  // 轻量级新消息检查（用于实时通信）
   useEffect(() => {
     if (!selectedUser || !currentUserId) return
 
-    const interval = setInterval(() => {
-      console.log('🔄 定期刷新消息...')
-      loadMessages(selectedUser.id)
-    }, 10000) // 每10秒刷新一次
+    const checkForNewMessages = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) return
 
-    return () => clearInterval(interval)
+        console.log(`🔔 [聊天面板] 检查新消息 - 当前本地消息数量: ${messages.length}`)
+
+        const response = await fetch(`/api/messages/conversation?userId=${selectedUser.id}&limit=10`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            const serverMessages = data.messages || []
+            console.log(`🔔 [聊天面板] 服务器消息数量: ${serverMessages.length}`)
+
+            // 更保守的检查：只有当服务器明显有更多消息时才同步
+            if (serverMessages.length > messages.length + 1) {
+              console.log(`🆕 [聊天面板] 发现明显的新消息！服务器${serverMessages.length} > 本地${messages.length}+1`)
+              // 使用非强制刷新
+              await loadMessages(selectedUser.id, false)
+            } else {
+              console.log(`✅ [聊天面板] 消息基本同步`)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ [聊天面板] 检查新消息错误:', error)
+      }
+    }
+
+    // 减少检查频率：初始延迟5秒，然后每15秒检查一次
+    const timeout = setTimeout(() => {
+      const interval = setInterval(checkForNewMessages, 15000)
+      
+      console.log('🔔 [聊天面板] 新消息检查已启动（15秒间隔）')
+      
+      // 清理函数
+      return () => {
+        clearInterval(interval)
+        console.log('🔔 [聊天面板] 新消息检查已停止')
+      }
+    }, 5000)
+
+    return () => {
+      clearTimeout(timeout)
+    }
+  }, [selectedUser, currentUserId])
+
+  // 当选择用户时加载聊天记录
+  useEffect(() => {
+    if (selectedUser && currentUserId) {
+      console.log('🔄 选择用户，强制加载聊天记录:', selectedUser.name, selectedUser.id)
+      loadMessages(selectedUser.id, true) // 初始加载使用强制刷新
+    }
+  }, [selectedUser, currentUserId])
+
+  // 定期刷新消息（暂时禁用以避免消息被覆盖）
+  useEffect(() => {
+    if (!selectedUser || !currentUserId) return
+
+    // 暂时禁用定期刷新，避免消息被"吞掉"
+    console.log('🚫 [聊天面板] 定期刷新已禁用，避免消息被覆盖')
+    
+    // const interval = setInterval(() => {
+    //   console.log('🔄 [聊天面板] 定期刷新消息（30秒间隔）...')
+    //   loadMessages(selectedUser.id)
+    // }, 30000) // 改为30秒刷新一次，避免干扰用户
+
+    // return () => clearInterval(interval)
   }, [selectedUser, currentUserId])
 
   // 自动滚动到底部
@@ -108,14 +221,38 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
   }, [messages])
 
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedUser || !currentUserId || loading) return
+    if (!newMessage.trim() || !selectedUser || !currentUserId || loading) {
+      console.log('❌ [聊天面板] 发送消息条件不满足:', {
+        hasMessage: !!newMessage.trim(),
+        hasSelectedUser: !!selectedUser,
+        hasCurrentUserId: !!currentUserId,
+        loading
+      })
+      return
+    }
 
     const messageContent = newMessage.trim()
+    console.log(`💬 [聊天面板] 准备发送消息:`, {
+      from: currentUserId,
+      to: selectedUser.id,
+      content: messageContent
+    })
+
+    // 先清空输入框，但保留消息内容用于恢复
     setNewMessage('')
     setLoading(true)
 
     try {
       const token = localStorage.getItem('token')
+      if (!token) {
+        console.error('❌ [聊天面板] 没有找到token')
+        alert('请重新登录')
+        setNewMessage(messageContent) // 恢复消息
+        return
+      }
+
+      console.log(`📤 [聊天面板] 发送API请求到 /api/messages/send`)
+
       const response = await fetch('/api/messages/send', {
         method: 'POST',
         headers: {
@@ -129,32 +266,57 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
         })
       })
 
+      console.log(`📡 [聊天面板] API响应状态:`, response.status)
+
       if (response.ok) {
         const data = await response.json()
+        console.log(`📨 [聊天面板] API响应数据:`, data)
+        
         if (data.success) {
-          // 添加新消息到本地状态
+          // 立即添加新消息到本地状态（乐观更新）
           const newMessage: Message = {
             id: data.data.id.toString(),
             senderId: currentUserId,
             receiverId: selectedUser.id,
             content: messageContent,
             timestamp: new Date(data.data.timestamp),
-            type: 'text'
+            type: 'text',
+            isRead: false // 新消息默认未读
           }
-          setMessages(prev => [...prev, newMessage])
-          console.log('✅ 消息发送成功:', newMessage)
+          
+          console.log('✅ [聊天面板] 消息发送成功，立即添加到本地状态:', newMessage)
+          
+          // 检查是否已存在相同ID的消息
+          const existingMessageIndex = messages.findIndex(msg => msg.id === newMessage.id)
+          if (existingMessageIndex === -1) {
+            // 消息不存在，添加到本地状态
+            setMessages(prev => [...prev, newMessage])
+            console.log('✅ [聊天面板] 新消息已添加到本地状态')
+          } else {
+            // 消息已存在，更新该消息
+            setMessages(prev => prev.map(msg => 
+              msg.id === newMessage.id ? newMessage : msg
+            ))
+            console.log('✅ [聊天面板] 现有消息已更新')
+          }
+          
+          // 不再自动重新加载，避免消息被"吞掉"
+          console.log('✅ [聊天面板] 消息已保存到本地，依赖实时检查机制同步')
+          
         } else {
-          console.error('❌ 发送消息失败:', data.error)
+          console.error('❌ [聊天面板] 发送消息失败:', data.error)
           alert('发送消息失败: ' + data.error)
           setNewMessage(messageContent) // 恢复消息内容
         }
       } else {
-        console.error('❌ 发送消息请求失败')
+        console.error('❌ [聊天面板] 发送消息请求失败，状态:', response.status)
+        const errorText = await response.text()
+        console.error('❌ [聊天面板] 错误详情:', errorText)
         alert('发送消息失败，请重试')
         setNewMessage(messageContent) // 恢复消息内容
       }
     } catch (error) {
-      console.error('❌ 发送消息错误:', error)
+      console.error('❌ [聊天面板] 发送消息异常:', error)
       alert('网络错误，请重试')
       setNewMessage(messageContent) // 恢复消息内容
     } finally {
@@ -169,11 +331,41 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
     }
   }
 
+  // 格式化时间显示
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('zh-CN', { 
-      hour: '2-digit', 
-      minute: '2-digit' 
-    })
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  // 已读状态指示器组件
+  const ReadStatusIndicator = ({ isRead }: { isRead: boolean }) => {
+    if (isRead) {
+      return (
+        <div className="flex items-center" title="已读">
+          <svg width="16" height="12" viewBox="0 0 16 12" className="text-blue-300">
+            <path
+              d="M15.03 1.47a.75.75 0 010 1.06l-9 9a.75.75 0 01-1.06 0l-4-4a.75.75 0 011.06-1.06L5.5 9.94 13.97 1.47a.75.75 0 011.06 0z"
+              fill="currentColor"
+            />
+            <path
+              d="M12.03 1.47a.75.75 0 010 1.06l-6 6a.75.75 0 01-1.06 0l-1-1a.75.75 0 011.06-1.06L6.5 7.94 10.97 3.47a.75.75 0 011.06 0z"
+              fill="currentColor"
+              opacity="0.6"
+            />
+          </svg>
+        </div>
+      )
+    } else {
+      return (
+        <div className="flex items-center" title="已发送">
+          <svg width="12" height="9" viewBox="0 0 12 9" className="text-red-200">
+            <path
+              d="M11.03 1.47a.75.75 0 010 1.06l-6 6a.75.75 0 01-1.06 0l-3-3a.75.75 0 011.06-1.06L4.5 6.94 9.97 1.47a.75.75 0 011.06 0z"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+      )
+    }
   }
 
   const formatLastSeen = (user: User) => {
@@ -288,32 +480,38 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
             {selectedUser ? (
               <>
                 {/* 聊天头部 */}
-                <div className="p-4 border-b bg-white">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-red-200 to-pink-200 rounded-full flex items-center justify-center">
-                        <span className="text-red-600 font-semibold text-lg">
-                          {selectedUser.name.charAt(0)}
-                        </span>
-                      </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900">{selectedUser.name}</h4>
-                        <div className="flex items-center space-x-2 text-sm text-gray-500">
-                          <span>{selectedUser.age}岁</span>
-                          <span>•</span>
-                          <span>{selectedUser.location}</span>
-                          <span>•</span>
-                          <span className={selectedUser.isOnline ? 'text-green-600 font-medium' : 'text-gray-500'}>
-                            {formatLastSeen(selectedUser)}
-                          </span>
-                        </div>
+                <div className="flex items-center justify-between p-4 border-b bg-white">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-semibold">
+                      {selectedUser.name.charAt(0).toUpperCase()}
+                    </div>
+                    <div>
+                      <div className="font-semibold">{selectedUser.name}</div>
+                      <div className="text-sm text-gray-500">
+                        {selectedUser.age}岁 • {selectedUser.location}
+                        {selectedUser.isOnline && (
+                          <span className="ml-2 text-green-500">• 在线</span>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <div className="px-3 py-1 bg-red-100 text-red-600 rounded-full text-sm font-medium">
-                        已匹配
-                      </div>
-                    </div>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => loadMessages(selectedUser.id, true)}
+                      className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                      title="强制刷新聊天记录"
+                    >
+                      🔄
+                    </button>
+                    <span className="px-3 py-1 bg-red-500 text-white text-sm rounded-lg">
+                      已匹配
+                    </span>
+                    <button
+                      onClick={onClose}
+                      className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                    >
+                      ✕
+                    </button>
                   </div>
                 </div>
 
@@ -356,50 +554,57 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                         }`}
                       >
                         <p className="text-sm leading-relaxed">{message.content}</p>
-                        <p className={`text-xs mt-2 ${
+                        <div className={`flex items-center justify-between mt-2 text-xs ${
                           message.senderId === currentUserId 
                             ? 'text-red-100' 
                             : 'text-gray-500'
                         }`}>
-                          {formatTime(message.timestamp)}
-                        </p>
+                          <span>{formatTime(message.timestamp)}</span>
+                          {message.senderId === currentUserId && (
+                            <div className="flex items-center ml-2">
+                              {message.isRead ? (
+                                <ReadStatusIndicator isRead={true} />
+                              ) : (
+                                <ReadStatusIndicator isRead={false} />
+                              )}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}
                   <div ref={messagesEndRef} />
                 </div>
 
-                {/* 输入区域 */}
+                {/* 消息输入区域 */}
                 <div className="p-4 border-t bg-white">
-                  <div className="flex items-center space-x-3">
-                    <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100">
-                      <Paperclip className="h-5 w-5" />
-                    </button>
-                    <div className="flex-1 relative">
-                      <input
-                        type="text"
-                        value={newMessage}
-                        onChange={(e) => setNewMessage(e.target.value)}
-                        onKeyPress={handleKeyPress}
-                        placeholder={`给 ${selectedUser.name} 发送消息...`}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-full focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent bg-gray-50"
-                        disabled={loading}
-                      />
-                    </div>
-                    <button className="p-2 text-gray-500 hover:text-gray-700 transition-colors rounded-full hover:bg-gray-100">
-                      <Smile className="h-5 w-5" />
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      value={newMessage}
+                      onChange={(e) => setNewMessage(e.target.value)}
+                      onKeyPress={handleKeyPress}
+                      placeholder={`给 ${selectedUser.name} 发送消息...`}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500"
+                      disabled={loading}
+                    />
+                    <button
+                      onClick={() => loadMessages(selectedUser.id, false)}
+                      className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm"
+                      title="立即同步消息"
+                    >
+                      🔄
                     </button>
                     <button
                       onClick={handleSendMessage}
-                      disabled={!newMessage.trim() || loading}
-                      className="p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                      disabled={loading || !newMessage.trim()}
+                      className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
-                      {loading ? (
-                        <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                      ) : (
-                        <Send className="h-5 w-5" />
-                      )}
+                      {loading ? '发送中...' : '发送'}
                     </button>
+                  </div>
+                  <div className="mt-2 text-xs text-gray-500 text-center">
+                    按 Enter 发送 • 🔄 手动同步 • 自动检查新消息每8秒
                   </div>
                 </div>
               </>
