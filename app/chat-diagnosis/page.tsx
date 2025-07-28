@@ -182,7 +182,7 @@ export default function ChatDiagnosis() {
           <div className="bg-gray-900 text-gray-100 p-4 rounded-lg min-h-[400px] font-mono text-sm">
             <div className="mb-2 text-green-400">聊天诊断日志:</div>
             {testResults.length === 0 && (
-              <div className="text-gray-500">点击"开始诊断"来测试聊天功能...</div>
+              <div className="text-gray-500">点击&quot;开始诊断&quot;来测试聊天功能...</div>
             )}
             {testResults.map((result, index) => (
               <div key={index} className="mb-1">
@@ -200,7 +200,7 @@ export default function ChatDiagnosis() {
               <li>• 测试消息发送到数据库是否成功</li>
               <li>• 测试消息查询是否能立即找到刚发送的消息</li>
               <li>• 测试消息持久性（5秒后是否还存在）</li>
-              <li>• 帮助定位"对方收不到"和"刷新后消失"的问题</li>
+              <li>• 帮助定位&quot;对方收不到&quot;和&quot;刷新后消失&quot;的问题</li>
             </ul>
           </div>
         </div>

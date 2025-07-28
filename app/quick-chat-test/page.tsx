@@ -239,10 +239,10 @@ export default function QuickChatTest() {
             <h3 className="font-semibold text-yellow-900 mb-2">🎯 测试步骤</h3>
             <ol className="text-yellow-700 text-sm space-y-1">
               <li>1. 输入目标用户ID (如果你是用户6，就输入7；如果你是用户7，就输入6)</li>
-              <li>2. 点击"加载消息"查看现有消息</li>
-              <li>3. 输入新消息内容，点击"发送消息"</li>
+              <li>2. 点击&quot;加载消息&quot;查看现有消息</li>
+              <li>3. 输入新消息内容，点击&quot;发送消息&quot;</li>
               <li>4. 观察消息是否立即出现在列表中</li>
-              <li>5. 点击"测试刷新"模拟页面刷新</li>
+              <li>5. 点击&quot;测试刷新&quot;模拟页面刷新</li>
               <li>6. 检查消息是否仍然存在</li>
             </ol>
             <div className="mt-3 text-yellow-800 font-medium">

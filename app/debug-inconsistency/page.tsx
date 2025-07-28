@@ -136,7 +136,7 @@ export default function DebugInconsistency() {
                 <div className="bg-gray-900 text-gray-100 p-3 rounded font-mono text-sm max-h-80 overflow-y-auto">
                   {debugData.rawData.allMessages.slice(-10).map((msg: any) => (
                     <div key={msg.id} className="mb-1">
-                      ID:{msg.id} | {msg.sender_id}→{msg.receiver_id} | 删除:{msg.is_deleted ? 'Y' : 'N'} | "{msg.message}"
+                      ID:{msg.id} | {msg.sender_id}→{msg.receiver_id} | 删除:{msg.is_deleted ? 'Y' : 'N'} | &quot;{msg.message}&quot;
                     </div>
                   ))}
                 </div>

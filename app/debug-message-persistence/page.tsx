@@ -290,7 +290,7 @@ export default function DebugMessagePersistence() {
           <div className="bg-gray-900 text-gray-100 p-4 rounded-lg min-h-[500px] font-mono text-sm overflow-y-auto">
             <div className="mb-2 text-green-400 font-bold">🔍 深度调试日志:</div>
             {logs.length === 0 && (
-              <div className="text-gray-500">点击"开始深度测试"来诊断消息持久化问题...</div>
+              <div className="text-gray-500">点击&quot;开始深度测试&quot;来诊断消息持久化问题...</div>
             )}
             {logs.map((log, index) => (
               <div key={index} className="mb-1 leading-relaxed">

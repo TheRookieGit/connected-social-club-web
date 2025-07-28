@@ -43,8 +43,17 @@ async function sendSMS(phone: string, code: string): Promise<boolean> {
       console.log('💡 提示: 要发送真实短信，请在 .env.local 配置 Twilio 相关信息')
       return true
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('发送短信失败:', error)
+    if (error.code) {
+      console.error('Twilio错误代码:', error.code)
+    }
+    if (error.message) {
+      console.error('错误消息:', error.message)
+    }
+    if (error.moreInfo) {
+      console.error('更多信息:', error.moreInfo)
+    }
     return false
   }
 }

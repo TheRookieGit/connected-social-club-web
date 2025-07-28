@@ -292,7 +292,7 @@ export default function DebugChatIssue() {
           <div className="bg-gray-900 text-gray-100 p-4 rounded-lg min-h-[400px] font-mono text-sm">
             <div className="mb-2 text-green-400">测试日志:</div>
             {testResults.length === 0 && (
-              <div className="text-gray-500">设置目标用户ID和测试消息，然后点击"详细测试"...</div>
+              <div className="text-gray-500">设置目标用户ID和测试消息，然后点击&quot;详细测试&quot;...</div>
             )}
             {testResults.map((result, index) => (
               <div key={index} className="mb-1">

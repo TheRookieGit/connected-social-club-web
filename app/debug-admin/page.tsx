@@ -178,7 +178,7 @@ export default function DebugAdmin() {
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold mb-4 text-blue-600">创建已匹配数据</h2>
               <p className="text-gray-600 mb-6">
-                为当前登录用户创建一些已接受的双向匹配，用于测试"我的匹配"功能
+                为当前登录用户创建一些已接受的双向匹配，用于测试&quot;我的匹配&quot;功能
               </p>
               
               <button
@@ -194,7 +194,7 @@ export default function DebugAdmin() {
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold mb-4 text-purple-600">创建待接受匹配数据</h2>
               <p className="text-gray-600 mb-6">
-                创建其他用户对你的待接受匹配请求，用于测试"待接受匹配"功能
+                创建其他用户对你的待接受匹配请求，用于测试&quot;待接受匹配&quot;功能
               </p>
               
               <button
@@ -266,8 +266,8 @@ export default function DebugAdmin() {
             <h3 className="font-semibold text-yellow-800 mb-2">📋 基础使用说明：</h3>
             <ol className="text-sm text-yellow-700 space-y-1">
               <li>1. 确保已登录系统</li>
-              <li>2. 点击"创建已匹配数据"按钮创建一些已确认的匹配</li>
-              <li>3. 点击"创建待接受匹配"按钮创建一些待处理的匹配请求</li>
+              <li>2. 点击&quot;创建已匹配数据&quot;按钮创建一些已确认的匹配</li>
+              <li>3. 点击&quot;创建待接受匹配&quot;按钮创建一些待处理的匹配请求</li>
               <li>4. 返回仪表板查看两种匹配功能</li>
               <li>5. 紫色按钮查看待接受匹配，红色按钮查看已匹配用户</li>
             </ol>

@@ -309,6 +309,12 @@ export default function RegisterForm() {
       setError('请先验证邮箱地址')
       return
     }
+
+    // 验证手机是否已验证
+    if (!verificationStatus.phoneVerified) {
+      setError('请先验证手机号码')
+      return
+    }
     
     setIsLoading(true)
     
@@ -479,8 +485,7 @@ export default function RegisterForm() {
           </div>
         </div>
         
-        {/* 暂时取消手机验证环节 - 保留代码以便之后使用 */}
-        {/*
+        {/* 手机验证码功能 */}
         <div className="mt-3 flex space-x-2">
           <input
             name="phoneCode"
@@ -508,7 +513,6 @@ export default function RegisterForm() {
             {verificationStatus.phoneVerified ? '已验证' : '验证'}
           </button>
         </div>
-        */}
       </div>
 
       <div className="grid grid-cols-2 gap-4">

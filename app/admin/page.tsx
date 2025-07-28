@@ -285,10 +285,10 @@ export default function AdminPanel() {
           <ul className="text-blue-700 space-y-1">
             <li>• 选择两个不同的用户进行强制匹配</li>
             <li>• 匹配分数范围是 0-1，默认为 0.95</li>
-            <li>• 强制匹配会创建双向的 "accepted" 状态匹配记录</li>
+            <li>• 强制匹配会创建双向的 &quot;accepted&quot; 状态匹配记录</li>
             <li>• 系统会检查用户是否已经存在匹配关系</li>
             <li>• 所有操作都会记录在活动日志中</li>
-            <li>• 点击"管理聊天记录"可以查看和管理所有用户的聊天内容</li>
+            <li>• 点击&quot;管理聊天记录&quot;可以查看和管理所有用户的聊天内容</li>
           </ul>
         </div>
       </div>

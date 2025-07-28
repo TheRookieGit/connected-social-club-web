@@ -150,7 +150,7 @@ export default function EmergencyChatFix() {
         <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
           <h1 className="text-2xl font-bold text-red-800 mb-4">🚨 紧急聊天修复验证</h1>
           <p className="text-red-700 mb-4">
-            此工具专门用于验证聊天消息被"吞掉"和错误已读标记的修复效果
+            此工具专门用于验证聊天消息被&quot;吞掉&quot;和错误已读标记的修复效果
           </p>
           <button
             onClick={runEmergencyTest}
