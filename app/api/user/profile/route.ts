@@ -56,7 +56,9 @@ export async function GET(request: NextRequest) {
 
     console.log('查询到的用户数据:', user)
     console.log('bio字段值:', user?.bio)
+    console.log('bio字段类型:', typeof user?.bio)
     console.log('location字段值:', user?.location)
+    console.log('location字段类型:', typeof user?.location)
     console.log('updated_at字段值:', user?.updated_at)
 
     if (userError || !user) {
@@ -165,6 +167,8 @@ export async function PUT(request: NextRequest) {
 
     console.log('过滤后的数据:', filteredData)
     console.log('用户ID:', decoded.userId)
+    console.log('bio字段值:', filteredData.bio)
+    console.log('bio字段类型:', typeof filteredData.bio)
 
     // 更新用户资料 - 使用事务确保数据一致性
     console.log('开始更新数据库...')
@@ -176,6 +180,9 @@ export async function PUT(request: NextRequest) {
       .single()
 
     console.log('更新结果:', { updatedUser, updateError, count })
+    console.log('更新后的用户数据:', updatedUser)
+    console.log('更新后的bio字段:', updatedUser?.bio)
+    console.log('更新后的bio字段类型:', typeof updatedUser?.bio)
 
     if (updateError) {
       console.error('更新用户资料错误:', updateError)

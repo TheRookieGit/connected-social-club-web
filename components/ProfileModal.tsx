@@ -10,21 +10,7 @@ interface ProfileModalProps {
   userId: string
 }
 
-interface UserProfile {
-  id: number
-  name: string
-  email: string
-  bio?: string
-  location?: string
-  birth_date?: string
-  gender?: string
-  avatar_url?: string
-  occupation?: string
-  education?: string
-  relationship_status?: string
-  height?: number
-  weight?: number
-}
+import { UserProfile } from '@/types/user'
 
 export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalProps) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
@@ -37,6 +23,8 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
       const token = localStorage.getItem('token')
       if (!token) return
 
+      console.log('🔄 开始获取个人资料...')
+
       const response = await fetch(`/api/user/profile?t=${Date.now()}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -45,18 +33,27 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
         }
       })
 
+      console.log('📡 获取资料API响应状态:', response.status)
+
       if (response.ok) {
         const data = await response.json()
-        console.log('获取个人资料响应:', data)
+        console.log('✅ 获取个人资料响应:', data)
         // 使用data.user而不是整个data对象
         const userData = data.user || data
+        console.log('✅ 解析后的用户数据:', userData)
+        console.log('✅ 用户bio字段:', userData.bio)
+        console.log('✅ 用户location字段:', userData.location)
+        
         setProfile(userData)
         setEditedProfile(userData)
+        console.log('✅ 个人资料已加载到状态中')
       } else {
-        console.error('获取个人资料失败:', response.status)
+        console.error('❌ 获取个人资料失败:', response.status)
+        const errorData = await response.json()
+        console.error('❌ 错误详情:', errorData)
       }
     } catch (error) {
-      console.error('获取用户资料失败:', error)
+      console.error('❌ 获取用户资料失败:', error)
     } finally {
       setIsLoading(false)
     }
@@ -82,7 +79,10 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
       const token = localStorage.getItem('token')
       if (!token) return
 
-      console.log('保存个人资料数据:', editedProfile)
+      console.log('🔄 开始保存个人资料...')
+      console.log('📝 编辑的数据:', editedProfile)
+      console.log('📝 bio字段值:', editedProfile.bio)
+      console.log('📝 location字段值:', editedProfile.location)
 
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
@@ -95,22 +95,27 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
         body: JSON.stringify(editedProfile)
       })
 
+      console.log('📡 API响应状态:', response.status)
+
       if (response.ok) {
         const updatedResponse = await response.json()
-        console.log('更新个人资料响应:', updatedResponse)
+        console.log('✅ 更新个人资料响应:', updatedResponse)
         // 使用updatedResponse.user而不是整个updatedResponse对象
         const updatedUserData = updatedResponse.user || updatedResponse
+        console.log('✅ 更新后的用户数据:', updatedUserData)
+        console.log('✅ 更新后的bio字段:', updatedUserData.bio)
+        
         setProfile(updatedUserData)
         setEditedProfile(updatedUserData)
         setIsEditing(false)
-        console.log('个人资料保存成功')
+        console.log('✅ 个人资料保存成功，状态已更新')
       } else {
-        console.error('更新个人资料失败:', response.status)
+        console.error('❌ 更新个人资料失败:', response.status)
         const errorData = await response.json()
-        console.error('错误详情:', errorData)
+        console.error('❌ 错误详情:', errorData)
       }
     } catch (error) {
-      console.error('更新用户资料失败:', error)
+      console.error('❌ 更新用户资料失败:', error)
     }
   }
 
@@ -173,13 +178,21 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 </button>
               </>
             ) : (
-              <button
-                onClick={handleEdit}
-                className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-              >
-                <Edit className="h-4 w-4" />
-                <span>编辑</span>
-              </button>
+              <>
+                <button
+                  onClick={handleEdit}
+                  className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                >
+                  <Edit className="h-4 w-4" />
+                  <span>编辑</span>
+                </button>
+                <button
+                  onClick={fetchProfile}
+                  className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  🔄 刷新
+                </button>
+              </>
             )}
             <button
               onClick={onClose}

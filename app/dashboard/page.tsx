@@ -10,6 +10,7 @@ import UserCard from '@/components/UserCard'
 import ProfileModal from '@/components/ProfileModal'
 import PendingMatchesPanel from '@/components/PendingMatchesPanel'
 import { syncUserDataToLocalStorage } from '@/lib/hooks'
+import { UserProfile } from '@/types/user'
 import dynamic from 'next/dynamic'
 
 // 动态导入Stream Chat组件，避免SSR问题
@@ -50,7 +51,7 @@ export default function Dashboard() {
   const [showPendingMatches, setShowPendingMatches] = useState(false)
   const [matchedUsers, setMatchedUsers] = useState<RecommendedUser[]>([])
   const [pendingMatchesCount, setPendingMatchesCount] = useState(0)
-  const [currentUser, setCurrentUser] = useState<any>(null)
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [users, setUsers] = useState<User[]>([])
 
   // 获取已匹配的用户
