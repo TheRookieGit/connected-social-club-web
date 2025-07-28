@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 interface ChatMessage {
   id: number
@@ -44,7 +44,7 @@ export default function AdminChatRecords() {
 
   const [selectedMessage, setSelectedMessage] = useState<ChatMessage | null>(null)
 
-  const fetchMessages = async () => {
+  const fetchMessages = useCallback(async () => {
     setLoading(true)
     try {
       const token = localStorage.getItem('token')
@@ -83,7 +83,7 @@ export default function AdminChatRecords() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [filters])
 
   const deleteMessage = async (messageId: number) => {
     if (!confirm('确定要删除这条消息吗？')) return
@@ -139,7 +139,7 @@ export default function AdminChatRecords() {
 
   useEffect(() => {
     fetchMessages()
-  }, [filters])
+  }, [fetchMessages])
 
   const handleFilterChange = (key: string, value: string | number) => {
     setFilters(prev => ({

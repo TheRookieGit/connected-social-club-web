@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { StreamChat } from 'stream-chat'
 import {
   Chat,
@@ -164,10 +164,10 @@ export default function StreamChatPanel({
         chatClient.disconnectUser()
       }
     }
-  }, [currentUser, isClient])
+  }, [currentUser, isClient, chatClient])
 
   // 为匹配的用户创建频道
-  const createChannelsForMatchedUsers = async () => {
+  const createChannelsForMatchedUsers = useCallback(async () => {
     if (!chatClient || !currentUser || !matchedUsers.length || channelsCreated) return
 
     try {
@@ -214,7 +214,7 @@ export default function StreamChatPanel({
     } catch (error) {
       console.error('💥 创建频道过程中出错:', error)
     }
-  }
+  }, [chatClient, currentUser, matchedUsers, channelsCreated])
 
   // 当客户端和匹配用户都准备好时创建频道
   useEffect(() => {
@@ -233,7 +233,7 @@ export default function StreamChatPanel({
     } else {
       console.log('⏳ 频道创建条件未满足')
     }
-  }, [chatClient, currentUser, matchedUsers, channelsCreated])
+  }, [chatClient, currentUser, matchedUsers, channelsCreated, createChannelsForMatchedUsers])
 
   // 服务器端渲染时返回加载状态
   if (!isClient) {

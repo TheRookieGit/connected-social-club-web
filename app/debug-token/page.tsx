@@ -166,10 +166,10 @@ export default function DebugToken() {
           <h3 className="text-lg font-semibold text-blue-900 mb-3">如何手动查看 Token</h3>
           <ol className="list-decimal list-inside space-y-2 text-blue-800">
             <li>打开浏览器开发者工具 (F12)</li>
-            <li>切换到 "Application" 或 "存储" 标签</li>
-            <li>在左侧找到 "Local Storage"</li>
+            <li>切换到 &quot;Application&quot; 或 &quot;存储&quot; 标签</li>
+            <li>在左侧找到 &quot;Local Storage&quot;</li>
             <li>点击你的网站域名</li>
-            <li>找到名为 "token" 的键</li>
+            <li>找到名为 &quot;token&quot; 的键</li>
             <li>值就是你的 JWT token</li>
           </ol>
         </div>

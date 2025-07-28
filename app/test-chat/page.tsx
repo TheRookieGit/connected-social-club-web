@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 
 export default function TestChat() {
   const [loading, setLoading] = useState(false)
@@ -15,7 +15,7 @@ export default function TestChat() {
   }
 
   // 获取已匹配用户
-  const getMatchedUsers = async () => {
+  const getMatchedUsers = useCallback(async () => {
     try {
       const token = localStorage.getItem('token')
       if (!token) {
@@ -49,7 +49,7 @@ export default function TestChat() {
     } catch (error) {
       addResult('error', '获取已匹配用户异常: ' + error)
     }
-  }
+  }, [])
 
   // 发送测试消息
   const sendTestMessage = async () => {
@@ -187,7 +187,7 @@ export default function TestChat() {
   useEffect(() => {
     // 页面加载时获取已匹配用户
     getMatchedUsers()
-  }, [])
+  }, [getMatchedUsers])
 
   return (
     <div className="min-h-screen bg-gray-100 p-8">

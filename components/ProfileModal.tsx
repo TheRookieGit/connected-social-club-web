@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import Image from 'next/image'
 import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight } from 'lucide-react'
 
 interface ProfileModalProps {
@@ -196,9 +197,11 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
             <div className="relative inline-block">
               <div className="w-32 h-32 bg-gradient-to-br from-red-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
                 {profile.avatar_url ? (
-                  <img 
+                  <Image 
                     src={profile.avatar_url} 
                     alt={profile.name}
+                    width={128}
+                    height={128}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       console.log('头像加载失败，使用首字母代替')

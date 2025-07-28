@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock } from 'lucide-react'
@@ -626,9 +627,11 @@ export default function Dashboard() {
               >
                 {currentUser?.avatar_url ? (
                   <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300 hover:border-red-500 transition-colors">
-                    <img 
+                    <Image 
                       src={currentUser.avatar_url} 
                       alt={currentUser.name}
+                      width={32}
+                      height={32}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         console.log('导航栏头像加载失败，显示默认图标')

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { X, Send, Smile, Paperclip, Heart, Clock, MapPin } from 'lucide-react'
 
 interface User {
@@ -49,7 +49,7 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
   }, [])
 
   // 改进的消息加载函数 - 智能合并，保证数据一致性
-  const loadMessages = async (userId: string, forceRefresh: boolean = false) => {
+  const loadMessages = useCallback(async (userId: string, forceRefresh: boolean = false) => {
     if (!userId || !currentUserId) {
       console.log('❌ [聊天面板] 加载消息条件不满足:', {
         hasUserId: !!userId,
@@ -163,7 +163,7 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
         setLoading(false)
       }
     }
-  }
+  }, [currentUserId, isInitialLoad, messages])
 
   // 改进的实时消息检查 - 更频繁且智能
   useEffect(() => {
@@ -209,7 +209,7 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
     const interval = setInterval(checkForNewMessages, 2000)
 
     return () => clearInterval(interval)
-  }, [selectedUser, currentUserId, lastMessageId])
+  }, [selectedUser, currentUserId, lastMessageId, loadMessages])
 
   // 当选择用户时初始化加载
   useEffect(() => {
@@ -220,7 +220,7 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
       setLastMessageId(null) // 重置最新消息ID
       loadMessages(selectedUser.id, true) // 强制刷新
     }
-  }, [selectedUser, currentUserId])
+  }, [selectedUser, currentUserId, loadMessages])
 
   // 自动滚动到底部
   useEffect(() => {
