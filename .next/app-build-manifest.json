@@ -16,15 +16,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/dashboard/page.js"
     ],
-    "/test-chat/page": [
+    "/debug-inconsistency/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/test-chat/page.js"
+      "static/chunks/app/debug-inconsistency/page.js"
     ],
-    "/admin-chat/page": [
+    "/test-fix/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/admin-chat/page.js"
+      "static/chunks/app/test-fix/page.js"
+    ],
+    "/test-frontend-fix/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/test-frontend-fix/page.js"
     ]
   }
 }

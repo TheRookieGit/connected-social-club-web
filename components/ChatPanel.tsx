@@ -21,7 +21,7 @@ interface Message {
   content: string
   timestamp: Date
   type: 'text' | 'image'
-  isRead: boolean // 新增已读状态
+  isRead: boolean
 }
 
 interface ChatPanelProps {
@@ -35,6 +35,8 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string>('')
+  const [lastMessageId, setLastMessageId] = useState<string | null>(null)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
   // 获取当前用户ID
@@ -46,7 +48,7 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
     }
   }, [])
 
-  // 加载聊天记录 - 智能合并，避免覆盖本地新消息
+  // 改进的消息加载函数 - 智能合并，保证数据一致性
   const loadMessages = async (userId: string, forceRefresh: boolean = false) => {
     if (!userId || !currentUserId) {
       console.log('❌ [聊天面板] 加载消息条件不满足:', {
@@ -57,7 +59,11 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
     }
     
     console.log(`📥 [聊天面板] 开始加载与用户 ${userId} 的聊天记录${forceRefresh ? ' (强制刷新)' : ''}`)
-    setLoading(true)
+    
+    // 只在初始加载或强制刷新时显示loading
+    if (forceRefresh || isInitialLoad) {
+      setLoading(true)
+    }
     
     try {
       const token = localStorage.getItem('token')
@@ -68,7 +74,7 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
 
       console.log(`📤 [聊天面板] 发送API请求到 /api/messages/conversation?userId=${userId}`)
 
-      const response = await fetch(`/api/messages/conversation?userId=${userId}`, {
+      const response = await fetch(`/api/messages/conversation?userId=${userId}&limit=100`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -81,46 +87,65 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
         console.log(`📨 [聊天面板] 获取聊天记录API响应数据:`, data)
         
         if (data.success) {
-          const formattedMessages: Message[] = data.messages.map((msg: any) => ({
+          const serverMessages: Message[] = data.messages.map((msg: any) => ({
             id: msg.id.toString(),
             senderId: msg.senderId,
             receiverId: msg.receiverId,
             content: msg.content,
             timestamp: new Date(msg.timestamp),
             type: msg.messageType || 'text',
-            isRead: msg.isRead || false // 添加isRead属性
+            isRead: msg.isRead || false
           }))
           
-          console.log(`✅ [聊天面板] 成功加载 ${formattedMessages.length} 条聊天记录`)
-          console.log(`📋 [聊天面板] 当前本地消息数量: ${messages.length}`)
-          console.log(`📋 [聊天面板] 服务器消息数量: ${formattedMessages.length}`)
+          console.log(`✅ [聊天面板] 成功加载 ${serverMessages.length} 条聊天记录`)
           
-          if (forceRefresh) {
-            // 强制刷新时直接覆盖
-            setMessages(formattedMessages)
-            console.log(`🔄 [聊天面板] 强制刷新 - 直接更新本地消息状态`)
-          } else {
-            // 智能合并：简化逻辑，优先保证消息不丢失
-            console.log(`🔄 [聊天面板] 开始简化智能合并`)
-            console.log(`📋 [聊天面板] 本地消息数: ${messages.length}, 服务器消息数: ${formattedMessages.length}`)
+          if (forceRefresh || isInitialLoad) {
+            // 初始加载或强制刷新：直接设置服务器数据
+            console.log(`🔄 [聊天面板] 初始加载/强制刷新 - 直接使用服务器数据`)
+            setMessages(serverMessages)
             
-            // 如果服务器消息数量更多，直接使用服务器消息
-            if (formattedMessages.length >= messages.length) {
-              console.log(`✅ [聊天面板] 服务器消息更多，直接使用服务器数据`)
-              setMessages(formattedMessages)
-            } else {
-              // 如果本地消息更多，保持本地消息不变
-              console.log(`⚠️ [聊天面板] 本地消息更多，保持本地状态`)
-              // 但是更新已读状态
-              const updatedMessages = messages.map(localMsg => {
-                const serverMsg = formattedMessages.find(sm => sm.id === localMsg.id)
-                if (serverMsg && serverMsg.isRead !== localMsg.isRead) {
-                  console.log(`📖 [聊天面板] 更新消息 ${localMsg.id} 已读状态: ${localMsg.isRead} → ${serverMsg.isRead}`)
-                  return { ...localMsg, isRead: serverMsg.isRead }
-                }
-                return localMsg
+            // 记录最新消息ID
+            if (serverMessages.length > 0) {
+              const latestMessage = serverMessages[serverMessages.length - 1]
+              setLastMessageId(latestMessage.id)
+              console.log(`📝 [聊天面板] 记录最新消息ID: ${latestMessage.id}`)
+            }
+            
+            setIsInitialLoad(false)
+          } else {
+            // 增量更新：只添加新消息，保持现有消息
+            console.log(`🔄 [聊天面板] 增量更新 - 检查新消息`)
+            
+            // 找出服务器有但本地没有的新消息
+            const existingIds = new Set(messages.map(msg => msg.id))
+            const newMessages = serverMessages.filter(msg => !existingIds.has(msg.id))
+            
+            if (newMessages.length > 0) {
+              console.log(`🆕 [聊天面板] 发现 ${newMessages.length} 条新消息`)
+              setMessages(prev => {
+                // 合并现有消息和新消息，按时间排序
+                const allMessages = [...prev, ...newMessages]
+                const sortedMessages = allMessages.sort((a, b) => 
+                  new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                )
+                
+                // 去重（以防万一）
+                const uniqueMessages = sortedMessages.reduce((acc, msg) => {
+                  if (!acc.find(existing => existing.id === msg.id)) {
+                    acc.push(msg)
+                  }
+                  return acc
+                }, [] as Message[])
+                
+                console.log(`📝 [聊天面板] 合并后消息总数: ${uniqueMessages.length}`)
+                return uniqueMessages
               })
-              setMessages(updatedMessages)
+              
+              // 更新最新消息ID
+              const latestNew = newMessages[newMessages.length - 1]
+              setLastMessageId(latestNew.id)
+            } else {
+              console.log(`✅ [聊天面板] 没有新消息`)
             }
           }
         } else {
@@ -134,11 +159,13 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
     } catch (error) {
       console.error('❌ [聊天面板] 加载聊天记录异常:', error)
     } finally {
-      setLoading(false)
+      if (forceRefresh || isInitialLoad) {
+        setLoading(false)
+      }
     }
   }
 
-  // 轻量级新消息检查（用于实时通信）
+  // 改进的实时消息检查 - 更频繁且智能
   useEffect(() => {
     if (!selectedUser || !currentUserId) return
 
@@ -147,9 +174,8 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
         const token = localStorage.getItem('token')
         if (!token) return
 
-        console.log(`🔔 [聊天面板] 检查新消息 - 当前本地消息数量: ${messages.length}`)
-
-        const response = await fetch(`/api/messages/conversation?userId=${selectedUser.id}&limit=10`, {
+        // 关键修复：始终获取完整消息历史，确保数据一致性
+        const response = await fetch(`/api/messages/conversation?userId=${selectedUser.id}&limit=100`, {
           headers: { 'Authorization': `Bearer ${token}` }
         })
 
@@ -157,62 +183,43 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
           const data = await response.json()
           if (data.success) {
             const serverMessages = data.messages || []
-            console.log(`🔔 [聊天面板] 服务器消息数量: ${serverMessages.length}`)
-
-            // 更保守的检查：只有当服务器明显有更多消息时才同步
-            if (serverMessages.length > messages.length + 1) {
-              console.log(`🆕 [聊天面板] 发现明显的新消息！服务器${serverMessages.length} > 本地${messages.length}+1`)
-              // 使用非强制刷新
-              await loadMessages(selectedUser.id, false)
-            } else {
-              console.log(`✅ [聊天面板] 消息基本同步`)
+            
+            // 检查是否有比本地最新消息更新的消息
+            if (serverMessages.length > 0) {
+              const serverLatestMessage = serverMessages[serverMessages.length - 1]
+              
+              // 如果服务器最新消息ID与本地记录不同，说明有新消息
+              if (lastMessageId !== serverLatestMessage.id.toString()) {
+                console.log(`🆕 [聊天面板] 检测到新消息，触发增量更新`)
+                await loadMessages(selectedUser.id, false) // 增量更新
+              }
             }
           }
         }
       } catch (error) {
-        console.error('❌ [聊天面板] 检查新消息错误:', error)
+        // 静默处理错误，避免干扰用户
+        console.error('❌ [聊天面板] 检查新消息时出错:', error)
       }
     }
 
-    // 减少检查频率：初始延迟5秒，然后每15秒检查一次
-    const timeout = setTimeout(() => {
-      const interval = setInterval(checkForNewMessages, 15000)
-      
-      console.log('🔔 [聊天面板] 新消息检查已启动（15秒间隔）')
-      
-      // 清理函数
-      return () => {
-        clearInterval(interval)
-        console.log('🔔 [聊天面板] 新消息检查已停止')
-      }
-    }, 5000)
+    // 立即检查一次
+    checkForNewMessages()
 
-    return () => {
-      clearTimeout(timeout)
-    }
-  }, [selectedUser, currentUserId])
+    // 设置定时检查，每2秒检查一次
+    const interval = setInterval(checkForNewMessages, 2000)
 
-  // 当选择用户时加载聊天记录
+    return () => clearInterval(interval)
+  }, [selectedUser, currentUserId, lastMessageId])
+
+  // 当选择用户时初始化加载
   useEffect(() => {
     if (selectedUser && currentUserId) {
-      console.log('🔄 选择用户，强制加载聊天记录:', selectedUser.name, selectedUser.id)
-      loadMessages(selectedUser.id, true) // 初始加载使用强制刷新
+      console.log('🔄 选择用户，初始化加载聊天记录:', selectedUser.name, selectedUser.id)
+      setIsInitialLoad(true)
+      setMessages([]) // 清空之前的消息
+      setLastMessageId(null) // 重置最新消息ID
+      loadMessages(selectedUser.id, true) // 强制刷新
     }
-  }, [selectedUser, currentUserId])
-
-  // 定期刷新消息（暂时禁用以避免消息被覆盖）
-  useEffect(() => {
-    if (!selectedUser || !currentUserId) return
-
-    // 暂时禁用定期刷新，避免消息被"吞掉"
-    console.log('🚫 [聊天面板] 定期刷新已禁用，避免消息被覆盖')
-    
-    // const interval = setInterval(() => {
-    //   console.log('🔄 [聊天面板] 定期刷新消息（30秒间隔）...')
-    //   loadMessages(selectedUser.id)
-    // }, 30000) // 改为30秒刷新一次，避免干扰用户
-
-    // return () => clearInterval(interval)
   }, [selectedUser, currentUserId])
 
   // 自动滚动到底部
@@ -238,7 +245,20 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
       content: messageContent
     })
 
-    // 先清空输入框，但保留消息内容用于恢复
+    // 生成临时ID用于乐观更新
+    const tempId = `temp_${Date.now()}`
+    const optimisticMessage: Message = {
+      id: tempId,
+      senderId: currentUserId,
+      receiverId: selectedUser.id,
+      content: messageContent,
+      timestamp: new Date(),
+      type: 'text',
+      isRead: false
+    }
+
+    // 乐观更新：立即显示消息
+    setMessages(prev => [...prev, optimisticMessage])
     setNewMessage('')
     setLoading(true)
 
@@ -247,7 +267,10 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
       if (!token) {
         console.error('❌ [聊天面板] 没有找到token')
         alert('请重新登录')
-        setNewMessage(messageContent) // 恢复消息
+        // 回滚乐观更新
+        setMessages(prev => prev.filter(msg => msg.id !== tempId))
+        setNewMessage(messageContent)
+        setLoading(false)
         return
       }
 
@@ -273,52 +296,50 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
         console.log(`📨 [聊天面板] API响应数据:`, data)
         
         if (data.success) {
-          // 立即添加新消息到本地状态（乐观更新）
-          const newMessage: Message = {
+          // 用服务器返回的真实消息替换临时消息
+          const realMessage: Message = {
             id: data.data.id.toString(),
-            senderId: currentUserId,
-            receiverId: selectedUser.id,
-            content: messageContent,
+            senderId: data.data.senderId,
+            receiverId: data.data.receiverId,
+            content: data.data.content,
             timestamp: new Date(data.data.timestamp),
-            type: 'text',
-            isRead: false // 新消息默认未读
+            type: data.data.messageType || 'text',
+            isRead: data.data.isRead
           }
           
-          console.log('✅ [聊天面板] 消息发送成功，立即添加到本地状态:', newMessage)
+          console.log('✅ [聊天面板] 消息发送成功，替换临时消息:', realMessage)
           
-          // 检查是否已存在相同ID的消息
-          const existingMessageIndex = messages.findIndex(msg => msg.id === newMessage.id)
-          if (existingMessageIndex === -1) {
-            // 消息不存在，添加到本地状态
-            setMessages(prev => [...prev, newMessage])
-            console.log('✅ [聊天面板] 新消息已添加到本地状态')
-          } else {
-            // 消息已存在，更新该消息
-            setMessages(prev => prev.map(msg => 
-              msg.id === newMessage.id ? newMessage : msg
-            ))
-            console.log('✅ [聊天面板] 现有消息已更新')
-          }
+          // 替换临时消息为真实消息
+          setMessages(prev => prev.map(msg => 
+            msg.id === tempId ? realMessage : msg
+          ))
           
-          // 不再自动重新加载，避免消息被"吞掉"
-          console.log('✅ [聊天面板] 消息已保存到本地，依赖实时检查机制同步')
+          // 更新最新消息ID
+          setLastMessageId(realMessage.id)
+          console.log(`📝 [聊天面板] 更新最新消息ID: ${realMessage.id}`)
           
         } else {
           console.error('❌ [聊天面板] 发送消息失败:', data.error)
           alert('发送消息失败: ' + data.error)
-          setNewMessage(messageContent) // 恢复消息内容
+          // 回滚乐观更新
+          setMessages(prev => prev.filter(msg => msg.id !== tempId))
+          setNewMessage(messageContent)
         }
       } else {
         console.error('❌ [聊天面板] 发送消息请求失败，状态:', response.status)
         const errorText = await response.text()
         console.error('❌ [聊天面板] 错误详情:', errorText)
         alert('发送消息失败，请重试')
-        setNewMessage(messageContent) // 恢复消息内容
+        // 回滚乐观更新
+        setMessages(prev => prev.filter(msg => msg.id !== tempId))
+        setNewMessage(messageContent)
       }
     } catch (error) {
       console.error('❌ [聊天面板] 发送消息异常:', error)
       alert('网络错误，请重试')
-      setNewMessage(messageContent) // 恢复消息内容
+      // 回滚乐观更新
+      setMessages(prev => prev.filter(msg => msg.id !== tempId))
+      setNewMessage(messageContent)
     } finally {
       setLoading(false)
     }
@@ -329,6 +350,13 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
       e.preventDefault()
       handleSendMessage()
     }
+  }
+
+  // 手动刷新函数 - 强制重新加载所有消息
+  const handleManualRefresh = async () => {
+    if (!selectedUser) return
+    console.log('🔄 [聊天面板] 手动强制刷新')
+    await loadMessages(selectedUser.id, true)
   }
 
   // 格式化时间显示
@@ -357,7 +385,7 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
     } else {
       return (
         <div className="flex items-center" title="已发送">
-          <svg width="12" height="9" viewBox="0 0 12 9" className="text-red-200">
+          <svg width="12" height="9" viewBox="0 0 12 9" className="text-gray-400">
             <path
               d="M11.03 1.47a.75.75 0 010 1.06l-6 6a.75.75 0 01-1.06 0l-3-3a.75.75 0 011.06-1.06L4.5 6.94 9.97 1.47a.75.75 0 011.06 0z"
               fill="currentColor"
@@ -370,7 +398,6 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
 
   const formatLastSeen = (user: User) => {
     if (user.isOnline) return '在线'
-    // 这里可以添加最后在线时间的逻辑
     return '离线'
   }
 
@@ -497,11 +524,12 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                   </div>
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => loadMessages(selectedUser.id, true)}
-                      className="px-3 py-1 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                      title="强制刷新聊天记录"
+                      onClick={handleManualRefresh}
+                      disabled={loading}
+                      className="px-3 py-1 text-sm bg-blue-100 hover:bg-blue-200 disabled:opacity-50 rounded-lg transition-colors"
+                      title="强制刷新消息"
                     >
-                      🔄
+                      {loading ? '刷新中...' : '🔄 刷新'}
                     </button>
                     <span className="px-3 py-1 bg-red-500 text-white text-sm rounded-lg">
                       已匹配
@@ -551,6 +579,8 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                           message.senderId === currentUserId
                             ? 'bg-red-500 text-white'
                             : 'bg-white text-gray-900 border'
+                        } ${
+                          message.id.startsWith('temp_') ? 'opacity-70' : ''
                         }`}
                       >
                         <p className="text-sm leading-relaxed">{message.content}</p>
@@ -560,14 +590,13 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                             : 'text-gray-500'
                         }`}>
                           <span>{formatTime(message.timestamp)}</span>
-                          {message.senderId === currentUserId && (
+                          {message.senderId === currentUserId && !message.id.startsWith('temp_') && (
                             <div className="flex items-center ml-2">
-                              {message.isRead ? (
-                                <ReadStatusIndicator isRead={true} />
-                              ) : (
-                                <ReadStatusIndicator isRead={false} />
-                              )}
+                              <ReadStatusIndicator isRead={message.isRead} />
                             </div>
+                          )}
+                          {message.id.startsWith('temp_') && (
+                            <span className="text-xs opacity-60">发送中...</span>
                           )}
                         </div>
                       </div>
@@ -589,13 +618,6 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                       disabled={loading}
                     />
                     <button
-                      onClick={() => loadMessages(selectedUser.id, false)}
-                      className="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors text-sm"
-                      title="立即同步消息"
-                    >
-                      🔄
-                    </button>
-                    <button
                       onClick={handleSendMessage}
                       disabled={loading || !newMessage.trim()}
                       className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
@@ -604,7 +626,7 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                     </button>
                   </div>
                   <div className="mt-2 text-xs text-gray-500 text-center">
-                    按 Enter 发送 • 🔄 手动同步 • 自动检查新消息每8秒
+                    按 Enter 发送 • 自动检查新消息每2秒 • 优化实时同步
                   </div>
                 </div>
               </>
