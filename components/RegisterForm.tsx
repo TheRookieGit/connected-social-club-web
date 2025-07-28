@@ -303,6 +303,12 @@ export default function RegisterForm() {
       setError('密码至少需要6位字符')
       return
     }
+
+    // 验证邮箱是否已验证
+    if (!verificationStatus.emailVerified) {
+      setError('请先验证邮箱地址')
+      return
+    }
     
     setIsLoading(true)
     
@@ -389,8 +395,7 @@ export default function RegisterForm() {
           />
         </div>
         
-        {/* 暂时取消邮箱验证环节 - 保留代码以便之后使用 */}
-        {/*
+        {/* 启用邮箱验证环节 */}
         <div className="mt-3 flex space-x-2">
           <input
             name="emailCode"
@@ -418,7 +423,6 @@ export default function RegisterForm() {
             {verificationStatus.emailVerified ? '已验证' : '验证'}
           </button>
         </div>
-        */}
       </div>
 
       <div>
