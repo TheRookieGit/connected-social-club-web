@@ -5,5 +5,27 @@
       "src": "package.json",
       "use": "@vercel/next"
     }
+  ],
+  "routes": [
+    {
+      "src": "/api/user/profile",
+      "headers": {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+        "Surrogate-Control": "no-store",
+        "Vercel-CDN-Cache-Control": "no-cache",
+        "Vercel-Cache-Control": "no-cache"
+      }
+    },
+    {
+      "src": "/api/(.*)",
+      "headers": {
+        "Cache-Control": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0",
+        "Pragma": "no-cache",
+        "Expires": "0",
+        "Surrogate-Control": "no-store"
+      }
+    }
   ]
 } 

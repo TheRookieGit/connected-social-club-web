@@ -192,8 +192,9 @@ export default function Dashboard() {
         const response = await fetch(`/api/user/profile?t=${Date.now()}`, {
           headers: {
             'Authorization': `Bearer ${token}`,
-            'Cache-Control': 'no-cache',
-            'Pragma': 'no-cache'
+            'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           }
         })
 
@@ -885,8 +886,9 @@ export default function Dashboard() {
                 const response = await fetch(`/api/user/profile?t=${Date.now()}`, {
                   headers: {
                     'Authorization': `Bearer ${token}`,
-                    'Cache-Control': 'no-cache',
-                    'Pragma': 'no-cache'
+                    'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+                    'Pragma': 'no-cache',
+                    'Expires': '0'
                   }
                 })
 

@@ -90,26 +90,36 @@ export async function GET(request: NextRequest) {
         activity_data: { profile_id: decoded.userId }
       })
 
-    return new NextResponse(
-      JSON.stringify({
-        success: true,
-        timestamp: new Date().toISOString(),
-        user: {
-          ...user,
-          interests: interests?.map((i: any) => i.interest) || [],
-          preferences: preferences || null
-        }
-      }),
+    // 创建响应对象
+    const responseData = {
+      success: true,
+      timestamp: new Date().toISOString(),
+      user: {
+        ...user,
+        interests: interests?.map((i: any) => i.interest) || [],
+        preferences: preferences || null
+      }
+    }
+
+    // 创建响应，添加强缓存控制头
+    const response = new NextResponse(
+      JSON.stringify(responseData),
       {
         status: 200,
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           'Pragma': 'no-cache',
           'Expires': '0',
-          'Surrogate-Control': 'no-store'
+          'Surrogate-Control': 'no-store',
+          'Vercel-CDN-Cache-Control': 'no-cache',
+          'Vercel-Cache-Control': 'no-cache',
+          'X-Vercel-Cache': 'MISS'
         }
       }
     )
+
+    return response
 
   } catch (error) {
     console.error('获取用户资料错误:', error)
@@ -262,27 +272,37 @@ export async function PUT(request: NextRequest) {
       .eq('user_id', decoded.userId)
       .single()
 
-    return new NextResponse(
-      JSON.stringify({
-        success: true,
-        message: '更新成功',
-        timestamp: new Date().toISOString(),
-        user: {
-          ...updatedUser,
-          interests: latestInterests?.map(i => i.interest) || [],
-          preferences: latestPreferences || null
-        }
-      }),
+    // 创建响应数据
+    const responseData = {
+      success: true,
+      message: '更新成功',
+      timestamp: new Date().toISOString(),
+      user: {
+        ...updatedUser,
+        interests: latestInterests?.map(i => i.interest) || [],
+        preferences: latestPreferences || null
+      }
+    }
+
+    // 创建响应，添加强缓存控制头
+    const response = new NextResponse(
+      JSON.stringify(responseData),
       {
         status: 200,
         headers: {
-          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           'Pragma': 'no-cache',
           'Expires': '0',
-          'Surrogate-Control': 'no-store'
+          'Surrogate-Control': 'no-store',
+          'Vercel-CDN-Cache-Control': 'no-cache',
+          'Vercel-Cache-Control': 'no-cache',
+          'X-Vercel-Cache': 'MISS'
         }
       }
     )
+
+    return response
 
   } catch (error) {
     console.error('更新用户资料错误:', error)
