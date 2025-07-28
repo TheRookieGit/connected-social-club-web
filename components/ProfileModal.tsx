@@ -50,8 +50,13 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
 
       if (response.ok) {
         const data = await response.json()
-        setProfile(data)
-        setEditedProfile(data)
+        console.log('获取个人资料响应:', data)
+        // 使用data.user而不是整个data对象
+        const userData = data.user || data
+        setProfile(userData)
+        setEditedProfile(userData)
+      } else {
+        console.error('获取个人资料失败:', response.status)
       }
     } catch (error) {
       console.error('获取用户资料失败:', error)
@@ -74,6 +79,8 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
       const token = localStorage.getItem('token')
       if (!token) return
 
+      console.log('保存个人资料数据:', editedProfile)
+
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
         headers: {
@@ -84,9 +91,18 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
       })
 
       if (response.ok) {
-        const updatedProfile = await response.json()
-        setProfile(updatedProfile)
+        const updatedResponse = await response.json()
+        console.log('更新个人资料响应:', updatedResponse)
+        // 使用updatedResponse.user而不是整个updatedResponse对象
+        const updatedUserData = updatedResponse.user || updatedResponse
+        setProfile(updatedUserData)
+        setEditedProfile(updatedUserData)
         setIsEditing(false)
+        console.log('个人资料保存成功')
+      } else {
+        console.error('更新个人资料失败:', response.status)
+        const errorData = await response.json()
+        console.error('错误详情:', errorData)
       }
     } catch (error) {
       console.error('更新用户资料失败:', error)
