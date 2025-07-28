@@ -133,20 +133,51 @@ export default function Dashboard() {
 
   // 检查登录状态并获取最新用户数据
   useEffect(() => {
-    const token = localStorage.getItem('token')
-    const user = localStorage.getItem('user')
+    // 首先检查URL参数中是否有LinkedIn登录返回的token和用户数据
+    const urlParams = new URLSearchParams(window.location.search)
+    const urlToken = urlParams.get('token')
+    const urlUser = urlParams.get('user')
     
-    if (!token || !user) {
-      router.push('/')
-      return
-    }
-    
-    // 验证token并获取最新用户数据
-    const initializeUserData = async () => {
+    if (urlToken && urlUser) {
+      console.log('Dashboard: 检测到LinkedIn登录回调参数，处理新的登录数据...')
       try {
-        // 先设置临时用户数据，避免白屏
-        const userData = JSON.parse(user)
+        // 解析用户数据
+        const userData = JSON.parse(decodeURIComponent(urlUser))
+        console.log('Dashboard: LinkedIn用户数据:', userData)
+        
+        // 保存新的token和用户信息
+        localStorage.setItem('token', urlToken)
+        localStorage.setItem('user', JSON.stringify(userData))
+        
+        console.log('Dashboard: 已保存LinkedIn登录数据到localStorage')
+        
+        // 清理URL参数
+        window.history.replaceState({}, document.title, window.location.pathname)
+        
+        // 立即设置用户数据，避免重定向
         setCurrentUser(userData)
+      } catch (error) {
+        console.error('Dashboard: 处理LinkedIn登录数据时出错:', error)
+      }
+    }
+
+    const initializeUserData = async () => {
+      const token = localStorage.getItem('token')
+      const user = localStorage.getItem('user')
+
+      if (!token || !user) {
+        console.log('Dashboard初始化: 没有登录信息，重定向到登录页面')
+        router.push('/')
+        return
+      }
+
+      console.log('Dashboard初始化: 发现登录信息，开始初始化...')
+
+      try {
+        // 先设置本地用户数据（这样用户界面可以立即显示）
+        const localUserData = JSON.parse(user)
+        console.log('Dashboard初始化: 本地用户数据:', localUserData)
+        setCurrentUser(localUserData)
         
         // 立即从API获取最新数据
         console.log('Dashboard初始化: 从API获取最新用户数据...')
@@ -171,20 +202,42 @@ export default function Dashboard() {
           }
         } else {
           console.error('Dashboard初始化: API请求失败:', response.status)
-          // 如果API请求失败，token可能已过期
-          if (response.status === 401) {
+          // 如果是LinkedIn用户且是首次访问，给更多时间等待数据同步
+          const userData = JSON.parse(user)
+          if (userData.provider === 'linkedin' && response.status === 404) {
+            console.log('Dashboard初始化: LinkedIn用户数据可能还在同步中，继续使用本地数据')
+            // 继续使用localStorage中的用户数据，不要重定向
+          } else if (response.status === 401) {
+            // 只有在token真正无效时才重定向
             localStorage.removeItem('token')
             localStorage.removeItem('user')
             router.push('/')
             return
           }
+          // 其他错误情况下，继续使用localStorage中的数据
         }
       } catch (error) {
         console.error('Dashboard初始化: 解析用户数据失败:', error)
-        localStorage.removeItem('token')
-        localStorage.removeItem('user')
-        router.push('/')
-        return
+        // 检查是否是LinkedIn用户，如果是则继续使用localStorage数据
+        try {
+          const userData = JSON.parse(user)
+          if (userData.provider === 'linkedin') {
+            console.log('Dashboard初始化: LinkedIn用户解析失败，但继续使用本地数据')
+            setCurrentUser(userData)
+          } else {
+            // 非LinkedIn用户且解析失败，重定向到登录页面
+            localStorage.removeItem('token')
+            localStorage.removeItem('user')
+            router.push('/')
+            return
+          }
+        } catch (parseError) {
+          console.error('Dashboard初始化: 无法解析用户数据，重定向到登录页面')
+          localStorage.removeItem('token')
+          localStorage.removeItem('user')
+          router.push('/')
+          return
+        }
       } finally {
         setIsLoading(false)
       }
@@ -552,9 +605,30 @@ export default function Dashboard() {
               
               <button
                 onClick={() => setShowProfile(true)}
-                className="p-2 text-gray-600 hover:text-red-500 transition-colors"
+                className="p-2 text-gray-600 hover:text-red-500 transition-colors flex items-center"
               >
-                <UserIcon size={24} />
+                {currentUser?.avatar_url ? (
+                  <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300 hover:border-red-500 transition-colors">
+                    <img 
+                      src={currentUser.avatar_url} 
+                      alt={currentUser.name}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        console.log('导航栏头像加载失败，显示默认图标')
+                        const target = e.currentTarget as HTMLImageElement
+                        target.style.display = 'none'
+                        const fallback = target.parentElement?.nextElementSibling as HTMLElement
+                        if (fallback) {
+                          fallback.style.display = 'block'
+                        }
+                      }}
+                    />
+                  </div>
+                ) : null}
+                <UserIcon 
+                  size={24} 
+                  className={currentUser?.avatar_url ? 'hidden' : ''}
+                />
               </button>
               
               {/* 管理员控制台入口 */}
@@ -776,6 +850,8 @@ export default function Dashboard() {
       {/* 个人资料模态框 */}
       {showProfile && (
         <ProfileModal
+          isOpen={showProfile}
+          userId={currentUser?.id?.toString() || ''}
           onClose={() => {
             setShowProfile(false)
             // 关闭个人资料模态框后，重新获取用户资料

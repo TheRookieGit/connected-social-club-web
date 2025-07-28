@@ -1,13 +1,12 @@
 {
-  "/api/user/pending-matches/route": "app/api/user/pending-matches/route.js",
-  "/api/messages/conversation/route": "app/api/messages/conversation/route.js",
-  "/api/user/online-status/route": "app/api/user/online-status/route.js",
-  "/dashboard/page": "app/dashboard/page.js",
-  "/test-fix/page": "app/test-fix/page.js",
-  "/debug-inconsistency/page": "app/debug-inconsistency/page.js",
-  "/api/user/matched-users/route": "app/api/user/matched-users/route.js",
-  "/test-frontend-fix/page": "app/test-frontend-fix/page.js",
-  "/api/messages/send/route": "app/api/messages/send/route.js",
   "/api/user/profile/route": "app/api/user/profile/route.js",
-  "/api/user/matches/route": "app/api/user/matches/route.js"
+  "/page": "app/page.js",
+  "/api/auth/linkedin/route": "app/api/auth/linkedin/route.js",
+  "/api/auth/linkedin/callback/route": "app/api/auth/linkedin/callback/route.js",
+  "/api/user/matched-users/route": "app/api/user/matched-users/route.js",
+  "/api/user/matches/route": "app/api/user/matches/route.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/api/user/pending-matches/route": "app/api/user/pending-matches/route.js",
+  "/api/user/online-status/route": "app/api/user/online-status/route.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js"
 }
