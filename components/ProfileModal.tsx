@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight } from 'lucide-react'
 
 interface ProfileModalProps {
@@ -31,20 +31,16 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
   const [isEditing, setIsEditing] = useState(false)
   const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({})
 
-  useEffect(() => {
-    if (isOpen && userId) {
-      fetchProfile()
-    }
-  }, [isOpen, userId])
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       const token = localStorage.getItem('token')
       if (!token) return
 
       const response = await fetch(`/api/user/profile?t=${Date.now()}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
         }
       })
 
@@ -63,7 +59,13 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (isOpen && userId) {
+      fetchProfile()
+    }
+  }, [isOpen, userId, fetchProfile])
 
   const handleEdit = () => {
     setIsEditing(true)
@@ -85,7 +87,9 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache',
+          'Pragma': 'no-cache'
         },
         body: JSON.stringify(editedProfile)
       })
