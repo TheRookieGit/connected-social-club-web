@@ -59,14 +59,17 @@ function createNoCacheHeaders() {
 
 在 `vercel.json` 中添加更全面的配置：
 
+**注意**：不要同时使用 `functions` 和 `builds` 属性，这会导致配置冲突。我们使用 `builds` 配置Next.js部署。
+
 ```json
 {
   "version": 2,
-  "functions": {
-    "app/api/**/*.ts": {
-      "maxDuration": 30
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
     }
-  },
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
@@ -104,6 +107,10 @@ const nextConfig = {
   experimental: {
     serverComponentsExternalPackages: [],
     dynamicIO: false,
+    // 设置函数超时时间
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
   images: {
     unoptimized: true,

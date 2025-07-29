@@ -5,6 +5,10 @@ const nextConfig = {
     serverComponentsExternalPackages: [],
     // 强制动态渲染
     dynamicIO: false,
+    // 设置函数超时时间
+    serverActions: {
+      bodySizeLimit: '2mb',
+    },
   },
   // 禁用图片优化缓存
   images: {
