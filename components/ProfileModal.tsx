@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight, Camera, Upload, Globe, BookOpen, Users, Home, Languages, Baby, Activity, Coffee, Wine, MessageCircle } from 'lucide-react'
+import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight, Camera, Upload, Globe, BookOpen, Users, Home, Languages, Baby, Activity, Coffee, Wine, MessageCircle, Settings } from 'lucide-react'
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -550,9 +550,19 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
 
               {/* 位置 */}
               <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  位置
+                <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 mr-2" />
+                    位置
+                  </div>
+                  <button
+                    onClick={() => window.open('/location-settings', '_blank')}
+                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center"
+                    title="位置权限设置"
+                  >
+                    <Settings className="h-3 w-3 mr-1" />
+                    位置设置
+                  </button>
                 </label>
                 {isEditing ? (
                   <input

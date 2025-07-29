@@ -77,8 +77,16 @@ export function shouldAutoRequestLocation(): boolean {
     return false
   }
   
-  // 如果用户从未同意过，或者同意但没有选择记住，需要请求
-  if (!settings.granted || (settings.granted && !settings.remembered)) {
+  // 如果用户已经在24小时内被问过，不再请求
+  if (settings.lastRequested) {
+    const hoursSinceLastRequest = (Date.now() - settings.lastRequested.getTime()) / (1000 * 60 * 60)
+    if (hoursSinceLastRequest < 24) {
+      return false
+    }
+  }
+  
+  // 如果用户从未被问过，可以请求
+  if (!settings.lastRequested) {
     return true
   }
   
@@ -106,6 +114,19 @@ export function recordUserConsent(remembered: boolean = false): void {
     ...settings,
     granted: true,
     denied: false,
+    remembered,
+    lastRequested: new Date()
+  })
+}
+
+// 明确记录用户拒绝位置权限
+export function recordUserDenial(remembered: boolean = false): void {
+  const settings = getLocationPermissionSettings()
+  
+  saveLocationPermissionSettings({
+    ...settings,
+    granted: false,
+    denied: true,
     remembered,
     lastRequested: new Date()
   })
@@ -168,8 +189,14 @@ export async function requestLocationPermission(): Promise<boolean> {
   try {
     // 检查用户是否已经同意过
     const settings = getLocationPermissionSettings()
-    if (!settings.granted && !settings.remembered) {
+    if (!settings.granted) {
       console.log('用户尚未明确同意位置权限')
+      return false
+    }
+
+    // 检查用户是否拒绝过
+    if (settings.denied) {
+      console.log('用户已拒绝位置权限')
       return false
     }
 

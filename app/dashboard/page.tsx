@@ -13,7 +13,7 @@ import LocationDisplay from '@/components/LocationDisplay'
 import { syncUserDataToLocalStorage } from '@/lib/hooks'
 import { UserProfile } from '@/types/user'
 import dynamic from 'next/dynamic'
-import { shouldAutoRequestLocation } from '@/lib/locationPermission'
+import { shouldAutoRequestLocation, recordUserDenial } from '@/lib/locationPermission'
 
 // 动态导入Stream Chat组件，避免SSR问题
 const StreamChatPanel = dynamic(() => import('@/components/StreamChatPanel'), {
@@ -686,6 +686,15 @@ export default function Dashboard() {
                   <Settings size={24} />
                 </button>
               )}
+
+              {/* 位置设置按钮 */}
+              <button
+                onClick={() => router.push('/location-settings')}
+                className="p-2 text-gray-600 hover:text-blue-500 transition-colors"
+                title="位置设置"
+              >
+                <MapPin size={24} />
+              </button>
               
               <button
                 onClick={handleLogout}
@@ -700,20 +709,29 @@ export default function Dashboard() {
 
       {/* 主要内容区域 */}
       <div className="max-w-6xl mx-auto px-4 py-8 relative">
-        {/* 位置显示 - 右上角（仅在用户同意后显示） */}
-        {(() => {
-          try {
-            const remembered = localStorage.getItem('location_permission_remembered')
-            const userLocation = localStorage.getItem('user_location')
-            return remembered === 'true' || userLocation
-          } catch (error) {
-            return false
-          }
-        })() && (
-          <div className="absolute top-0 right-4 z-10">
+        {/* 位置显示 - 右上角 */}
+        <div className="absolute top-0 right-4 z-10 flex items-center space-x-2">
+          {(() => {
+            try {
+              const remembered = localStorage.getItem('location_permission_remembered')
+              const userLocation = localStorage.getItem('user_location')
+              return remembered === 'true' || userLocation
+            } catch (error) {
+              return false
+            }
+          })() && (
             <LocationDisplay compact={true} showRefresh={false} />
-          </div>
-        )}
+          )}
+          
+          {/* 位置设置按钮 */}
+          <button
+            onClick={() => router.push('/location-settings')}
+            className="p-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 shadow-sm"
+            title="位置设置"
+          >
+            <MapPin className="h-4 w-4 text-gray-600" />
+          </button>
+        </div>
         
         {/* 我的匹配概览区域 */}
         <motion.div
@@ -958,7 +976,11 @@ export default function Dashboard() {
               
               <div className="flex space-x-4">
                 <button
-                  onClick={() => setShowLocationPermission(false)}
+                  onClick={() => {
+                    // 记录用户拒绝，24小时内不再询问
+                    recordUserDenial(false)
+                    setShowLocationPermission(false)
+                  }}
                   className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   稍后再说

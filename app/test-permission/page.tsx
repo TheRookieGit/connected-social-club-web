@@ -5,7 +5,8 @@ import {
   shouldAutoRequestLocation, 
   getLocationPermissionSettings,
   clearLocationPermissionSettings,
-  recordUserConsent
+  recordUserConsent,
+  recordUserDenial
 } from '@/lib/locationPermission'
 
 export default function TestPermission() {
@@ -98,6 +99,26 @@ export default function TestPermission() {
               </button>
               
               <button
+                onClick={() => {
+                  recordUserDenial(false)
+                  loadSettings()
+                }}
+                className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              >
+                拒绝权限（不记住）
+              </button>
+              
+              <button
+                onClick={() => {
+                  recordUserDenial(true)
+                  loadSettings()
+                }}
+                className="w-full px-4 py-2 bg-red-800 text-white rounded-lg hover:bg-red-900"
+              >
+                拒绝权限（记住）
+              </button>
+              
+              <button
                 onClick={handleClearSettings}
                 className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
               >
@@ -118,11 +139,11 @@ export default function TestPermission() {
         <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-blue-900 mb-3">测试说明</h3>
           <div className="text-blue-800 space-y-2 text-sm">
-            <p>✅ <strong>权限逻辑:</strong> 如果用户之前没有同意过，每次登录后（包括页面刷新）都需要询问</p>
-            <p>✅ <strong>记住选择:</strong> 如果用户选择记住，下次不再询问</p>
-            <p>✅ <strong>拒绝处理:</strong> 如果用户拒绝，不再自动请求</p>
-            <p>✅ <strong>Dashboard检查:</strong> Dashboard页面加载时会检查是否需要请求权限</p>
-            <p>✅ <strong>URL参数:</strong> 支持通过URL参数触发权限请求</p>
+            <p>✅ <strong>权限逻辑:</strong> 只在用户首次访问或24小时后再次询问</p>
+            <p>✅ <strong>记住同意:</strong> 如果用户同意并选择记住，永远不再询问</p>
+            <p>✅ <strong>记住拒绝:</strong> 如果用户拒绝并选择记住，永远不再询问</p>
+            <p>✅ <strong>拒绝处理:</strong> 点击拒绝后不会获取位置，24小时内不再询问</p>
+            <p>✅ <strong>频率控制:</strong> 24小时内最多询问一次</p>
           </div>
         </div>
 
@@ -132,10 +153,11 @@ export default function TestPermission() {
           <div className="text-yellow-800 space-y-2 text-sm">
             <p>1. 点击&ldquo;清除所有设置&rdquo;重置权限状态</p>
             <p>2. 刷新页面，应该显示&ldquo;应该请求: 是&rdquo;</p>
-            <p>3. 点击&ldquo;同意权限（不记住）&rdquo;，然后刷新页面</p>
-            <p>4. 应该再次显示&ldquo;应该请求: 是&rdquo;</p>
-            <p>5. 点击&ldquo;同意权限（记住）&rdquo;，然后刷新页面</p>
-            <p>6. 应该显示&ldquo;应该请求: 否&rdquo;</p>
+            <p>3. 点击&ldquo;拒绝权限（不记住）&rdquo;，然后刷新页面</p>
+            <p>4. 应该显示&ldquo;应该请求: 否&rdquo;（24小时内不再询问）</p>
+            <p>5. 点击&ldquo;拒绝权限（记住）&rdquo;，然后刷新页面</p>
+            <p>6. 应该永远显示&ldquo;应该请求: 否&rdquo;</p>
+            <p>7. 点击&ldquo;同意权限（记住）&rdquo;后，永远不再询问</p>
           </div>
         </div>
       </div>

@@ -8,6 +8,7 @@ import {
   saveLocationPermissionSettings, 
   getCachedLocation,
   recordUserConsent,
+  recordUserDenial,
   shouldAutoRequestLocation
 } from '@/lib/locationPermission'
 
@@ -55,10 +56,16 @@ export default function LoginForm() {
         // 清理URL参数
         window.history.replaceState({}, document.title, window.location.pathname)
         
-        console.log('LoginForm: 准备显示位置权限请求...')
+        console.log('LoginForm: 检查是否需要显示位置权限请求...')
         
-        // 显示位置权限请求
-        setShowLocationPermission(true)
+        // 检查是否应该显示位置权限请求
+        const shouldShow = shouldAutoRequestLocation()
+        if (shouldShow) {
+          setShowLocationPermission(true)
+        } else {
+          // 直接跳转到dashboard
+          router.push('/dashboard')
+        }
       } catch (error) {
         console.error('LoginForm: 处理LinkedIn登录数据时出错:', error)
         setError('处理登录信息时出错，请重试')
@@ -75,13 +82,8 @@ export default function LoginForm() {
       setShowLocationPermission(true)
       // 清理URL参数
       window.history.replaceState({}, document.title, window.location.pathname)
-    } else {
-      // 检查是否应该自动显示位置权限请求
-      const shouldShow = shouldAutoRequestLocation()
-      if (shouldShow) {
-        setShowLocationPermission(true)
-      }
     }
+    // 移除自动显示逻辑，只在用户主动登录后显示
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -105,8 +107,14 @@ export default function LoginForm() {
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
         
-        // 显示位置权限请求
-        setShowLocationPermission(true)
+        // 检查是否应该显示位置权限请求
+        const shouldShow = shouldAutoRequestLocation()
+        if (shouldShow) {
+          setShowLocationPermission(true)
+        } else {
+          // 直接跳转到dashboard
+          router.push('/dashboard')
+        }
       } else {
         setError(data.error || '登录失败')
       }
@@ -164,6 +172,9 @@ export default function LoginForm() {
   }
 
   const handleSkipLocation = () => {
+    // 记录用户拒绝，如果选择了记住则不再询问
+    recordUserDenial(rememberLocationPermission)
+    setShowLocationPermission(false)
     router.push('/dashboard')
   }
 
