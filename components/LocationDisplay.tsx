@@ -159,7 +159,7 @@ export default function LocationDisplay({
           <div className="flex items-center space-x-1">
             <span className="text-xs text-gray-600">
               {addressInfo.city}
-              {addressInfo.postal_code && ` (${addressInfo.postal_code})`}
+              {addressInfo.postal_code && `, ${addressInfo.postal_code}`}
             </span>
             {showRefresh && (
               <button
@@ -224,11 +224,11 @@ export default function LocationDisplay({
               <div className="bg-blue-50 p-3 rounded-lg">
                 <div className="text-sm font-medium text-blue-900 mb-1">
                   {addressInfo.city}
+                  {addressInfo.postal_code && `, ${addressInfo.postal_code}`}
                   {addressInfo.state && `, ${addressInfo.state}`}
                 </div>
                 <div className="text-xs text-blue-700">
-                  {addressInfo.postal_code && `邮编: ${addressInfo.postal_code}`}
-                  {addressInfo.country && ` • ${addressInfo.country}`}
+                  {addressInfo.country && `${addressInfo.country}`}
                 </div>
               </div>
               

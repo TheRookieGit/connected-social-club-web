@@ -264,6 +264,24 @@ export default function LocationSettings() {
               当前位置信息
             </h2>
             
+            {/* 地址信息显示 */}
+            <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+              <div className="text-lg font-medium text-blue-900">
+                {(() => {
+                  try {
+                    const cachedAddress = localStorage.getItem('user_address')
+                    if (cachedAddress) {
+                      const address = JSON.parse(cachedAddress)
+                      return `${address.city}${address.postal_code ? `, ${address.postal_code}` : ''}`
+                    }
+                    return '正在解析地址...'
+                  } catch (error) {
+                    return '地址解析失败'
+                  }
+                })()}
+              </div>
+            </div>
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div className="p-3 bg-gray-50 rounded-lg">
                 <div className="text-gray-600">纬度</div>
