@@ -9,6 +9,7 @@ import useSWR from 'swr'
 import UserCard from '@/components/UserCard'
 import ProfileModal from '@/components/ProfileModal'
 import PendingMatchesPanel from '@/components/PendingMatchesPanel'
+import LocationDisplay from '@/components/LocationDisplay'
 import { syncUserDataToLocalStorage } from '@/lib/hooks'
 import { UserProfile } from '@/types/user'
 import dynamic from 'next/dynamic'
@@ -685,7 +686,12 @@ export default function Dashboard() {
       </nav>
 
       {/* 主要内容区域 */}
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="max-w-6xl mx-auto px-4 py-8 relative">
+        {/* 位置显示 - 右上角 */}
+        <div className="absolute top-0 right-4 z-10">
+          <LocationDisplay compact={true} showRefresh={false} />
+        </div>
+        
         {/* 我的匹配概览区域 */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}

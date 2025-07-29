@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
+import { 
+  requestLocationPermission, 
+  saveLocationPermissionSettings, 
+  getCachedLocation 
+} from '@/lib/locationPermission'
 
 export default function LoginForm() {
   const [email, setEmail] = useState('')
@@ -10,6 +15,9 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [showLocationPermission, setShowLocationPermission] = useState(false)
+  const [locationPermissionGranted, setLocationPermissionGranted] = useState(false)
+  const [rememberLocationPermission, setRememberLocationPermission] = useState(false)
   const router = useRouter()
 
   // 处理LinkedIn登录返回的token
@@ -45,10 +53,10 @@ export default function LoginForm() {
         // 清理URL参数
         window.history.replaceState({}, document.title, window.location.pathname)
         
-        console.log('LoginForm: 准备跳转到dashboard...')
+        console.log('LoginForm: 准备显示位置权限请求...')
         
-        // 立即跳转到仪表板
-        router.push('/dashboard')
+        // 显示位置权限请求
+        setShowLocationPermission(true)
       } catch (error) {
         console.error('LoginForm: 处理LinkedIn登录数据时出错:', error)
         setError('处理登录信息时出错，请重试')
@@ -77,8 +85,8 @@ export default function LoginForm() {
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
         
-        // 跳转到仪表板
-        router.push('/dashboard')
+        // 显示位置权限请求
+        setShowLocationPermission(true)
       } else {
         setError(data.error || '登录失败')
       }
@@ -87,6 +95,58 @@ export default function LoginForm() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  const handleLocationPermission = async () => {
+    try {
+      // 使用权限管理工具请求位置权限
+      const success = await requestLocationPermission()
+      
+      if (success) {
+        // 如果用户选择记住权限，保存设置
+        if (rememberLocationPermission) {
+          saveLocationPermissionSettings({ remembered: true })
+        }
+
+        // 更新用户位置到服务器
+        const token = localStorage.getItem('token')
+        const locationData = getCachedLocation()
+        
+        if (token && locationData) {
+          try {
+            await fetch('/api/user/location', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+              },
+              body: JSON.stringify(locationData)
+            })
+          } catch (error) {
+            console.error('更新位置到服务器失败:', error)
+          }
+        }
+
+        setLocationPermissionGranted(true)
+        
+        // 延迟跳转，让用户看到成功提示
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 1500)
+      } else {
+        // 位置获取失败，直接跳转
+        router.push('/dashboard')
+      }
+      
+    } catch (error: any) {
+      console.error('获取位置失败:', error)
+      // 即使位置获取失败，也跳转到dashboard
+      router.push('/dashboard')
+    }
+  }
+
+  const handleSkipLocation = () => {
+    router.push('/dashboard')
   }
 
   const handleLinkedInLogin = () => {
@@ -228,8 +288,84 @@ export default function LoginForm() {
           >
             立即注册
           </button>
-        </div>
+                </div>
       </form>
+
+      {/* 位置权限请求模态框 */}
+      {showLocationPermission && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            {!locationPermissionGranted ? (
+              <>
+                <div className="text-center mb-6">
+                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">位置权限请求</h3>
+                  <p className="text-sm text-gray-600">
+                    为了提供更好的服务，我们需要获取您的位置信息。
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="bg-blue-50 p-4 rounded-lg">
+                    <h4 className="font-medium text-blue-900 mb-2">位置信息将用于：</h4>
+                    <ul className="text-sm text-blue-800 space-y-1">
+                      <li>• 显示附近的其他用户</li>
+                      <li>• 计算用户间的距离</li>
+                      <li>• 提供本地化的推荐</li>
+                      <li>• 改善匹配算法</li>
+                    </ul>
+                  </div>
+
+                  <div className="flex items-center">
+                    <input
+                      id="remember-location"
+                      type="checkbox"
+                      checked={rememberLocationPermission}
+                      onChange={(e) => setRememberLocationPermission(e.target.checked)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="remember-location" className="ml-2 block text-sm text-gray-700">
+                      记住我的选择，以后不再询问
+                    </label>
+                  </div>
+                </div>
+
+                <div className="flex space-x-3 mt-6">
+                  <button
+                    onClick={handleSkipLocation}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  >
+                    跳过
+                  </button>
+                  <button
+                    onClick={handleLocationPermission}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+                  >
+                    允许访问位置
+                  </button>
+                </div>
+              </>
+            ) : (
+              <div className="text-center">
+                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">位置权限已获取</h3>
+                <p className="text-sm text-gray-600">
+                  正在跳转到仪表板...
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   )
 } 
