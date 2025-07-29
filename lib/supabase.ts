@@ -1,14 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
 
-// 强制使用硬编码配置，避免生产环境URL问题
-const supabaseUrl = 'https://ckhxivbcnagwgpzljzrl.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNraHhpdmJjbmFnd2dwemxqenJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MjQwMzgsImV4cCI6MjA2OTEwMDAzOH0.ZxoO8QQ9G3tggQFRCHjdnulgv45KtVyx6B7TnqrdHx4'
+// 使用环境变量配置
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error('Missing Supabase environment variables')
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl!, supabaseAnonKey!)
 
 // 为API路由提供的统一客户端创建函数
 export function createSupabaseClient() {
@@ -17,7 +17,7 @@ export function createSupabaseClient() {
     console.log('Supabase URL:', supabaseUrl)
     console.log('Supabase Anon Key exists:', !!supabaseAnonKey)
     
-    const client = createClient(supabaseUrl, supabaseAnonKey, {
+    const client = createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
         persistSession: false // API路由不需要持久化会话
       }
