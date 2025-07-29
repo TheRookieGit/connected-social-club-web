@@ -33,21 +33,87 @@ export default function LocationDisplay({
   const resolveAddress = async (lat: number, lng: number) => {
     try {
       // 使用免费的 Nominatim API (OpenStreetMap)
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=zh-CN`
+      // 优先使用高精度查询来获取准确的地址信息
+      let response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=20&accept-language=en-US&addressdetails=1&extratags=1`
       )
+      
+      if (!response.ok) {
+        // 备用查询 - 降级到中等精度
+        response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&accept-language=en-US&addressdetails=1`
+        )
+      }
+      
+      if (!response.ok) {
+        // 最后备用 - 使用较低精度
+        response = await fetch(
+          `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=16&accept-language=en-US&addressdetails=1`
+        )
+      }
       
       if (response.ok) {
         const data = await response.json()
         
         if (data.address) {
+          // 调试信息
+          console.log('地址解析结果:', data.address)
+          console.log('地址类型:', data.addresstype)
+          
+          // 简化的地址解析逻辑 - 直接使用 API 返回的数据
+          let city = data.address.city || data.address.town || data.address.village || data.address.suburb || data.address.city_district
+          let postal_code = data.address.postcode
+          
+          // 验证邮编的合理性（拉斯维加斯地区的主要邮编）
+          const validLasVegasZipCodes = [
+            '89101', '89102', '89103', '89104', '89105', '89106', '89107', '89108', '89109', '89110',
+            '89111', '89112', '89113', '89114', '89115', '89116', '89117', '89118', '89119', '89120',
+            '89121', '89122', '89123', '89124', '89125', '89126', '89127', '89128', '89129', '89130',
+            '89131', '89132', '89133', '89134', '89135', '89136', '89137', '89138', '89139', '89140',
+            '89141', '89142', '89143', '89144', '89145', '89146', '89147', '89148', '89149', '89150',
+            '89151', '89152', '89153', '89154', '89155', '89156', '89157', '89158', '89159', '89160',
+            '89161', '89162', '89163', '89164', '89165', '89166', '89167', '89168', '89169', '89170',
+            '89171', '89172', '89173', '89174', '89175', '89176', '89177', '89178', '89179', '89180',
+            '89181', '89182', '89183', '89185', '89186', '89187', '89188', '89189', '89190', '89191',
+            '89193', '89194', '89195', '89196', '89197', '89198', '89199'
+          ]
+          
+          // 如果邮编不在有效列表中，尝试获取更准确的邮编
+          if (postal_code && !validLasVegasZipCodes.includes(postal_code) && lat >= 36.0 && lat <= 36.5 && lng >= -115.5 && lng <= -114.5) {
+            console.log('⚠️ 检测到可能不准确的邮编:', postal_code)
+            // 可以在这里添加备用邮编查找逻辑
+          }
+          
+          // 特殊处理：拉斯维加斯地区 - 如果 API 没有返回城市名，使用 Las Vegas
+          if (lat >= 36.0 && lat <= 36.5 && lng >= -115.5 && lng <= -114.5) {
+            if (!city || city.includes('County')) {
+              city = 'Las Vegas'
+            }
+          }
+          
+          // 如果没有城市信息，尝试从 display_name 中提取
+          if (!city && data.display_name) {
+            const parts = data.display_name.split(', ')
+            // 通常第一个部分是城市名
+            if (parts.length > 0 && !parts[0].includes('County') && !parts[0].includes('州')) {
+              city = parts[0]
+            }
+          }
+          
+          // 如果仍然没有城市信息，使用 county
+          if (!city && data.address.county) {
+            city = data.address.county
+          }
+          
           const address: AddressInfo = {
-            city: data.address.city || data.address.town || data.address.village || data.address.county || '未知城市',
+            city: city || '未知城市',
             state: data.address.state || data.address.province || '',
             country: data.address.country || '',
-            postal_code: data.address.postcode || '',
+            postal_code: postal_code || '',
             formatted_address: data.display_name || ''
           }
+          
+          console.log('解析后的地址信息:', address)
           
           setAddressInfo(address)
           
@@ -63,7 +129,7 @@ export default function LocationDisplay({
     }
   }
 
-  // 加载位置信息
+
   const loadLocation = useCallback(async () => {
     setIsLoading(true)
     setError('')
@@ -130,6 +196,16 @@ export default function LocationDisplay({
     }
   }, [])
 
+  // 清除缓存并重新获取位置
+  const clearCacheAndReload = useCallback(async () => {
+    // 清除缓存
+    localStorage.removeItem('user_location')
+    localStorage.removeItem('user_address')
+    
+    // 重新加载位置
+    await loadLocation()
+  }, [loadLocation])
+
   // 组件挂载时加载位置
   useEffect(() => {
     loadLocation()
@@ -158,14 +234,29 @@ export default function LocationDisplay({
         ) : addressInfo ? (
           <div className="flex items-center space-x-1">
             <span className="text-xs text-gray-600">
-              {addressInfo.city}
-              {addressInfo.postal_code && `, ${addressInfo.postal_code}`}
+              {(() => {
+                // 如果城市名包含 "County" 且没有邮编，尝试显示更具体的信息
+                if (addressInfo.city.includes('County') && !addressInfo.postal_code) {
+                  return addressInfo.city
+                }
+                // 显示格式：城市+邮编+州
+                const parts = []
+                parts.push(addressInfo.city)
+                if (addressInfo.postal_code) {
+                  parts.push(addressInfo.postal_code)
+                }
+                if (addressInfo.state) {
+                  parts.push(addressInfo.state)
+                }
+                return parts.join(', ')
+              })()}
             </span>
             {showRefresh && (
               <button
                 onClick={loadLocation}
+                onDoubleClick={clearCacheAndReload}
                 className="p-1 hover:bg-gray-100 rounded"
-                title="刷新位置"
+                title="单击刷新位置，双击清除缓存"
               >
                 <RefreshCw className="h-3 w-3 text-gray-400" />
               </button>
@@ -177,8 +268,9 @@ export default function LocationDisplay({
             {showRefresh && (
               <button
                 onClick={loadLocation}
+                onDoubleClick={clearCacheAndReload}
                 className="p-1 hover:bg-gray-100 rounded"
-                title="刷新位置"
+                title="单击刷新位置，双击清除缓存"
               >
                 <RefreshCw className="h-3 w-3 text-gray-400" />
               </button>
@@ -203,9 +295,10 @@ export default function LocationDisplay({
         {showRefresh && (
           <button
             onClick={loadLocation}
+            onDoubleClick={clearCacheAndReload}
             disabled={isLoading}
             className="p-1 hover:bg-gray-100 rounded disabled:opacity-50"
-            title="刷新位置"
+            title="单击刷新位置，双击清除缓存"
           >
             <RefreshCw className={`h-4 w-4 text-gray-400 ${isLoading ? 'animate-spin' : ''}`} />
           </button>
@@ -223,9 +316,17 @@ export default function LocationDisplay({
             <div className="space-y-2">
               <div className="bg-blue-50 p-3 rounded-lg">
                 <div className="text-sm font-medium text-blue-900 mb-1">
-                  {addressInfo.city}
-                  {addressInfo.postal_code && `, ${addressInfo.postal_code}`}
-                  {addressInfo.state && `, ${addressInfo.state}`}
+                  {(() => {
+                    const parts = []
+                    parts.push(addressInfo.city)
+                    if (addressInfo.postal_code) {
+                      parts.push(addressInfo.postal_code)
+                    }
+                    if (addressInfo.state) {
+                      parts.push(addressInfo.state)
+                    }
+                    return parts.join(', ')
+                  })()}
                 </div>
                 <div className="text-xs text-blue-700">
                   {addressInfo.country && `${addressInfo.country}`}

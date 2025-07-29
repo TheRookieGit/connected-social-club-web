@@ -1,104 +1,75 @@
 'use client'
 
-import { useState } from 'react'
 import LocationDisplay from '@/components/LocationDisplay'
-import { MapPin, RefreshCw } from 'lucide-react'
 
 export default function TestCityFormat() {
-  const [testMode, setTestMode] = useState<'compact' | 'full'>('compact')
-
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-4xl mx-auto">
         <div className="bg-white rounded-lg shadow-md p-6 mb-8">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4 flex items-center">
-            <MapPin className="h-6 w-6 mr-2 text-blue-500" />
-            城市格式测试页面
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">
+            城市显示格式测试
           </h1>
           
-          <div className="space-y-4">
-            <p className="text-gray-600">
-              测试位置显示格式：<strong>城市名, 邮编</strong>（例如：Las Vegas, 89113）
+          <p className="text-gray-600 mb-6">
+            测试新的地址显示格式：城市+邮编+州
+          </p>
+          
+          <div className="p-4 bg-blue-50 rounded-lg mb-4">
+            <h2 className="text-lg font-medium text-blue-900 mb-2">新的显示格式</h2>
+            <p className="text-blue-800 text-sm">
+              • <strong>紧凑模式</strong>：Las Vegas, 89113, Nevada<br/>
+              • <strong>完整模式</strong>：Las Vegas, 89113, Nevada<br/>
+              • <strong>格式说明</strong>：城市名, 邮编, 州名
             </p>
-            
-            <div className="flex space-x-4">
-              <button
-                onClick={() => setTestMode('compact')}
-                className={`px-4 py-2 rounded-lg ${
-                  testMode === 'compact' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-              >
-                紧凑模式
-              </button>
-              <button
-                onClick={() => setTestMode('full')}
-                className={`px-4 py-2 rounded-lg ${
-                  testMode === 'full' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-gray-200 text-gray-700'
-                }`}
-              >
-                完整模式
-              </button>
-            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">
-            位置显示测试 - {testMode === 'compact' ? '紧凑模式' : '完整模式'}
-          </h2>
-          
-          <div className="mb-4 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-700 mb-2">预期格式：</h3>
-            <div className="text-sm text-gray-600 space-y-1">
-              <p>• 紧凑模式：<code className="bg-gray-200 px-1 rounded">Las Vegas, 89113</code></p>
-              <p>• 完整模式：<code className="bg-gray-200 px-1 rounded">Las Vegas, 89113, Nevada</code></p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 紧凑模式 */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">紧凑模式</h2>
+            <LocationDisplay compact={true} showRefresh={true} />
+            <div className="mt-4 p-3 bg-gray-50 rounded text-sm">
+              <p className="text-gray-600">预期格式：</p>
+              <p className="font-mono text-gray-800">Las Vegas, 89113, Nevada</p>
             </div>
           </div>
-          
-          <LocationDisplay 
-            compact={testMode === 'compact'} 
-            showRefresh={true}
-            className="border-2 border-dashed border-blue-300"
-          />
+
+          {/* 完整模式 */}
+          <div className="bg-white rounded-lg shadow-md p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">完整模式</h2>
+            <LocationDisplay compact={false} showRefresh={true} />
+            <div className="mt-4 p-3 bg-gray-50 rounded text-sm">
+              <p className="text-gray-600">预期格式：</p>
+              <p className="font-mono text-gray-800">Las Vegas, 89113, Nevada</p>
+            </div>
+          </div>
         </div>
 
         <div className="mt-8 bg-white rounded-lg shadow-md p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-4">测试说明</h2>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">格式说明</h2>
           
-          <div className="space-y-3 text-sm text-gray-600">
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p>确保您已授予位置权限，否则将显示&quot;位置不可用&quot;</p>
+          <div className="space-y-4">
+            <div>
+              <h3 className="font-medium text-gray-900 mb-2">显示规则</h3>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• 城市名：优先显示具体城市名，如 "Las Vegas"</li>
+                <li>• 邮编：如果有邮编信息，显示在逗号后</li>
+                <li>• 州名：如果有州信息，显示在邮编后</li>
+                <li>• 分隔符：使用逗号和空格分隔各部分</li>
+              </ul>
             </div>
             
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p>地址解析需要网络连接，首次获取可能需要几秒钟</p>
+            <div>
+              <h3 className="font-medium text-gray-900 mb-2">示例</h3>
+              <div className="text-sm text-gray-600 space-y-1">
+                <p>• <span className="font-mono">Las Vegas, 89113, Nevada</span></p>
+                <p>• <span className="font-mono">New York, 10001, New York</span></p>
+                <p>• <span className="font-mono">Los Angeles, 90210, California</span></p>
+                <p>• <span className="font-mono">Clark County</span> (当只有县信息时)</p>
+              </div>
             </div>
-            
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p>如果地址解析失败，将显示坐标信息</p>
-            </div>
-            
-            <div className="flex items-start space-x-2">
-              <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p>点击刷新按钮可以重新获取位置和地址信息</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 bg-blue-50 border border-blue-200 rounded-lg p-6">
-          <h3 className="text-lg font-semibold text-blue-900 mb-3">格式说明</h3>
-          <div className="text-blue-800 space-y-2 text-sm">
-            <p>• <strong>紧凑模式</strong>：显示为 <code>城市名, 邮编</code> 格式</p>
-            <p>• <strong>完整模式</strong>：显示为 <code>城市名, 邮编, 州/省</code> 格式</p>
-            <p>• 如果没有邮编信息，只显示城市名</p>
-            <p>• 使用免费的 OpenStreetMap Nominatim API 进行地址解析</p>
           </div>
         </div>
       </div>

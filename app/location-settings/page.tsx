@@ -266,20 +266,28 @@ export default function LocationSettings() {
             
             {/* 地址信息显示 */}
             <div className="mb-6 p-4 bg-blue-50 rounded-lg">
-              <div className="text-lg font-medium text-blue-900">
-                {(() => {
-                  try {
-                    const cachedAddress = localStorage.getItem('user_address')
-                    if (cachedAddress) {
-                      const address = JSON.parse(cachedAddress)
-                      return `${address.city}${address.postal_code ? `, ${address.postal_code}` : ''}`
-                    }
-                    return '正在解析地址...'
-                  } catch (error) {
-                    return '地址解析失败'
-                  }
-                })()}
-              </div>
+                      <div className="text-lg font-medium text-blue-900">
+          {(() => {
+            try {
+              const cachedAddress = localStorage.getItem('user_address')
+              if (cachedAddress) {
+                const address = JSON.parse(cachedAddress)
+                const parts = []
+                parts.push(address.city)
+                if (address.postal_code) {
+                  parts.push(address.postal_code)
+                }
+                if (address.state) {
+                  parts.push(address.state)
+                }
+                return parts.join(', ')
+              }
+              return '正在解析地址...'
+            } catch (error) {
+              return '地址解析失败'
+            }
+          })()}
+        </div>
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
