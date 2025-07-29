@@ -62,6 +62,7 @@ function createNoCacheHeaders() {
 **注意**：
 1. 不要同时使用 `functions` 和 `builds` 属性，这会导致配置冲突。我们使用 `builds` 配置Next.js部署。
 2. 不要同时使用 `headers` 和 `routes` 属性，这也会导致配置冲突。我们使用 `headers` 配置缓存控制。
+3. 缓存绕过主要通过前端代码中的时间戳参数和HTTP头部实现，不需要复杂的重写规则。
 
 ```json
 {
@@ -121,12 +122,6 @@ function createNoCacheHeaders() {
           "value": "no-cache"
         }
       ]
-    }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/user/profile",
-      "destination": "/api/user/profile?cache_bypass=true&t=:now"
     }
   ]
 }

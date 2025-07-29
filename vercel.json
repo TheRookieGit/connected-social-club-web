@@ -56,11 +56,5 @@
         }
       ]
     }
-  ],
-  "rewrites": [
-    {
-      "source": "/api/user/profile",
-      "destination": "/api/user/profile?cache_bypass=true&t=:now"
-    }
   ]
 } 
