@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight } from 'lucide-react'
+import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight, Camera, Upload } from 'lucide-react'
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -17,6 +17,8 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
   const [isLoading, setIsLoading] = useState(true)
   const [isEditing, setIsEditing] = useState(false)
   const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({})
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -180,6 +182,79 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
     }))
   }
 
+  const handleAvatarUpload = async (file: File) => {
+    try {
+      setIsUploadingAvatar(true)
+      const token = localStorage.getItem('token')
+      if (!token) return
+
+      console.log('🔄 开始上传头像...', new Date().toISOString())
+      console.log('📁 文件信息:', { name: file.name, size: file.size, type: file.type })
+
+      const formData = new FormData()
+      formData.append('avatar', file)
+
+      // 创建更强的缓存绕过参数
+      const timestamp = Date.now()
+      const randomId = Math.random().toString(36).substring(7)
+
+      const response = await fetch('/api/user/upload-avatar', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0',
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-Force-Refresh': 'true',
+          'X-Cache-Bypass': 'true',
+          'X-Timestamp': timestamp.toString(),
+          'X-Upload-ID': `upload-${timestamp}-${randomId}`,
+          'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT'
+        },
+        body: formData
+      })
+
+      console.log('📡 头像上传API响应状态:', response.status)
+      console.log('📡 响应头:', Object.fromEntries(response.headers.entries()))
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('✅ 头像上传成功:', data)
+        
+        // 更新本地状态
+        if (profile) {
+          const updatedProfile = { ...profile, avatar_url: data.avatar_url }
+          setProfile(updatedProfile)
+          setEditedProfile(updatedProfile)
+        }
+        
+        console.log('✅ 头像已更新到状态中')
+      } else {
+        console.error('❌ 头像上传失败:', response.status)
+        const errorData = await response.json()
+        console.error('❌ 错误详情:', errorData)
+        alert(`头像上传失败: ${errorData.error || '未知错误'}`)
+      }
+    } catch (error) {
+      console.error('❌ 头像上传失败:', error)
+      alert('头像上传失败，请稍后重试')
+    } finally {
+      setIsUploadingAvatar(false)
+    }
+  }
+
+  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      handleAvatarUpload(file)
+    }
+  }
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click()
+  }
+
   if (!isOpen) return null
 
   if (isLoading) {
@@ -262,7 +337,7 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
           {/* 头像区域 */}
           <div className="text-center">
             <div className="relative inline-block">
-              <div className="w-32 h-32 bg-gradient-to-br from-red-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden">
+              <div className="w-32 h-32 bg-gradient-to-br from-red-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden relative">
                 {profile.avatar_url ? (
                   <Image 
                     src={profile.avatar_url} 
@@ -287,8 +362,39 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 >
                   {profile.name ? profile.name.charAt(0).toUpperCase() : '?'}
                 </span>
+                
+                {/* 头像上传按钮 */}
+                <button
+                  onClick={triggerFileInput}
+                  disabled={isUploadingAvatar}
+                  className="absolute bottom-0 right-0 w-10 h-10 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
+                  title="上传头像"
+                >
+                  {isUploadingAvatar ? (
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  ) : (
+                    <Camera className="h-5 w-5" />
+                  )}
+                </button>
               </div>
+              
+              {/* 隐藏的文件输入 */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/jpg,image/png,image/webp"
+                onChange={handleFileSelect}
+                className="hidden"
+              />
             </div>
+            
+            {/* 上传提示 */}
+            {isUploadingAvatar && (
+              <div className="text-sm text-gray-500 mb-2">
+                正在上传头像...
+              </div>
+            )}
+            
             <h2 className="text-2xl font-bold text-gray-900 mb-2">{profile.name}</h2>
             <p className="text-gray-600 mb-6">{profile.email}</p>
           </div>
