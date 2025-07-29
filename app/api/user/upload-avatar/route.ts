@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 import { createSupabaseClient } from '@/lib/supabase'
 import jwt from 'jsonwebtoken'
 
@@ -48,7 +49,27 @@ function verifyToken(authHeader: string | null) {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createSupabaseClient()
+    // 使用service role key创建客户端以便访问storage bucket
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    if (!supabaseUrl || !serviceRoleKey) {
+      return new NextResponse(
+        JSON.stringify({ success: false, error: '服务配置不完整' }),
+        { 
+          status: 500,
+          headers: createNoCacheHeaders()
+        }
+      )
+    }
+
+    const supabase = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    })
+
     if (!supabase) {
       return new NextResponse(
         JSON.stringify({ success: false, error: '数据库连接失败' }),
@@ -133,7 +154,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const userAvatarsBucket = buckets?.find(b => b.id === 'user-avatars')
+    const userAvatarsBucket = buckets?.find((b: any) => b.id === 'user-avatars')
     if (!userAvatarsBucket) {
       console.error('user-avatars存储桶不存在')
       return new NextResponse(
