@@ -171,6 +171,102 @@ export default function TestVercelCache() {
     await fetchProfile()
   }
 
+  const clearBrowserCache = () => {
+    try {
+      // 清除各种可能的缓存
+      if ('caches' in window) {
+        caches.keys().then(function(names) {
+          for (let name of names) {
+            caches.delete(name);
+          }
+        });
+      }
+      
+      // 清除 localStorage 中可能的缓存
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('cache') || key.includes('profile')) {
+          localStorage.removeItem(key);
+        }
+      });
+      
+      // 清除 sessionStorage
+      sessionStorage.clear();
+      
+      console.log('✅ 浏览器缓存已清除');
+      setMessage('✅ 浏览器缓存已清除');
+    } catch (error) {
+      console.error('❌ 清除缓存失败:', error);
+      setMessage('❌ 清除缓存失败');
+    }
+  }
+
+  const testCacheBypass = async () => {
+    setMessage('🧪 测试缓存绕过机制...')
+    setLoading(true)
+    
+    try {
+      // 测试多种缓存绕过方法
+      const methods = [
+        { name: '基础时间戳', url: `/api/user/profile?t=${Date.now()}` },
+        { name: '随机参数', url: `/api/user/profile?r=${Math.random()}&t=${Date.now()}` },
+        { name: '强制刷新', url: `/api/user/profile?force=true&cache=false&t=${Date.now()}` },
+        { name: 'POST请求', method: 'POST', url: '/api/user/profile' }
+      ]
+      
+      const token = localStorage.getItem('token')
+      if (!token) {
+        setMessage('请先登录')
+        return
+      }
+      
+      for (const method of methods) {
+        console.log(`🧪 测试: ${method.name}`)
+        
+        const options: RequestInit = {
+          method: method.method || 'GET',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            'Pragma': 'no-cache',
+            'Expires': '0',
+            'X-Test-Method': method.name,
+            'X-Timestamp': Date.now().toString()
+          }
+        }
+        
+        if (method.method === 'POST') {
+          options.headers = {
+            ...options.headers,
+            'Content-Type': 'application/json'
+          }
+          options.body = JSON.stringify({ test: true })
+        }
+        
+        try {
+          const response = await fetch(method.url, options)
+          const data = await response.json()
+          console.log(`✅ ${method.name} 成功:`, {
+            status: response.status,
+            timestamp: data.timestamp,
+            cache_id: data.cache_id
+          })
+        } catch (error) {
+          console.error(`❌ ${method.name} 失败:`, error)
+        }
+        
+        // 添加延迟避免请求过快
+        await new Promise(resolve => setTimeout(resolve, 200))
+      }
+      
+      setMessage('✅ 缓存绕过测试完成，请查看控制台日志')
+    } catch (error) {
+      setMessage(`❌ 测试失败: ${error}`)
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="min-h-screen bg-gray-100 p-8">
       <div className="max-w-4xl mx-auto">
@@ -195,6 +291,22 @@ export default function TestVercelCache() {
                 className="px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600 disabled:opacity-50"
               >
                 {loading ? '处理中...' : '⚡ 强制刷新'}
+              </button>
+
+              <button
+                onClick={clearBrowserCache}
+                disabled={loading}
+                className="px-4 py-2 bg-orange-500 text-white rounded hover:bg-orange-600 disabled:opacity-50"
+              >
+                🗑️ 清除缓存
+              </button>
+
+              <button
+                onClick={testCacheBypass}
+                disabled={loading}
+                className="px-4 py-2 bg-yellow-500 text-white rounded hover:bg-yellow-600 disabled:opacity-50"
+              >
+                🧪 测试缓存
               </button>
             </div>
 

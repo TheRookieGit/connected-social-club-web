@@ -23,27 +23,52 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
       const token = localStorage.getItem('token')
       if (!token) return
 
-      console.log('🔄 开始获取个人资料...')
+      console.log('🔄 开始获取个人资料...', new Date().toISOString())
 
-      const response = await fetch(`/api/user/profile?t=${Date.now()}`, {
+      // 创建更强的缓存绕过参数
+      const timestamp = Date.now()
+      const randomId = Math.random().toString(36).substring(7)
+      const cacheBreaker = `t=${timestamp}&r=${randomId}&force=true`
+
+      const response = await fetch(`/api/user/profile?${cacheBreaker}`, {
+        method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          // 添加更多强制刷新头部
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-Force-Refresh': 'true',
+          'X-Cache-Bypass': 'true',
+          'X-Timestamp': timestamp.toString(),
+          'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT',
+          'If-None-Match': '*'
         }
       })
 
       console.log('📡 获取资料API响应状态:', response.status)
+      console.log('📡 响应头:', Object.fromEntries(response.headers.entries()))
 
       if (response.ok) {
         const data = await response.json()
         console.log('✅ 获取个人资料响应:', data)
-        // 使用data.user而不是整个data对象
+        
+        // 验证数据完整性
         const userData = data.user || data
         console.log('✅ 解析后的用户数据:', userData)
         console.log('✅ 用户bio字段:', userData.bio)
         console.log('✅ 用户location字段:', userData.location)
+        console.log('✅ 数据时间戳:', userData.data_timestamp)
+        console.log('✅ 服务器时间:', data.server_time)
+        
+        // 确保数据新鲜度
+        if (data.server_time) {
+          const serverTime = new Date(data.timestamp || Date.now())
+          const clientTime = new Date()
+          const timeDiff = Math.abs(clientTime.getTime() - serverTime.getTime())
+          console.log('⏰ 服务器时间差:', timeDiff, 'ms')
+        }
         
         setProfile(userData)
         setEditedProfile(userData)
@@ -80,10 +105,14 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
       const token = localStorage.getItem('token')
       if (!token) return
 
-      console.log('🔄 开始保存个人资料...')
+      console.log('🔄 开始保存个人资料...', new Date().toISOString())
       console.log('📝 编辑的数据:', editedProfile)
       console.log('📝 bio字段值:', editedProfile.bio)
       console.log('📝 location字段值:', editedProfile.location)
+
+      // 创建更强的缓存绕过参数
+      const timestamp = Date.now()
+      const randomId = Math.random().toString(36).substring(7)
 
       const response = await fetch('/api/user/profile', {
         method: 'PUT',
@@ -92,24 +121,47 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
           'Authorization': `Bearer ${token}`,
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           'Pragma': 'no-cache',
-          'Expires': '0'
+          'Expires': '0',
+          // 添加更多强制刷新头部
+          'X-Requested-With': 'XMLHttpRequest',
+          'X-Force-Refresh': 'true',
+          'X-Cache-Bypass': 'true',
+          'X-Timestamp': timestamp.toString(),
+          'X-Update-ID': `update-${timestamp}-${randomId}`,
+          'If-Modified-Since': 'Thu, 01 Jan 1970 00:00:00 GMT'
         },
-        body: JSON.stringify(editedProfile)
+        body: JSON.stringify({
+          ...editedProfile,
+          // 添加客户端时间戳确保数据唯一性
+          client_timestamp: new Date().toISOString(),
+          update_id: `client-${timestamp}-${randomId}`
+        })
       })
 
       console.log('📡 API响应状态:', response.status)
+      console.log('📡 响应头:', Object.fromEntries(response.headers.entries()))
 
       if (response.ok) {
         const updatedResponse = await response.json()
         console.log('✅ 更新个人资料响应:', updatedResponse)
-        // 使用updatedResponse.user而不是整个updatedResponse对象
+        
+        // 验证更新结果
         const updatedUserData = updatedResponse.user || updatedResponse
         console.log('✅ 更新后的用户数据:', updatedUserData)
         console.log('✅ 更新后的bio字段:', updatedUserData.bio)
+        console.log('✅ 更新确认:', updatedUserData.update_confirmed)
+        console.log('✅ 更新时间:', updatedUserData.confirmed_at)
         
         setProfile(updatedUserData)
         setEditedProfile(updatedUserData)
         setIsEditing(false)
+        
+        // 强制重新获取数据验证保存效果
+        setTimeout(() => {
+          console.log('🔄 验证保存效果...')
+          fetchProfile()
+        }, 500)
+        
         console.log('✅ 个人资料保存成功，状态已更新')
       } else {
         console.error('❌ 更新个人资料失败:', response.status)
