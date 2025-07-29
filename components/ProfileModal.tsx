@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight, Camera, Upload, Settings } from 'lucide-react'
+import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight, Camera, Upload, Globe, BookOpen, Users, Home, Languages, Baby, Activity, Coffee, Wine, MessageCircle } from 'lucide-react'
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -175,7 +175,7 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
     }
   }
 
-  const handleInputChange = (field: keyof UserProfile, value: string | number) => {
+  const handleInputChange = (field: keyof UserProfile, value: string | number | string[] | boolean) => {
     setEditedProfile(prev => ({
       ...prev,
       [field]: value
@@ -309,18 +309,11 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
             ) : (
               <>
                 <button
-                  onClick={() => window.location.href = '/profile-edit'}
+                  onClick={handleEdit}
                   className="flex items-center space-x-1 px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
                 >
-                  <Settings className="h-4 w-4" />
-                  <span>完整编辑</span>
-                </button>
-                <button
-                  onClick={handleEdit}
-                  className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                >
                   <Edit className="h-4 w-4" />
-                  <span>快速编辑</span>
+                  <span>编辑资料</span>
                 </button>
                 <button
                   onClick={fetchProfile}
@@ -406,10 +399,10 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
             <p className="text-gray-600 mb-6">{profile.email}</p>
           </div>
 
-          {/* 基本信息 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* 完整资料信息 */}
+          <div className="space-y-6">
             {/* 个人简介 */}
-            <div className="md:col-span-2">
+            <div>
               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
                 <User className="h-4 w-4 mr-2" />
                 个人简介
@@ -429,193 +422,568 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
               )}
             </div>
 
-            {/* 位置 */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <MapPin className="h-4 w-4 mr-2" />
-                位置
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedProfile.location || ''}
-                  onChange={(e) => handleInputChange('location', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="你的位置"
-                />
-              ) : (
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                  {profile.location || '未设置'}
-                </p>
-              )}
-            </div>
+            {/* 基础信息 */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* 年龄 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Calendar className="h-4 w-4 mr-2" />
+                  年龄
+                </label>
+                {isEditing ? (
+                  <input
+                    type="date"
+                    value={editedProfile.birth_date || ''}
+                    onChange={(e) => handleInputChange('birth_date', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  />
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.birth_date ? 
+                      `${Math.floor((Date.now() - new Date(profile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}岁` : 
+                      '未设置'
+                    }
+                  </p>
+                )}
+              </div>
 
-            {/* 生日 */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Calendar className="h-4 w-4 mr-2" />
-                生日
-              </label>
-              {isEditing ? (
-                <input
-                  type="date"
-                  value={editedProfile.birth_date || ''}
-                  onChange={(e) => handleInputChange('birth_date', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                />
-              ) : (
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                  {profile.birth_date ? new Date(profile.birth_date).toLocaleDateString('zh-CN') : '未设置'}
-                </p>
-              )}
-            </div>
+              {/* 身高 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Ruler className="h-4 w-4 mr-2" />
+                  身高
+                </label>
+                {isEditing ? (
+                  <input
+                    type="number"
+                    value={editedProfile.height || ''}
+                    onChange={(e) => handleInputChange('height', parseInt(e.target.value) || 0)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="身高(cm)"
+                    min="100"
+                    max="250"
+                  />
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.height ? `${profile.height}cm` : '未设置'}
+                  </p>
+                )}
+              </div>
 
-            {/* 职业 */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Briefcase className="h-4 w-4 mr-2" />
-                职业
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedProfile.occupation || ''}
-                  onChange={(e) => handleInputChange('occupation', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="你的职业"
-                />
-              ) : (
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                  {profile.occupation || '未设置'}
-                </p>
-              )}
-            </div>
+              {/* 种族 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Globe className="h-4 w-4 mr-2" />
+                  种族
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.ethnicity || ''}
+                    onChange={(e) => handleInputChange('ethnicity', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">选择种族</option>
+                    <option value="亚洲人">亚洲人</option>
+                    <option value="白人">白人</option>
+                    <option value="黑人">黑人</option>
+                    <option value="拉丁裔">拉丁裔</option>
+                    <option value="中东人">中东人</option>
+                    <option value="混血">混血</option>
+                    <option value="其他">其他</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.ethnicity || '未设置'}
+                  </p>
+                )}
+              </div>
 
-            {/* 教育背景 */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <GraduationCap className="h-4 w-4 mr-2" />
-                教育背景
-              </label>
-              {isEditing ? (
-                <input
-                  type="text"
-                  value={editedProfile.education || ''}
-                  onChange={(e) => handleInputChange('education', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="你的教育背景"
-                />
-              ) : (
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                  {profile.education || '未设置'}
-                </p>
-              )}
-            </div>
+              {/* 宗教 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <BookOpen className="h-4 w-4 mr-2" />
+                  宗教
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.religion || ''}
+                    onChange={(e) => handleInputChange('religion', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">选择宗教</option>
+                    <option value="无宗教信仰">无宗教信仰</option>
+                    <option value="基督教">基督教</option>
+                    <option value="天主教">天主教</option>
+                    <option value="伊斯兰教">伊斯兰教</option>
+                    <option value="佛教">佛教</option>
+                    <option value="印度教">印度教</option>
+                    <option value="犹太教">犹太教</option>
+                    <option value="其他">其他</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.religion || '未设置'}
+                  </p>
+                )}
+              </div>
 
-            {/* 情感状态 */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Heart className="h-4 w-4 mr-2" />
-                情感状态
-              </label>
-              {isEditing ? (
-                <select
-                  value={editedProfile.relationship_status || ''}
-                  onChange={(e) => handleInputChange('relationship_status', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
-                  <option value="">选择状态</option>
-                  <option value="single">单身</option>
-                  <option value="dating">恋爱中</option>
-                  <option value="married">已婚</option>
-                  <option value="divorced">离异</option>
-                  <option value="widowed">丧偶</option>
-                </select>
-              ) : (
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                  {profile.relationship_status ? {
-                    'single': '单身',
-                    'dating': '恋爱中',
-                    'married': '已婚',
-                    'divorced': '离异',
-                    'widowed': '丧偶'
-                  }[profile.relationship_status] || profile.relationship_status : '未设置'}
-                </p>
-              )}
-            </div>
+              {/* 雇主 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Briefcase className="h-4 w-4 mr-2" />
+                  雇主
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedProfile.employer || ''}
+                    onChange={(e) => handleInputChange('employer', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="你的雇主"
+                  />
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.employer || '未设置'}
+                  </p>
+                )}
+              </div>
 
-            {/* 性别 */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <User className="h-4 w-4 mr-2" />
-                性别
-              </label>
-              {isEditing ? (
-                <select
-                  value={editedProfile.gender || ''}
-                  onChange={(e) => handleInputChange('gender', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                >
-                  <option value="">选择性别</option>
-                  <option value="male">男</option>
-                  <option value="female">女</option>
-                  <option value="other">其他</option>
-                </select>
-              ) : (
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                  {profile.gender ? {
-                    'male': '男',
-                    'female': '女',
-                    'other': '其他'
-                  }[profile.gender] || profile.gender : '未设置'}
-                </p>
-              )}
-            </div>
+              {/* 位置 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  位置
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedProfile.location || ''}
+                    onChange={(e) => handleInputChange('location', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="你的位置"
+                  />
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.location || '未设置'}
+                  </p>
+                )}
+              </div>
 
-            {/* 身高 */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Ruler className="h-4 w-4 mr-2" />
-                身高 (cm)
-              </label>
-              {isEditing ? (
-                <input
-                  type="number"
-                  value={editedProfile.height || ''}
-                  onChange={(e) => handleInputChange('height', parseInt(e.target.value) || 0)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="身高"
-                  min="100"
-                  max="250"
-                />
-              ) : (
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                  {profile.height ? `${profile.height} cm` : '未设置'}
-                </p>
-              )}
-            </div>
+              {/* 职业 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Briefcase className="h-4 w-4 mr-2" />
+                  职业
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedProfile.occupation || ''}
+                    onChange={(e) => handleInputChange('occupation', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="你的职业"
+                  />
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.occupation || '未设置'}
+                  </p>
+                )}
+              </div>
 
-            {/* 体重 */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <Weight className="h-4 w-4 mr-2" />
-                体重 (kg)
-              </label>
-              {isEditing ? (
-                <input
-                  type="number"
-                  value={editedProfile.weight || ''}
-                  onChange={(e) => handleInputChange('weight', parseInt(e.target.value) || 0)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  placeholder="体重"
-                  min="30"
-                  max="300"
-                />
-              ) : (
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                  {profile.weight ? `${profile.weight} kg` : '未设置'}
-                </p>
-              )}
+              {/* 学校 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  学校
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedProfile.school || ''}
+                    onChange={(e) => handleInputChange('school', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="你的学校"
+                  />
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.school || '未设置'}
+                  </p>
+                )}
+              </div>
+
+              {/* 学位 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <GraduationCap className="h-4 w-4 mr-2" />
+                  学位
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedProfile.degree || ''}
+                    onChange={(e) => handleInputChange('degree', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="你的学位"
+                  />
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.degree || '未设置'}
+                  </p>
+                )}
+              </div>
+
+              {/* 价值观 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Heart className="h-4 w-4 mr-2" />
+                  价值观
+                </label>
+                {isEditing ? (
+                  <select
+                    multiple
+                    value={editedProfile.values_preferences || []}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value)
+                      handleInputChange('values_preferences', selected)
+                    }}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="家庭">家庭</option>
+                    <option value="事业">事业</option>
+                    <option value="健康">健康</option>
+                    <option value="教育">教育</option>
+                    <option value="旅行">旅行</option>
+                    <option value="艺术">艺术</option>
+                    <option value="运动">运动</option>
+                    <option value="音乐">音乐</option>
+                    <option value="阅读">阅读</option>
+                    <option value="美食">美食</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.values_preferences && profile.values_preferences.length > 0 
+                      ? profile.values_preferences.join(', ') 
+                      : '未设置'
+                    }
+                  </p>
+                )}
+              </div>
+
+              {/* 性格 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Users className="h-4 w-4 mr-2" />
+                  性格
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.personality_type || ''}
+                    onChange={(e) => handleInputChange('personality_type', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">选择性格</option>
+                    <option value="内向">内向</option>
+                    <option value="外向">外向</option>
+                    <option value="内向偏外向">内向偏外向</option>
+                    <option value="外向偏内向">外向偏内向</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.personality_type || '未设置'}
+                  </p>
+                )}
+              </div>
+
+              {/* 兴趣 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Heart className="h-4 w-4 mr-2" />
+                  兴趣
+                </label>
+                {isEditing ? (
+                  <select
+                    multiple
+                    value={editedProfile.interests || []}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value)
+                      handleInputChange('interests', selected)
+                    }}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="旅行">旅行</option>
+                    <option value="音乐">音乐</option>
+                    <option value="电影">电影</option>
+                    <option value="阅读">阅读</option>
+                    <option value="运动">运动</option>
+                    <option value="美食">美食</option>
+                    <option value="摄影">摄影</option>
+                    <option value="艺术">艺术</option>
+                    <option value="科技">科技</option>
+                    <option value="时尚">时尚</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.interests && profile.interests.length > 0 
+                      ? profile.interests.join(', ') 
+                      : '未设置'
+                    }
+                  </p>
+                )}
+              </div>
+
+              {/* 家乡 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Home className="h-4 w-4 mr-2" />
+                  家乡
+                </label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editedProfile.hometown || ''}
+                    onChange={(e) => handleInputChange('hometown', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                    placeholder="你的家乡"
+                  />
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.hometown || '未设置'}
+                  </p>
+                )}
+              </div>
+
+              {/* 语言 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Languages className="h-4 w-4 mr-2" />
+                  语言
+                </label>
+                {isEditing ? (
+                  <select
+                    multiple
+                    value={editedProfile.languages || []}
+                    onChange={(e) => {
+                      const selected = Array.from(e.target.selectedOptions, option => option.value)
+                      handleInputChange('languages', selected)
+                    }}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="中文">中文</option>
+                    <option value="英语">英语</option>
+                    <option value="日语">日语</option>
+                    <option value="韩语">韩语</option>
+                    <option value="法语">法语</option>
+                    <option value="德语">德语</option>
+                    <option value="西班牙语">西班牙语</option>
+                    <option value="其他">其他</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.languages && profile.languages.length > 0 
+                      ? profile.languages.join(', ') 
+                      : '未设置'
+                    }
+                  </p>
+                )}
+              </div>
+
+              {/* 关系状态 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Heart className="h-4 w-4 mr-2" />
+                  关系状态
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.relationship_status || ''}
+                    onChange={(e) => handleInputChange('relationship_status', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">选择状态</option>
+                    <option value="单身">单身</option>
+                    <option value="恋爱中">恋爱中</option>
+                    <option value="已婚">已婚</option>
+                    <option value="离异">离异</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.relationship_status || '未设置'}
+                  </p>
+                )}
+              </div>
+
+              {/* 家庭计划 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Baby className="h-4 w-4 mr-2" />
+                  家庭计划
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.family_plans || ''}
+                    onChange={(e) => handleInputChange('family_plans', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">选择计划</option>
+                    <option value="想要孩子">想要孩子</option>
+                    <option value="对孩子开放">对孩子开放</option>
+                    <option value="不想要孩子">不想要孩子</option>
+                    <option value="已有孩子">已有孩子</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.family_plans || '未设置'}
+                  </p>
+                )}
+              </div>
+
+              {/* 孩子 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Baby className="h-4 w-4 mr-2" />
+                  孩子
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.has_kids ? 'true' : 'false'}
+                    onChange={(e) => handleInputChange('has_kids', e.target.value === 'true')}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="false">没有孩子</option>
+                    <option value="true">有孩子</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.has_kids ? '有孩子' : '没有孩子'}
+                  </p>
+                )}
+              </div>
+
+              {/* 婚姻状况 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Heart className="h-4 w-4 mr-2" />
+                  婚姻状况
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.marital_status || ''}
+                    onChange={(e) => handleInputChange('marital_status', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">选择状况</option>
+                    <option value="单身">单身</option>
+                    <option value="离异">离异</option>
+                    <option value="丧偶">丧偶</option>
+                    <option value="分居">分居</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.marital_status || '未设置'}
+                  </p>
+                )}
+              </div>
+
+              {/* 运动 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Activity className="h-4 w-4 mr-2" />
+                  运动
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.exercise_frequency || ''}
+                    onChange={(e) => handleInputChange('exercise_frequency', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">选择频率</option>
+                    <option value="每天">每天</option>
+                    <option value="每周几次">每周几次</option>
+                    <option value="每月几次">每月几次</option>
+                    <option value="很少">很少</option>
+                    <option value="从不">从不</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.exercise_frequency || '未设置'}
+                  </p>
+                )}
+              </div>
+
+              {/* 吸烟 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Coffee className="h-4 w-4 mr-2" />
+                  吸烟
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.smoking_status || ''}
+                    onChange={(e) => handleInputChange('smoking_status', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">选择状态</option>
+                    <option value="从不">从不</option>
+                    <option value="偶尔">偶尔</option>
+                    <option value="经常">经常</option>
+                    <option value="正在戒烟">正在戒烟</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.smoking_status || '未设置'}
+                  </p>
+                )}
+              </div>
+
+              {/* 饮酒 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <Wine className="h-4 w-4 mr-2" />
+                  饮酒
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.drinking_status || ''}
+                    onChange={(e) => handleInputChange('drinking_status', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">选择状态</option>
+                    <option value="从不">从不</option>
+                    <option value="偶尔">偶尔</option>
+                    <option value="经常">经常</option>
+                    <option value="仅社交场合">仅社交场合</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.drinking_status || '未设置'}
+                  </p>
+                )}
+              </div>
+
+              {/* 约会风格 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  约会风格
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.dating_style || ''}
+                    onChange={(e) => handleInputChange('dating_style', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">选择风格</option>
+                    <option value="随意">随意</option>
+                    <option value="认真">认真</option>
+                    <option value="以结婚为目的">以结婚为目的</option>
+                    <option value="先做朋友">先做朋友</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {profile.dating_style || '未设置'}
+                  </p>
+                )}
+              </div>
             </div>
           </div>
         </div>
