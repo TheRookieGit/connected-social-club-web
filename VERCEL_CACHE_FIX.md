@@ -59,7 +59,9 @@ function createNoCacheHeaders() {
 
 在 `vercel.json` 中添加更全面的配置：
 
-**注意**：不要同时使用 `functions` 和 `builds` 属性，这会导致配置冲突。我们使用 `builds` 配置Next.js部署。
+**注意**：
+1. 不要同时使用 `functions` 和 `builds` 属性，这会导致配置冲突。我们使用 `builds` 配置Next.js部署。
+2. 不要同时使用 `headers` 和 `routes` 属性，这也会导致配置冲突。我们使用 `headers` 配置缓存控制。
 
 ```json
 {
@@ -79,12 +81,44 @@ function createNoCacheHeaders() {
           "value": "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0"
         },
         {
+          "key": "Pragma",
+          "value": "no-cache"
+        },
+        {
+          "key": "Expires",
+          "value": "0"
+        },
+        {
+          "key": "Surrogate-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "CDN-Cache-Control",
+          "value": "no-store"
+        },
+        {
           "key": "Vercel-CDN-Cache-Control",
+          "value": "no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Vercel-Cache-Control",
           "value": "no-cache, no-store, must-revalidate"
         },
         {
           "key": "X-Vercel-Cache",
           "value": "MISS"
+        },
+        {
+          "key": "X-Accel-Expires",
+          "value": "0"
+        },
+        {
+          "key": "X-Proxy-Cache",
+          "value": "BYPASS"
+        },
+        {
+          "key": "X-SW-Cache",
+          "value": "no-cache"
         }
       ]
     }
