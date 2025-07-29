@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight, Camera, Upload } from 'lucide-react'
+import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight, Camera, Upload, Settings } from 'lucide-react'
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -309,11 +309,18 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
             ) : (
               <>
                 <button
+                  onClick={() => window.location.href = '/profile-edit'}
+                  className="flex items-center space-x-1 px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>完整编辑</span>
+                </button>
+                <button
                   onClick={handleEdit}
                   className="flex items-center space-x-1 px-3 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                 >
                   <Edit className="h-4 w-4" />
-                  <span>编辑</span>
+                  <span>快速编辑</span>
                 </button>
                 <button
                   onClick={fetchProfile}
