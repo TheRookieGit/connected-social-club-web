@@ -54,7 +54,7 @@ export default function TestCityFormat() {
             <div>
               <h3 className="font-medium text-gray-900 mb-2">显示规则</h3>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• 城市名：优先显示具体城市名，如 "Las Vegas"</li>
+                <li>• 城市名：优先显示具体城市名，如 &quot;Las Vegas&quot;</li>
                 <li>• 邮编：如果有邮编信息，显示在逗号后</li>
                 <li>• 州名：如果有州信息，显示在邮编后</li>
                 <li>• 分隔符：使用逗号和空格分隔各部分</li>
