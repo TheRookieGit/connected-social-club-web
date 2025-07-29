@@ -6,7 +6,9 @@ import { Mail, Lock, Eye, EyeOff } from 'lucide-react'
 import { 
   requestLocationPermission, 
   saveLocationPermissionSettings, 
-  getCachedLocation 
+  getCachedLocation,
+  recordUserConsent,
+  shouldAutoRequestLocation
 } from '@/lib/locationPermission'
 
 export default function LoginForm() {
@@ -64,6 +66,24 @@ export default function LoginForm() {
     }
   }, [router])
 
+  // 检查是否需要显示位置权限请求（从Dashboard跳转过来）
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search)
+    const showLocationPermission = urlParams.get('showLocationPermission')
+    
+    if (showLocationPermission === 'true') {
+      setShowLocationPermission(true)
+      // 清理URL参数
+      window.history.replaceState({}, document.title, window.location.pathname)
+    } else {
+      // 检查是否应该自动显示位置权限请求
+      const shouldShow = shouldAutoRequestLocation()
+      if (shouldShow) {
+        setShowLocationPermission(true)
+      }
+    }
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -99,15 +119,13 @@ export default function LoginForm() {
 
   const handleLocationPermission = async () => {
     try {
+      // 明确记录用户同意
+      recordUserConsent(rememberLocationPermission)
+      
       // 使用权限管理工具请求位置权限
       const success = await requestLocationPermission()
       
       if (success) {
-        // 如果用户选择记住权限，保存设置
-        if (rememberLocationPermission) {
-          saveLocationPermissionSettings({ remembered: true })
-        }
-
         // 更新用户位置到服务器
         const token = localStorage.getItem('token')
         const locationData = getCachedLocation()

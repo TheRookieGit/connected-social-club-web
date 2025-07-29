@@ -13,6 +13,7 @@ import LocationDisplay from '@/components/LocationDisplay'
 import { syncUserDataToLocalStorage } from '@/lib/hooks'
 import { UserProfile } from '@/types/user'
 import dynamic from 'next/dynamic'
+import { shouldAutoRequestLocation } from '@/lib/locationPermission'
 
 // 动态导入Stream Chat组件，避免SSR问题
 const StreamChatPanel = dynamic(() => import('@/components/StreamChatPanel'), {
@@ -54,6 +55,7 @@ export default function Dashboard() {
   const [pendingMatchesCount, setPendingMatchesCount] = useState(0)
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [users, setUsers] = useState<User[]>([])
+  const [showLocationPermission, setShowLocationPermission] = useState(false)
 
   // 获取已匹配的用户
   const fetchMatchedUsers = async () => {
@@ -256,6 +258,17 @@ export default function Dashboard() {
     initializeUserData()
     fetchMatchedUsers() // 获取已匹配的用户
     fetchPendingMatchesCount() // 获取待接受匹配数量
+    
+    // 检查是否需要请求位置权限
+    const checkLocationPermission = () => {
+      if (shouldAutoRequestLocation()) {
+        console.log('Dashboard: 需要请求位置权限')
+        setShowLocationPermission(true)
+      }
+    }
+    
+    // 延迟检查位置权限，确保用户数据加载完成
+    setTimeout(checkLocationPermission, 1000)
     
     // 更新在线状态
     const updateOnlineStatus = async () => {
@@ -687,10 +700,20 @@ export default function Dashboard() {
 
       {/* 主要内容区域 */}
       <div className="max-w-6xl mx-auto px-4 py-8 relative">
-        {/* 位置显示 - 右上角 */}
-        <div className="absolute top-0 right-4 z-10">
-          <LocationDisplay compact={true} showRefresh={false} />
-        </div>
+        {/* 位置显示 - 右上角（仅在用户同意后显示） */}
+        {(() => {
+          try {
+            const remembered = localStorage.getItem('location_permission_remembered')
+            const userLocation = localStorage.getItem('user_location')
+            return remembered === 'true' || userLocation
+          } catch (error) {
+            return false
+          }
+        })() && (
+          <div className="absolute top-0 right-4 z-10">
+            <LocationDisplay compact={true} showRefresh={false} />
+          </div>
+        )}
         
         {/* 我的匹配概览区域 */}
         <motion.div
@@ -916,6 +939,45 @@ export default function Dashboard() {
             refreshUserProfile()
           }}
         />
+      )}
+
+      {/* 位置权限请求模态框 */}
+      {showLocationPermission && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MapPin className="text-blue-600" size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">位置服务</h3>
+              <p className="text-gray-600 mb-6">
+                为了提供更好的匹配服务，我们需要获取您的位置信息。
+                <br />
+                这将帮助我们为您推荐附近的用户。
+              </p>
+              
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => setShowLocationPermission(false)}
+                  className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  稍后再说
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLocationPermission(false)
+                    // 这里可以添加获取位置的逻辑
+                    // 或者跳转到登录表单的位置权限请求
+                    router.push('/?showLocationPermission=true')
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  允许访问
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

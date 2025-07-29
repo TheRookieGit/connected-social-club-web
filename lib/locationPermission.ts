@@ -2,6 +2,7 @@
 
 export interface LocationPermissionSettings {
   granted: boolean
+  denied: boolean
   remembered: boolean
   lastRequested?: Date
   autoRequest: boolean
@@ -44,6 +45,7 @@ export function getLocationPermissionSettings(): LocationPermissionSettings {
       const settings = JSON.parse(stored)
       return {
         granted: settings.granted || false,
+        denied: settings.denied || false,
         remembered: settings.remembered || false,
         lastRequested: settings.lastRequested ? new Date(settings.lastRequested) : undefined,
         autoRequest: settings.autoRequest !== false
@@ -55,6 +57,7 @@ export function getLocationPermissionSettings(): LocationPermissionSettings {
   
   return {
     granted: false,
+    denied: false,
     remembered: false,
     autoRequest: true
   }
@@ -64,20 +67,22 @@ export function getLocationPermissionSettings(): LocationPermissionSettings {
 export function shouldAutoRequestLocation(): boolean {
   const settings = getLocationPermissionSettings()
   
-  // 如果用户已经记住选择，不再自动请求
-  if (settings.remembered) {
+  // 如果用户已经明确同意并选择记住，不再自动请求
+  if (settings.granted && settings.remembered) {
     return false
   }
   
-  // 如果用户已经拒绝过，不再自动请求
-  if (settings.lastRequested) {
-    const daysSinceLastRequest = (Date.now() - settings.lastRequested.getTime()) / (1000 * 60 * 60 * 24)
-    if (daysSinceLastRequest < 7) { // 7天内不再请求
-      return false
-    }
+  // 如果用户明确拒绝过，不自动请求
+  if (settings.denied) {
+    return false
   }
   
-  return settings.autoRequest
+  // 如果用户从未同意过，或者同意但没有选择记住，需要请求
+  if (!settings.granted || (settings.granted && !settings.remembered)) {
+    return true
+  }
+  
+  return false
 }
 
 // 记录位置权限请求
@@ -87,6 +92,20 @@ export function recordLocationPermissionRequest(granted: boolean, remembered: bo
   saveLocationPermissionSettings({
     ...settings,
     granted,
+    denied: !granted,
+    remembered,
+    lastRequested: new Date()
+  })
+}
+
+// 明确记录用户同意位置权限
+export function recordUserConsent(remembered: boolean = false): void {
+  const settings = getLocationPermissionSettings()
+  
+  saveLocationPermissionSettings({
+    ...settings,
+    granted: true,
+    denied: false,
     remembered,
     lastRequested: new Date()
   })
@@ -147,6 +166,13 @@ export async function requestLocationPermission(): Promise<boolean> {
   }
 
   try {
+    // 检查用户是否已经同意过
+    const settings = getLocationPermissionSettings()
+    if (!settings.granted && !settings.remembered) {
+      console.log('用户尚未明确同意位置权限')
+      return false
+    }
+
     const position = await new Promise<GeolocationPosition>((resolve, reject) => {
       navigator.geolocation.getCurrentPosition(resolve, reject, {
         enableHighAccuracy: true,

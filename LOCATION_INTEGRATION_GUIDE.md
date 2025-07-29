@@ -34,18 +34,22 @@
 
 #### 功能特点：
 - ✅ 在Dashboard右上角显示紧凑的位置信息
+- ✅ 显示城市名称和邮编，而不是坐标
 - ✅ 自动获取和缓存位置数据
 - ✅ 定期更新位置（每5分钟）
-- ✅ 显示坐标、精度、更新时间
+- ✅ 地址解析功能（坐标转地址）
 - ✅ 提供地图链接（Google Maps、OpenStreetMap）
 - ✅ 错误处理和重试机制
+- ✅ 智能缓存策略（位置5分钟，地址1小时）
 
 #### 实现位置：
 - `components/LocationDisplay.tsx` - 位置显示组件
 - `app/dashboard/page.tsx` - Dashboard页面
 
 #### 显示内容：
-- 当前位置坐标（纬度、经度）
+- 城市名称和邮编（主要显示）
+- 州/省和国家信息
+- 位置坐标（详细信息）
 - 位置精度
 - 最后更新时间
 - 地图查看链接
@@ -53,10 +57,20 @@
 ### 3. 位置权限管理
 
 #### 功能特点：
+- ✅ 用户明确同意后才获取位置
 - ✅ 智能权限检查
 - ✅ 权限状态记忆
 - ✅ 自动请求控制
 - ✅ 权限历史记录
+- ✅ 隐私保护优先
+- ✅ Dashboard页面刷新时也会检查权限
+
+#### 权限检查逻辑：
+- 如果用户已经明确同意并选择记住，不再请求
+- 如果用户明确拒绝过，不自动请求
+- 如果用户从未同意过，需要请求
+- 如果用户同意但没有选择记住，每次都需要重新请求
+- 在Dashboard页面刷新时也会检查是否需要请求
 
 #### 核心函数：
 ```typescript
@@ -65,6 +79,9 @@ shouldAutoRequestLocation(): boolean
 
 // 请求位置权限
 requestLocationPermission(): Promise<boolean>
+
+// 明确记录用户同意
+recordUserConsent(remembered: boolean = false): void
 
 // 检查位置权限状态
 checkLocationPermissionStatus(): Promise<'granted' | 'denied' | 'prompt'>
@@ -77,22 +94,40 @@ saveLocationPermissionSettings(settings: Partial<LocationPermissionSettings>): v
 
 ### 1. 位置权限请求流程
 
+#### 登录时请求：
 ```typescript
 // 1. 用户登录成功后
 setShowLocationPermission(true)
 
 // 2. 用户点击"允许访问位置"
+recordUserConsent(rememberLocationPermission) // 先记录用户同意
 const success = await requestLocationPermission()
 
-// 3. 如果成功，保存位置数据
+// 3. 如果成功，保存位置数据并解析地址
 if (success) {
   const locationData = getCachedLocation()
+  // 解析地址信息
+  await resolveAddress(locationData.latitude, locationData.longitude)
   // 更新到服务器
   await updateLocationToServer(locationData)
 }
 
 // 4. 跳转到Dashboard
 router.push('/dashboard')
+```
+
+#### Dashboard页面刷新时请求：
+```typescript
+// 1. Dashboard加载完成后检查权限
+const shouldShow = shouldAutoRequestLocation()
+
+// 2. 如果需要请求，显示权限模态框
+if (shouldShow) {
+  setShowLocationPermission(true)
+}
+
+// 3. 用户点击"允许访问"后跳转到登录页面处理
+router.push('/?showLocationPermission=true')
 ```
 
 ### 2. Dashboard位置显示
@@ -112,6 +147,10 @@ const location = await getCurrentLocation()
 
 // 缓存位置数据
 localStorage.setItem('user_location', JSON.stringify(location))
+
+// 解析地址信息
+const address = await resolveAddress(location.latitude, location.longitude)
+localStorage.setItem('user_address', JSON.stringify(address))
 
 // 检查位置数据是否过期
 const isExpired = isLocationDataExpired(5) // 5分钟过期

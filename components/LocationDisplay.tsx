@@ -4,6 +4,14 @@ import { useState, useEffect } from 'react'
 import { MapPin, RefreshCw, Globe } from 'lucide-react'
 import { getCurrentLocation, formatDistance, type LocationData } from '@/lib/location'
 
+interface AddressInfo {
+  city: string
+  state: string
+  country: string
+  postal_code: string
+  formatted_address: string
+}
+
 interface LocationDisplayProps {
   className?: string
   showRefresh?: boolean
@@ -16,9 +24,44 @@ export default function LocationDisplay({
   compact = false 
 }: LocationDisplayProps) {
   const [location, setLocation] = useState<LocationData | null>(null)
+  const [addressInfo, setAddressInfo] = useState<AddressInfo | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string>('')
   const [lastUpdate, setLastUpdate] = useState<Date | null>(null)
+
+  // 解析地址信息
+  const resolveAddress = async (lat: number, lng: number) => {
+    try {
+      // 使用免费的 Nominatim API (OpenStreetMap)
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=10&accept-language=zh-CN`
+      )
+      
+      if (response.ok) {
+        const data = await response.json()
+        
+        if (data.address) {
+          const address: AddressInfo = {
+            city: data.address.city || data.address.town || data.address.village || data.address.county || '未知城市',
+            state: data.address.state || data.address.province || '',
+            country: data.address.country || '',
+            postal_code: data.address.postcode || '',
+            formatted_address: data.display_name || ''
+          }
+          
+          setAddressInfo(address)
+          
+          // 缓存地址信息
+          localStorage.setItem('user_address', JSON.stringify({
+            ...address,
+            timestamp: Date.now()
+          }))
+        }
+      }
+    } catch (error) {
+      console.error('地址解析失败:', error)
+    }
+  }
 
   // 加载位置信息
   const loadLocation = async () => {
@@ -28,6 +71,8 @@ export default function LocationDisplay({
     try {
       // 首先尝试从localStorage获取缓存的位置
       const cached = localStorage.getItem('user_location')
+      const cachedAddress = localStorage.getItem('user_address')
+      
       if (cached) {
         const cachedLocation = JSON.parse(cached)
         const age = Date.now() - cachedLocation.timestamp
@@ -35,6 +80,16 @@ export default function LocationDisplay({
         if (age < 5 * 60 * 1000) {
           setLocation(cachedLocation)
           setLastUpdate(new Date(cachedLocation.timestamp))
+          
+          // 加载缓存的地址信息
+          if (cachedAddress) {
+            const address = JSON.parse(cachedAddress)
+            const addressAge = Date.now() - address.timestamp
+            if (addressAge < 60 * 60 * 1000) { // 地址缓存1小时
+              setAddressInfo(address)
+            }
+          }
+          
           setIsLoading(false)
           return
         }
@@ -44,6 +99,9 @@ export default function LocationDisplay({
       const newLocation = await getCurrentLocation()
       setLocation(newLocation)
       setLastUpdate(new Date())
+      
+      // 解析地址信息
+      await resolveAddress(newLocation.latitude, newLocation.longitude)
       
       // 保存到localStorage
       localStorage.setItem('user_location', JSON.stringify(newLocation))
@@ -97,11 +155,25 @@ export default function LocationDisplay({
             <RefreshCw className="h-3 w-3 text-gray-400 animate-spin" />
             <span className="text-xs text-gray-500">定位中...</span>
           </div>
-        ) : location ? (
+        ) : addressInfo ? (
           <div className="flex items-center space-x-1">
             <span className="text-xs text-gray-600">
-              {location.latitude.toFixed(4)}, {location.longitude.toFixed(4)}
+              {addressInfo.city}
+              {addressInfo.postal_code && ` (${addressInfo.postal_code})`}
             </span>
+            {showRefresh && (
+              <button
+                onClick={loadLocation}
+                className="p-1 hover:bg-gray-100 rounded"
+                title="刷新位置"
+              >
+                <RefreshCw className="h-3 w-3 text-gray-400" />
+              </button>
+            )}
+          </div>
+        ) : location ? (
+          <div className="flex items-center space-x-1">
+            <span className="text-xs text-gray-500">解析地址中...</span>
             {showRefresh && (
               <button
                 onClick={loadLocation}
@@ -147,36 +219,85 @@ export default function LocationDisplay({
         </div>
       ) : location ? (
         <div className="space-y-2">
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div>
-              <span className="text-gray-500">纬度:</span>
-              <span className="ml-1 font-mono text-gray-900">
-                {location.latitude.toFixed(6)}
-              </span>
+          {addressInfo ? (
+            <div className="space-y-2">
+              <div className="bg-blue-50 p-3 rounded-lg">
+                <div className="text-sm font-medium text-blue-900 mb-1">
+                  {addressInfo.city}
+                  {addressInfo.state && `, ${addressInfo.state}`}
+                </div>
+                <div className="text-xs text-blue-700">
+                  {addressInfo.postal_code && `邮编: ${addressInfo.postal_code}`}
+                  {addressInfo.country && ` • ${addressInfo.country}`}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span className="text-gray-500">纬度:</span>
+                  <span className="ml-1 font-mono text-gray-900">
+                    {location.latitude.toFixed(6)}
+                  </span>
+                </div>
+                <div>
+                  <span className="text-gray-500">经度:</span>
+                  <span className="ml-1 font-mono text-gray-900">
+                    {location.longitude.toFixed(6)}
+                  </span>
+                </div>
+                {location.accuracy && (
+                  <div>
+                    <span className="text-gray-500">精度:</span>
+                    <span className="ml-1 text-gray-900">
+                      {location.accuracy.toFixed(1)} 米
+                    </span>
+                  </div>
+                )}
+                {lastUpdate && (
+                  <div>
+                    <span className="text-gray-500">更新:</span>
+                    <span className="ml-1 text-gray-900">
+                      {lastUpdate.toLocaleTimeString()}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-            <div>
-              <span className="text-gray-500">经度:</span>
-              <span className="ml-1 font-mono text-gray-900">
-                {location.longitude.toFixed(6)}
-              </span>
-            </div>
-            {location.accuracy && (
+          ) : (
+            <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="text-gray-500">精度:</span>
-                <span className="ml-1 text-gray-900">
-                  {location.accuracy.toFixed(1)} 米
+                <span className="text-gray-500">纬度:</span>
+                <span className="ml-1 font-mono text-gray-900">
+                  {location.latitude.toFixed(6)}
                 </span>
               </div>
-            )}
-            {lastUpdate && (
               <div>
-                <span className="text-gray-500">更新:</span>
-                <span className="ml-1 text-gray-900">
-                  {lastUpdate.toLocaleTimeString()}
+                <span className="text-gray-500">经度:</span>
+                <span className="ml-1 font-mono text-gray-900">
+                  {location.longitude.toFixed(6)}
                 </span>
               </div>
-            )}
-          </div>
+              {location.accuracy && (
+                <div>
+                  <span className="text-gray-500">精度:</span>
+                  <span className="ml-1 text-gray-900">
+                    {location.accuracy.toFixed(1)} 米
+                  </span>
+                </div>
+              )}
+              {lastUpdate && (
+                <div>
+                  <span className="text-gray-500">更新:</span>
+                  <span className="ml-1 text-gray-900">
+                    {lastUpdate.toLocaleTimeString()}
+                  </span>
+                </div>
+              )}
+              <div className="col-span-2 text-xs text-gray-500">
+                正在解析地址信息...
+              </div>
+            </div>
+          )}
 
           <div className="flex space-x-2 pt-2">
             <a
