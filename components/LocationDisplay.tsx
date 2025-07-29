@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { MapPin, RefreshCw, Globe } from 'lucide-react'
 import { getCurrentLocation, formatDistance, type LocationData } from '@/lib/location'
 
@@ -64,7 +64,7 @@ export default function LocationDisplay({
   }
 
   // 加载位置信息
-  const loadLocation = async () => {
+  const loadLocation = useCallback(async () => {
     setIsLoading(true)
     setError('')
     
@@ -128,12 +128,12 @@ export default function LocationDisplay({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [])
 
   // 组件挂载时加载位置
   useEffect(() => {
     loadLocation()
-  }, [])
+  }, [loadLocation])
 
   // 定期更新位置（每5分钟）
   useEffect(() => {
@@ -144,7 +144,7 @@ export default function LocationDisplay({
     }, 5 * 60 * 1000)
 
     return () => clearInterval(interval)
-  }, [isLoading])
+  }, [isLoading, loadLocation])
 
   if (compact) {
     return (

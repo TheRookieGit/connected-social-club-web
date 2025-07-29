@@ -130,12 +130,12 @@ export default function TestPermission() {
         <div className="mt-6 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
           <h3 className="text-lg font-semibold text-yellow-900 mb-3">测试步骤</h3>
           <div className="text-yellow-800 space-y-2 text-sm">
-            <p>1. 点击"清除所有设置"重置权限状态</p>
-            <p>2. 刷新页面，应该显示"应该请求: 是"</p>
-            <p>3. 点击"同意权限（不记住）"，然后刷新页面</p>
-            <p>4. 应该再次显示"应该请求: 是"</p>
-            <p>5. 点击"同意权限（记住）"，然后刷新页面</p>
-            <p>6. 应该显示"应该请求: 否"</p>
+            <p>1. 点击&ldquo;清除所有设置&rdquo;重置权限状态</p>
+            <p>2. 刷新页面，应该显示&ldquo;应该请求: 是&rdquo;</p>
+            <p>3. 点击&ldquo;同意权限（不记住）&rdquo;，然后刷新页面</p>
+            <p>4. 应该再次显示&ldquo;应该请求: 是&rdquo;</p>
+            <p>5. 点击&ldquo;同意权限（记住）&rdquo;，然后刷新页面</p>
+            <p>6. 应该显示&ldquo;应该请求: 否&rdquo;</p>
           </div>
         </div>
       </div>

@@ -20,6 +20,9 @@ export async function GET(request: NextRequest) {
   try {
     // 创建Supabase客户端
     const supabase = createSupabaseClient()
+  if (!supabase) {
+    return NextResponse.redirect(`${process.env.NEXTAUTH_URL || 'http://localhost:3000'}/?error=database_connection_failed`)
+  }
 
     // 1. 用code交换access token
     const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
@@ -54,6 +57,10 @@ export async function GET(request: NextRequest) {
 
     // 3. 检查用户是否已存在，如果不存在则创建
     let user
+    
+    if (!supabase) {
+      throw new Error('数据库连接失败')
+    }
     
     // 先用邮箱查找用户
     const { data: existingUser, error: findError } = await supabase

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { MapPin, Navigation, Globe, AlertCircle } from 'lucide-react'
 
 interface LocationData {
@@ -74,7 +74,7 @@ export default function LocationService({
   }
 
   // 开始监听位置变化
-  const startWatching = () => {
+  const startWatching = useCallback(() => {
     if (!navigator.geolocation) {
       setError('浏览器不支持地理位置服务')
       return
@@ -120,19 +120,19 @@ export default function LocationService({
 
     setWatchId(id)
     setIsWatching(true)
-  }
+  }, [onLocationUpdate])
 
   // 停止监听位置变化
-  const stopWatching = () => {
+  const stopWatching = useCallback(() => {
     if (watchId !== null) {
       navigator.geolocation.clearWatch(watchId)
       setWatchId(null)
       setIsWatching(false)
     }
-  }
+  }, [watchId])
 
   // 手动获取位置
-  const handleGetLocation = async () => {
+  const handleGetLocation = useCallback(async () => {
     setIsLoading(true)
     setError('')
     
@@ -145,7 +145,7 @@ export default function LocationService({
     } finally {
       setIsLoading(false)
     }
-  }
+  }, [onLocationUpdate])
 
   // 自动更新位置
   useEffect(() => {
@@ -156,7 +156,7 @@ export default function LocationService({
         stopWatching()
       }
     }
-  }, [autoUpdate])
+  }, [autoUpdate, startWatching, stopWatching])
 
   // 定期更新位置
   useEffect(() => {
@@ -167,14 +167,14 @@ export default function LocationService({
 
       return () => clearInterval(interval)
     }
-  }, [autoUpdate, updateInterval])
+  }, [autoUpdate, updateInterval, handleGetLocation])
 
   // 组件卸载时清理
   useEffect(() => {
     return () => {
       stopWatching()
     }
-  }, [])
+  }, [stopWatching])
 
   return (
     <div className="bg-white rounded-lg shadow-md p-6">
