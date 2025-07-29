@@ -220,7 +220,7 @@ export default function TestAvatarUpload() {
             <ul className="text-blue-700 space-y-2">
               <li>• 选择一张图片文件（JPEG、PNG、WebP格式）</li>
               <li>• 文件大小不能超过5MB</li>
-              <li>• 点击"上传头像"按钮进行测试</li>
+              <li>• 点击&quot;上传头像&quot;按钮进行测试</li>
               <li>• 上传成功后会在数据库中更新用户的avatar_url字段</li>
               <li>• 文件会存储在Supabase Storage的user-avatars bucket中</li>
             </ul>

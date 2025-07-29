@@ -3,8 +3,6 @@ const nextConfig = {
   // 禁用静态优化和缓存
   experimental: {
     serverComponentsExternalPackages: [],
-    // 强制动态渲染
-    dynamicIO: false,
     // 设置函数超时时间
     serverActions: {
       bodySizeLimit: '2mb',
