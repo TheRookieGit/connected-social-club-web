@@ -238,10 +238,16 @@ export default function StreamChatPanel({
   // 服务器端渲染时返回加载状态
   if (!isClient) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6">
+      <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center">
-            <p>加载聊天中...</p>
+            <div className="w-16 h-16 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-pink-500 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">加载聊天中...</h3>
+            <p className="text-gray-600 text-sm">正在初始化聊天服务</p>
           </div>
         </div>
       </div>
@@ -251,25 +257,29 @@ export default function StreamChatPanel({
   // 显示错误状态
   if (initError) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6 max-w-md">
+      <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md">
           <div className="text-center">
-            <div className="text-red-500 text-4xl mb-4">⚠️</div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-2">聊天服务暂时不可用</h3>
-            <p className="text-gray-600 mb-4">{initError}</p>
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <svg className="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">聊天服务暂时不可用</h3>
+            <p className="text-gray-600 mb-6">{initError}</p>
             <div className="flex space-x-3">
               <button
                 onClick={() => {
                   setInitError(null)
                   window.location.reload()
                 }}
-                className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+                className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl hover:from-pink-600 hover:to-rose-600 transition-all duration-200 font-medium"
               >
                 重试
               </button>
               <button
                 onClick={onClose}
-                className="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600"
+                className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium"
               >
                 关闭
               </button>
@@ -282,12 +292,14 @@ export default function StreamChatPanel({
 
   if (!chatClient) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-lg p-6">
+      <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500 mx-auto mb-4"></div>
-            <p>正在连接专业聊天服务...</p>
-            <p className="text-sm text-gray-500 mt-2">首次连接可能需要几秒钟</p>
+            <div className="w-16 h-16 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">正在连接专业聊天服务...</h3>
+            <p className="text-gray-600 text-sm">首次连接可能需要几秒钟</p>
           </div>
         </div>
       </div>
@@ -295,19 +307,26 @@ export default function StreamChatPanel({
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl h-5/6 flex flex-col">
+    <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-pink-100">
         {/* 头部 */}
-        <div className="flex items-center justify-between p-4 border-b bg-red-500 text-white rounded-t-lg">
-          <div className="flex items-center space-x-3">
-            <h3 className="text-xl font-bold">💬 专业聊天</h3>
-            <span className="bg-red-400 px-2 py-1 rounded-full text-xs font-semibold">
-              {matchedUsers.length} 个匹配
-            </span>
+        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-pink-500 to-rose-500 text-white">
+          <div className="flex items-center space-x-4">
+            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+              </svg>
+            </div>
+            <div>
+              <h2 className="text-2xl font-bold">甜蜜聊天</h2>
+              <p className="text-pink-100 text-sm">
+                {matchedUsers.length} 个匹配 • 专业聊天服务
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="text-white hover:text-red-200 transition-colors p-1"
+            className="p-3 text-white hover:bg-white hover:bg-opacity-20 transition-all duration-200 rounded-full"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -320,19 +339,32 @@ export default function StreamChatPanel({
           <Chat client={chatClient}>
             <div className="flex w-full h-full">
               {/* 频道列表 */}
-              <div className="w-1/3 border-r bg-gray-50">
-                <div className="p-4 border-b bg-white">
+              <div className="w-1/3 border-r border-pink-200 bg-gradient-to-b from-pink-50 to-rose-50">
+                <div className="p-6 border-b border-pink-200 bg-white">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-semibold text-gray-800">已匹配用户</h4>
-                      <p className="text-sm text-gray-500 mt-1">
-                        {matchedUsers.length > 0 ? '点击开始聊天' : '暂无匹配用户'}
+                      <h4 className="text-lg font-bold text-gray-900">已匹配用户</h4>
+                      <p className="text-sm text-gray-600 mt-1">
+                        {matchedUsers.length > 0 ? '点击开始甜蜜对话' : '暂无匹配用户'}
                       </p>
                       {/* 状态信息 */}
-                      <div className="mt-2 text-xs text-gray-400 space-y-1">
-                        <div>用户ID: {currentUser?.id} | 匹配数: {matchedUsers.length}</div>
-                        <div>频道状态: {channelsCreated ? '✅ 已创建' : '⏳ 创建中'}</div>
-                        <div>客户端: {chatClient ? '✅ 已连接' : '❌ 未连接'}</div>
+                      <div className="mt-3 p-3 bg-pink-50 rounded-lg text-xs text-gray-600 space-y-1">
+                        <div className="flex items-center space-x-2">
+                          <span className="w-2 h-2 bg-pink-400 rounded-full"></span>
+                          <span>用户ID: {currentUser?.id}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className="w-2 h-2 bg-pink-400 rounded-full"></span>
+                          <span>匹配数: {matchedUsers.length}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`w-2 h-2 rounded-full ${channelsCreated ? 'bg-green-400' : 'bg-yellow-400'}`}></span>
+                          <span>频道状态: {channelsCreated ? '✅ 已创建' : '⏳ 创建中'}</span>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <span className={`w-2 h-2 rounded-full ${chatClient ? 'bg-green-400' : 'bg-red-400'}`}></span>
+                          <span>客户端: {chatClient ? '✅ 已连接' : '❌ 未连接'}</span>
+                        </div>
                       </div>
                     </div>
                     <div className="flex flex-col space-y-2">
@@ -341,7 +373,7 @@ export default function StreamChatPanel({
                           console.log('🔄 手动刷新频道列表')
                           setForceRefresh(prev => prev + 1)
                         }}
-                        className="text-blue-500 hover:text-blue-700 text-sm font-medium"
+                        className="px-3 py-2 text-sm bg-pink-100 text-pink-600 rounded-lg hover:bg-pink-200 transition-colors font-medium"
                         title="刷新聊天列表"
                       >
                         🔄 刷新
@@ -351,7 +383,7 @@ export default function StreamChatPanel({
                           console.log('🛠️ 重新创建频道')
                           setChannelsCreated(false)
                         }}
-                        className="text-green-500 hover:text-green-700 text-sm font-medium"
+                        className="px-3 py-2 text-sm bg-green-100 text-green-600 rounded-lg hover:bg-green-200 transition-colors font-medium"
                         title="重新创建频道"
                       >
                         🛠️ 重新创建
@@ -380,7 +412,7 @@ export default function StreamChatPanel({
                             }
                           }
                         }}
-                        className="text-purple-500 hover:text-purple-700 text-sm font-medium"
+                        className="px-3 py-2 text-sm bg-purple-100 text-purple-600 rounded-lg hover:bg-purple-200 transition-colors font-medium"
                         title="查询频道"
                       >
                         🔍 查询
@@ -408,18 +440,24 @@ export default function StreamChatPanel({
                     showChannelSearch={false}
                   />
                 ) : (
-                  <div className="p-4 text-center text-gray-500">
-                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
-                      💬
+                  <div className="p-8 text-center">
+                    <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg className="w-10 h-10 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                      </svg>
                     </div>
-                    <p className="text-sm">暂无匹配用户</p>
-                    <p className="text-xs mt-1">去寻找你的另一半吧！</p>
+                    <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无匹配用户</h3>
+                    <p className="text-gray-600 text-sm leading-relaxed">
+                      还没有找到匹配的用户<br/>
+                      继续浏览用户来寻找<br/>
+                      你的完美匹配吧！💕
+                    </p>
                   </div>
                 )}
               </div>
 
               {/* 聊天窗口 */}
-              <div className="flex-1 flex flex-col">
+              <div className="flex-1 flex flex-col bg-gradient-to-b from-pink-25 to-white">
                 <Channel>
                   <Window>
                     <ChannelHeader />
