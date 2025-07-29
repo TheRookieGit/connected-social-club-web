@@ -120,6 +120,33 @@ export async function POST(request: NextRequest) {
 
     console.log('准备上传文件:', fileName, '大小:', file.size, '类型:', file.type)
 
+    // 检查存储桶是否存在
+    const { data: buckets, error: bucketError } = await supabase.storage.listBuckets()
+    if (bucketError) {
+      console.error('获取存储桶列表失败:', bucketError)
+      return new NextResponse(
+        JSON.stringify({ success: false, error: '存储桶访问失败', details: bucketError.message }),
+        { 
+          status: 500,
+          headers: createNoCacheHeaders()
+        }
+      )
+    }
+
+    const userAvatarsBucket = buckets?.find(b => b.id === 'user-avatars')
+    if (!userAvatarsBucket) {
+      console.error('user-avatars存储桶不存在')
+      return new NextResponse(
+        JSON.stringify({ success: false, error: '存储桶不存在，请先设置Supabase Storage' }),
+        { 
+          status: 500,
+          headers: createNoCacheHeaders()
+        }
+      )
+    }
+
+    console.log('存储桶信息:', userAvatarsBucket)
+
     // 上传文件到Supabase Storage
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('user-avatars')
@@ -130,8 +157,27 @@ export async function POST(request: NextRequest) {
 
     if (uploadError) {
       console.error('文件上传失败:', uploadError)
+      console.error('上传错误详情:', {
+        message: uploadError.message,
+        name: uploadError.name
+      })
+      
+      // 提供更详细的错误信息
+      let errorMessage = '文件上传失败'
+      if (uploadError.message.includes('bucket')) {
+        errorMessage = '存储桶配置错误，请检查Supabase Storage设置'
+      } else if (uploadError.message.includes('policy')) {
+        errorMessage = '存储权限错误，请检查存储策略设置'
+      } else if (uploadError.message.includes('unauthorized')) {
+        errorMessage = '权限验证失败，请重新登录'
+      }
+      
       return new NextResponse(
-        JSON.stringify({ success: false, error: '文件上传失败', details: uploadError.message }),
+        JSON.stringify({ 
+          success: false, 
+          error: errorMessage, 
+          details: uploadError.message
+        }),
         { 
           status: 500,
           headers: createNoCacheHeaders()
