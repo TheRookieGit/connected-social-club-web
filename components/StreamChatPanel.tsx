@@ -6,12 +6,12 @@ import {
   Chat,
   Channel,
   ChannelHeader,
-  ChannelList,
   MessageInput,
   MessageList,
   Thread,
   Window,
 } from 'stream-chat-react'
+import { Pin, Trash2, MoreVertical, MapPin, Clock } from 'lucide-react'
 import 'stream-chat-react/dist/css/v2/index.css'
 
 interface StreamChatPanelProps {
@@ -30,6 +30,9 @@ export default function StreamChatPanel({
   const [channelsCreated, setChannelsCreated] = useState(false)
   const [forceRefresh, setForceRefresh] = useState(0) // 用于强制刷新ChannelList
   const [initError, setInitError] = useState<string | null>(null)
+  const [channels, setChannels] = useState<any[]>([])
+  const [selectedChannel, setSelectedChannel] = useState<any>(null)
+  const [showChannelMenu, setShowChannelMenu] = useState<string | null>(null)
 
   // 确保只在客户端渲染
   useEffect(() => {
@@ -166,6 +169,29 @@ export default function StreamChatPanel({
     }
   }, [currentUser, isClient, chatClient])
 
+  // 获取用户的所有频道
+  const fetchUserChannels = useCallback(async () => {
+    if (!chatClient || !currentUser) return
+
+    try {
+      console.log('📡 获取用户频道列表...')
+      const userChannels = await chatClient.queryChannels({
+        type: 'messaging',
+        members: { $in: [currentUser.id.toString()] }
+      })
+      
+      console.log(`✅ 获取到 ${userChannels.length} 个频道`)
+      setChannels(userChannels)
+      
+      // 如果有频道且没有选中的频道，选择第一个
+      if (userChannels.length > 0 && !selectedChannel) {
+        setSelectedChannel(userChannels[0])
+      }
+    } catch (error) {
+      console.error('❌ 获取频道列表失败:', error)
+    }
+  }, [chatClient, currentUser, selectedChannel])
+
   // 为匹配的用户创建频道
   const createChannelsForMatchedUsers = useCallback(async () => {
     if (!chatClient || !currentUser || !matchedUsers.length || channelsCreated) return
@@ -205,16 +231,15 @@ export default function StreamChatPanel({
       console.log(`🎉 成功创建 ${successfulChannels.length}/${matchedUsers.length} 个频道`)
       setChannelsCreated(true)
       
-      // 延迟刷新以确保频道创建完成
+      // 创建完成后刷新频道列表
       setTimeout(() => {
-        console.log('🔄 强制刷新频道列表...')
-        setForceRefresh(prev => prev + 1)
+        fetchUserChannels()
       }, 1000)
       
     } catch (error) {
       console.error('💥 创建频道过程中出错:', error)
     }
-  }, [chatClient, currentUser, matchedUsers, channelsCreated])
+  }, [chatClient, currentUser, matchedUsers, channelsCreated, fetchUserChannels])
 
   // 当客户端和匹配用户都准备好时创建频道
   useEffect(() => {
@@ -234,6 +259,49 @@ export default function StreamChatPanel({
       console.log('⏳ 频道创建条件未满足')
     }
   }, [chatClient, currentUser, matchedUsers, channelsCreated, createChannelsForMatchedUsers])
+
+  // 获取用户频道列表
+  useEffect(() => {
+    if (chatClient && currentUser) {
+      fetchUserChannels()
+    }
+  }, [chatClient, currentUser, fetchUserChannels])
+
+  // 格式化时间
+  const formatTime = (date: Date) => {
+    const now = new Date()
+    const diff = now.getTime() - date.getTime()
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
+    
+    if (days === 0) {
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+    } else if (days === 1) {
+      return '昨天'
+    } else if (days < 7) {
+      return `${days}天前`
+    } else {
+      return date.toLocaleDateString()
+    }
+  }
+
+  // 获取频道中的其他用户
+  const getOtherUser = (channel: any) => {
+    if (!currentUser || !channel.state.members) return null
+    
+    const memberIds = Object.keys(channel.state.members)
+    const otherUserId = memberIds.find(id => id !== currentUser.id.toString())
+    
+    if (otherUserId) {
+      const member = channel.state.members[otherUserId]
+      return {
+        id: otherUserId,
+        name: member.user?.name || `用户${otherUserId}`,
+        image: member.user?.image,
+        online: member.user?.online || false
+      }
+    }
+    return null
+  }
 
   // 服务器端渲染时返回加载状态
   if (!isClient) {
@@ -421,51 +489,178 @@ export default function StreamChatPanel({
                   </div>
                 </div>
                 
-                {/* 匹配用户显示 */}
-                {matchedUsers.length > 0 ? (
-                  <ChannelList 
-                    key={forceRefresh} // 强制刷新的key
-                    filters={{ 
-                      type: 'messaging', 
-                      members: { $in: [currentUser?.id.toString()] } 
-                    }}
-                    sort={{ last_message_at: -1, created_at: -1 }}
-                    options={{ 
-                      state: true, 
-                      watch: true, 
-                      presence: true,
-                      limit: 20,
-                      message_limit: 10
-                    }}
-                    showChannelSearch={false}
-                  />
-                ) : (
-                  <div className="p-8 text-center">
-                    <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <svg className="w-10 h-10 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
-                      </svg>
+                {/* 自定义频道列表 */}
+                <div className="flex-1 overflow-y-auto p-4 space-y-2">
+                  {channels.length > 0 ? (
+                    channels.map((channel) => {
+                      const otherUser = getOtherUser(channel)
+                      const lastMessage = channel.state.last_message
+                      const isSelected = selectedChannel?.id === channel.id
+                      
+                      return (
+                        <div
+                          key={channel.id}
+                          className={`relative group cursor-pointer transition-all duration-200 ${
+                            isSelected
+                              ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg scale-105'
+                              : 'bg-white hover:bg-pink-50 border border-pink-100 hover:border-pink-200'
+                          } rounded-2xl p-4`}
+                          onClick={() => setSelectedChannel(channel)}
+                        >
+                          <div className="flex items-center space-x-3">
+                            {/* 头像 */}
+                            <div className="relative">
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${
+                                isSelected
+                                  ? 'bg-white text-pink-500'
+                                  : 'bg-gradient-to-br from-pink-200 to-rose-200 text-pink-600'
+                              }`}>
+                                {otherUser?.name?.charAt(0) || '?'}
+                              </div>
+                              {otherUser?.online && (
+                                <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                              )}
+                            </div>
+
+                            {/* 用户信息 */}
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center justify-between mb-1">
+                                <h4 className={`font-semibold truncate ${
+                                  isSelected ? 'text-white' : 'text-gray-900'
+                                }`}>
+                                  {otherUser?.name || '未知用户'}
+                                </h4>
+                                <span className={`text-xs ${
+                                  isSelected ? 'text-pink-100' : 'text-gray-500'
+                                }`}>
+                                  {lastMessage ? formatTime(new Date(lastMessage.created_at)) : ''}
+                                </span>
+                              </div>
+                              
+                              <div className="flex items-center space-x-2 mb-1">
+                                <Clock size={12} className={isSelected ? 'text-pink-200' : 'text-gray-400'} />
+                                <span className={`text-xs truncate ${
+                                  isSelected ? 'text-pink-200' : 'text-gray-500'
+                                }`}>
+                                  频道ID: {channel.id}
+                                </span>
+                              </div>
+
+                              {/* 最后消息 */}
+                              {lastMessage && (
+                                <p className={`text-sm truncate ${
+                                  isSelected ? 'text-pink-100' : 'text-gray-600'
+                                }`}>
+                                  {lastMessage.user?.id === currentUser?.id ? '你: ' : ''}
+                                  {lastMessage.text || '图片消息'}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* 操作按钮 */}
+                            <div className="flex flex-col items-end space-y-2">
+                              {/* 未读消息数 */}
+                              {channel.count_unread > 0 && (
+                                <div className="bg-pink-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
+                                  {channel.count_unread}
+                                </div>
+                              )}
+                              
+                              {/* 操作菜单 */}
+                              <div className="relative">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setShowChannelMenu(showChannelMenu === channel.id ? null : channel.id)
+                                  }}
+                                  className={`p-1 rounded-full transition-all duration-200 ${
+                                    isSelected
+                                      ? 'text-white hover:bg-white hover:bg-opacity-20'
+                                      : 'text-gray-400 hover:text-pink-500 hover:bg-pink-50'
+                                  }`}
+                                >
+                                  <MoreVertical size={16} />
+                                </button>
+                                
+                                {showChannelMenu === channel.id && (
+                                  <div className="absolute right-0 top-8 bg-white rounded-xl shadow-lg border border-pink-100 py-2 z-10 min-w-[160px]">
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        // 这里可以添加置顶功能
+                                        setShowChannelMenu(null)
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm hover:bg-pink-50 flex items-center space-x-2"
+                                    >
+                                      <Pin size={14} />
+                                      <span>置顶对话</span>
+                                    </button>
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation()
+                                        // 这里可以添加删除功能
+                                        setShowChannelMenu(null)
+                                      }}
+                                      className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center space-x-2"
+                                    >
+                                      <Trash2 size={14} />
+                                      <span>删除对话</span>
+                                    </button>
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })
+                  ) : (
+                    <div className="p-8 text-center">
+                      <div className="w-20 h-20 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <svg className="w-10 h-10 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无聊天频道</h3>
+                      <p className="text-gray-600 text-sm leading-relaxed">
+                        还没有聊天频道<br/>
+                        匹配用户后会自动创建<br/>
+                        开始你的甜蜜对话吧！💕
+                      </p>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">暂无匹配用户</h3>
-                    <p className="text-gray-600 text-sm leading-relaxed">
-                      还没有找到匹配的用户<br/>
-                      继续浏览用户来寻找<br/>
-                      你的完美匹配吧！💕
-                    </p>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
 
               {/* 聊天窗口 */}
               <div className="flex-1 flex flex-col bg-gradient-to-b from-pink-25 to-white">
-                <Channel>
-                  <Window>
-                    <ChannelHeader />
-                    <MessageList />
-                    <MessageInput />
-                  </Window>
-                  <Thread />
-                </Channel>
+                {selectedChannel ? (
+                  <Channel channel={selectedChannel}>
+                    <Window>
+                      <ChannelHeader />
+                      <MessageList />
+                      <MessageInput />
+                    </Window>
+                    <Thread />
+                  </Channel>
+                ) : (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-24 h-24 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                        <svg className="w-12 h-12 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-2xl font-bold text-gray-900 mb-3">
+                        选择聊天对象
+                      </h3>
+                      <p className="text-gray-500 leading-relaxed text-lg">
+                        从左侧选择一个聊天频道<br/>
+                        开始你们的甜蜜对话 💕
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </Chat>
