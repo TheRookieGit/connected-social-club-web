@@ -72,7 +72,7 @@ export default function TestCityFormat() {
           <div className="space-y-3 text-sm text-gray-600">
             <div className="flex items-start space-x-2">
               <div className="w-2 h-2 bg-blue-500 rounded-full mt-2 flex-shrink-0"></div>
-              <p>确保您已授予位置权限，否则将显示"位置不可用"</p>
+              <p>确保您已授予位置权限，否则将显示&quot;位置不可用&quot;</p>
             </div>
             
             <div className="flex items-start space-x-2">
