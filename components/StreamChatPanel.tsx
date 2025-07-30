@@ -34,6 +34,9 @@ export default function StreamChatPanel({
   const [selectedChannel, setSelectedChannel] = useState<any>(null)
   const [showChannelMenu, setShowChannelMenu] = useState<string | null>(null)
   const [pinnedChannels, setPinnedChannels] = useState<Set<string>>(new Set())
+  const [searchTerm, setSearchTerm] = useState('')
+  const [searchResults, setSearchResults] = useState<any[]>([])
+  const [isSearching, setIsSearching] = useState(false)
 
   // 确保只在客户端渲染
   useEffect(() => {
@@ -368,6 +371,93 @@ export default function StreamChatPanel({
     })
   }
 
+  // 搜索用户
+  const searchUsers = async (query: string) => {
+    if (!query.trim() || !chatClient) {
+      setSearchResults([])
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      console.log(`🔍 搜索用户: ${query}`)
+      
+      // 搜索Stream Chat中的用户
+      const response = await chatClient.queryUsers(
+        { 
+          $or: [
+            { name: { $autocomplete: query } },
+            { id: { $autocomplete: query } }
+          ]
+        },
+        { id: 1 }
+      )
+      
+      console.log(`✅ 搜索到 ${response.users.length} 个用户`)
+      setSearchResults(response.users)
+    } catch (error) {
+      console.error('❌ 搜索用户失败:', error)
+      setSearchResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
+
+  // 处理搜索输入
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value
+    setSearchTerm(value)
+    
+    if (value.trim()) {
+      searchUsers(value)
+    } else {
+      setSearchResults([])
+    }
+  }
+
+  // 创建与用户的聊天频道
+  const createChatWithUser = async (userId: string, userName: string) => {
+    if (!chatClient || !currentUser) return
+
+    try {
+      console.log(`💬 创建与用户 ${userName} 的聊天频道`)
+      
+      // 检查是否已存在频道
+      const existingChannels = await chatClient.queryChannels({
+        type: 'messaging',
+        members: { $in: [currentUser.id.toString(), userId] }
+      })
+
+      if (existingChannels.length > 0) {
+        console.log('✅ 找到现有频道，切换到该频道')
+        setSelectedChannel(existingChannels[0])
+        setSearchTerm('')
+        setSearchResults([])
+        return
+      }
+
+      // 创建新频道
+      const channelId = `chat-${Math.min(Number(currentUser.id), Number(userId))}-${Math.max(Number(currentUser.id), Number(userId))}`
+      const channel = chatClient.channel('messaging', channelId, {
+        members: [currentUser.id.toString(), userId],
+        created_by_id: currentUser.id.toString()
+      })
+
+      await channel.watch()
+      console.log(`✅ 成功创建频道: ${channelId}`)
+      
+      // 添加到频道列表并选中
+      setChannels(prev => [channel, ...prev])
+      setSelectedChannel(channel)
+      setSearchTerm('')
+      setSearchResults([])
+      
+    } catch (error) {
+      console.error('❌ 创建聊天频道失败:', error)
+      alert('创建聊天频道失败，请重试')
+    }
+  }
+
   // 服务器端渲染时返回加载状态
   if (!isClient) {
     return (
@@ -500,7 +590,8 @@ export default function StreamChatPanel({
                         </div>
                       </div> */}
                     </div>
-                    <div className="flex flex-col space-y-2">
+                    {/* 操作按钮 - 已隐藏，保留代码以备后用 */}
+                    {/* <div className="flex flex-col space-y-2">
                       <button
                         onClick={() => {
                           console.log('🔄 手动刷新频道列表')
@@ -550,8 +641,57 @@ export default function StreamChatPanel({
                       >
                         🔍 查询
                       </button>
+                    </div> */}
+                  </div>
+                </div>
+                
+                {/* 搜索框 */}
+                <div className="p-4 border-b border-pink-200">
+                  <div className="relative">
+                    <input
+                      type="text"
+                      placeholder="搜索用户..."
+                      value={searchTerm}
+                      onChange={handleSearchChange}
+                      className="w-full px-4 py-3 pl-10 bg-white border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-sm"
+                    />
+                    <div className="absolute left-3 top-1/2 transform -translate-y-1/2">
+                      {isSearching ? (
+                        <div className="w-4 h-4 border-2 border-pink-300 border-t-pink-500 rounded-full animate-spin"></div>
+                      ) : (
+                        <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                      )}
                     </div>
                   </div>
+                  
+                  {/* 搜索结果 */}
+                  {searchResults.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                      <h4 className="text-sm font-medium text-gray-700 mb-2">搜索结果</h4>
+                      {searchResults.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex items-center space-x-3 p-3 bg-pink-50 rounded-lg hover:bg-pink-100 transition-colors cursor-pointer"
+                          onClick={() => createChatWithUser(user.id, user.name || user.id)}
+                        >
+                          <div className="w-8 h-8 bg-gradient-to-br from-pink-200 to-rose-200 rounded-full flex items-center justify-center text-sm font-bold text-pink-600">
+                            {(user.name || user.id).charAt(0)}
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-sm font-medium text-gray-900">{user.name || `用户${user.id}`}</p>
+                            <p className="text-xs text-gray-500">ID: {user.id}</p>
+                          </div>
+                          <div className="text-pink-500">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
                 
                 {/* 自定义频道列表 */}
