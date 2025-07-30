@@ -669,7 +669,39 @@ export default function Dashboard() {
 
               {/* 重新进行注册流程按钮 */}
               <button
-                onClick={() => router.push('/test-registration-flow')}
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('token')
+                    if (!token) {
+                      alert('请先登录')
+                      return
+                    }
+
+                    const response = await fetch('/api/user/registration-status', {
+                      headers: {
+                        'Authorization': `Bearer ${token}`
+                      }
+                    })
+
+                    if (response.ok) {
+                      const data = await response.json()
+                      if (data.success) {
+                        if (data.isComplete) {
+                          alert('您的资料已经完整了！')
+                        } else {
+                          router.push(data.nextStep)
+                        }
+                      } else {
+                        alert('检查状态失败: ' + data.error)
+                      }
+                    } else {
+                      alert('请求失败，请重试')
+                    }
+                  } catch (error) {
+                    console.error('检查注册状态失败:', error)
+                    alert('网络错误，请重试')
+                  }
+                }}
                 className="p-2 text-gray-600 hover:text-blue-500 transition-colors"
                 title="重新进行注册流程的填写"
               >
@@ -795,7 +827,39 @@ export default function Dashboard() {
 
                 {/* 重新进行注册流程按钮 */}
                 <motion.button
-                  onClick={() => router.push('/test-registration-flow')}
+                  onClick={async () => {
+                    try {
+                      const token = localStorage.getItem('token')
+                      if (!token) {
+                        alert('请先登录')
+                        return
+                      }
+
+                      const response = await fetch('/api/user/registration-status', {
+                        headers: {
+                          'Authorization': `Bearer ${token}`
+                        }
+                      })
+
+                      if (response.ok) {
+                        const data = await response.json()
+                        if (data.success) {
+                          if (data.isComplete) {
+                            alert('您的资料已经完整了！')
+                          } else {
+                            router.push(data.nextStep)
+                          }
+                        } else {
+                          alert('检查状态失败: ' + data.error)
+                        }
+                      } else {
+                        alert('请求失败，请重试')
+                      }
+                    } catch (error) {
+                      console.error('检查注册状态失败:', error)
+                      alert('网络错误，请重试')
+                    }
+                  }}
                   className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm flex items-center space-x-2"
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
