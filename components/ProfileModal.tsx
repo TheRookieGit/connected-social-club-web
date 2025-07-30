@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight, Camera, Upload, Globe, BookOpen, Users, Home, Languages, Baby, Activity, Coffee, Wine, MessageCircle, Settings } from 'lucide-react'
+import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight, Camera, Upload, Globe, BookOpen, Home, Baby, Activity, Coffee, Wine, MessageCircle, Settings } from 'lucide-react'
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -430,21 +430,12 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                   <Calendar className="h-4 w-4 mr-2" />
                   年龄
                 </label>
-                {isEditing ? (
-                  <input
-                    type="date"
-                    value={editedProfile.birth_date || ''}
-                    onChange={(e) => handleInputChange('birth_date', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  />
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.birth_date ? 
-                      `${Math.floor((Date.now() - new Date(profile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}岁` : 
-                      '未设置'
-                    }
-                  </p>
-                )}
+                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                  {profile.birth_date ? 
+                    `${Math.floor((Date.now() - new Date(profile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}岁` : 
+                    '未设置'
+                  }
+                </p>
               </div>
 
               {/* 身高 */}
@@ -470,33 +461,7 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 )}
               </div>
 
-              {/* 种族 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Globe className="h-4 w-4 mr-2" />
-                  种族
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.ethnicity || ''}
-                    onChange={(e) => handleInputChange('ethnicity', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择种族</option>
-                    <option value="亚洲人">亚洲人</option>
-                    <option value="白人">白人</option>
-                    <option value="黑人">黑人</option>
-                    <option value="拉丁裔">拉丁裔</option>
-                    <option value="中东人">中东人</option>
-                    <option value="混血">混血</option>
-                    <option value="其他">其他</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.ethnicity || '未设置'}
-                  </p>
-                )}
-              </div>
+
 
               {/* 宗教 */}
               <div>
@@ -628,13 +593,17 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                   学位
                 </label>
                 {isEditing ? (
-                  <input
-                    type="text"
+                  <select
                     value={editedProfile.degree || ''}
                     onChange={(e) => handleInputChange('degree', e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="你的学位"
-                  />
+                  >
+                    <option value="">选择学位</option>
+                    <option value="博士">博士</option>
+                    <option value="硕士">硕士</option>
+                    <option value="本科">本科</option>
+                    <option value="非本科（大专/自考）">非本科（大专/自考）</option>
+                  </select>
                 ) : (
                   <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
                     {profile.degree || '未设置'}
@@ -649,32 +618,57 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                   价值观
                 </label>
                 {isEditing ? (
-                  <select
-                    multiple
-                    value={editedProfile.values_preferences || []}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value)
-                      handleInputChange('values_preferences', selected)
-                    }}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="ambition">有上进心</option>
-                    <option value="confidence">自信</option>
-                    <option value="curiosity">好奇心</option>
-                    <option value="emotional_intelligence">高情商</option>
-                    <option value="empathy">同理心</option>
-                    <option value="generosity">大方</option>
-                    <option value="gratitude">感恩</option>
-                    <option value="humility">谦逊</option>
-                    <option value="humor">幽默</option>
-                    <option value="kindness">善良</option>
-                    <option value="leadership">领导力</option>
-                    <option value="loyalty">忠诚</option>
-                    <option value="openness">开放</option>
-                    <option value="optimism">乐观</option>
-                    <option value="playfulness">有趣</option>
-                    <option value="sassiness">活泼</option>
-                  </select>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(() => {
+                      // 价值观ID到中文名称的映射
+                      const valueMap: { [key: string]: string } = {
+                        'ambition': '有上进心',
+                        'confidence': '自信',
+                        'curiosity': '好奇心',
+                        'emotional_intelligence': '高情商',
+                        'empathy': '同理心',
+                        'generosity': '大方',
+                        'gratitude': '感恩',
+                        'humility': '谦逊',
+                        'humor': '幽默',
+                        'kindness': '善良',
+                        'leadership': '领导力',
+                        'loyalty': '忠诚',
+                        'openness': '开放',
+                        'optimism': '乐观',
+                        'playfulness': '有趣',
+                        'sassiness': '活泼'
+                      }
+                      
+                      const currentValues = editedProfile.values_preferences || []
+                      
+                      if (currentValues.length > 0) {
+                        return currentValues.map((value, index) => (
+                          <div key={index} className="flex items-center justify-between px-2 py-1 border border-gray-300 rounded-md bg-white text-sm">
+                            <span className="text-gray-900 truncate">{valueMap[value] || value}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newValues = currentValues.filter((_, i) => i !== index)
+                                handleInputChange('values_preferences', newValues)
+                              }}
+                              className="text-red-500 hover:text-red-700 text-xs ml-1 hover:bg-red-50 rounded-full px-1 flex-shrink-0"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))
+                      } else {
+                        return (
+                          <div className="col-span-3">
+                            <p className="text-gray-500 italic px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm text-center">
+                              暂无选择的价值观
+                            </p>
+                          </div>
+                        )
+                      }
+                    })()}
+                  </div>
                 ) : (
                   <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
                     {(() => {
@@ -699,7 +693,7 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                       }
                       
                       if (profile.values_preferences && profile.values_preferences.length > 0) {
-                        const translatedValues = profile.values_preferences.map((value: string) => 
+                        const translatedValues = profile.values_preferences.map(value => 
                           valueMap[value] || value
                         )
                         return translatedValues.join(', ')
@@ -710,30 +704,7 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 )}
               </div>
 
-              {/* 性格 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Users className="h-4 w-4 mr-2" />
-                  性格
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.personality_type || ''}
-                    onChange={(e) => handleInputChange('personality_type', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择性格</option>
-                    <option value="内向">内向</option>
-                    <option value="外向">外向</option>
-                    <option value="内向偏外向">内向偏外向</option>
-                    <option value="外向偏内向">外向偏内向</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.personality_type || '未设置'}
-                  </p>
-                )}
-              </div>
+
 
               {/* 兴趣 */}
               <div>
@@ -742,43 +713,68 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                   兴趣
                 </label>
                 {isEditing ? (
-                  <select
-                    multiple
-                    value={editedProfile.interests || []}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value)
-                      handleInputChange('interests', selected)
-                    }}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="baking">🍰 烘焙</option>
-                    <option value="lgbtq_rights">🏳️‍🌈 LGBTQ+</option>
-                    <option value="hiking">⛰️ 徒步</option>
-                    <option value="gardening">🌱 园艺</option>
-                    <option value="rnb">🎵 音乐</option>
-                    <option value="art">🎨 艺术</option>
-                    <option value="writing">📝 写作</option>
-                    <option value="country">🖼️ 绘画</option>
-                    <option value="skiing">📚 阅读</option>
-                    <option value="museums">🏛️ 博物馆</option>
-                    <option value="vegetarian">🥦 素食</option>
-                    <option value="horror">📺 电影</option>
-                    <option value="dancing">💃 跳舞</option>
-                    <option value="yoga">🧘 瑜伽</option>
-                    <option value="dogs">🐶 狗</option>
-                    <option value="crafts">🧷 手工艺</option>
-                    <option value="festivals">🎉 节日</option>
-                    <option value="tennis">🎾 运动</option>
-                    <option value="cats">🐱 猫</option>
-                    <option value="concerts">🎟️ 音乐会</option>
-                    <option value="foodie">🍜 美食</option>
-                    <option value="exploring_cities">🏙️ 旅游</option>
-                    <option value="camping">⛺ 露营</option>
-                    <option value="wine">🍷 葡萄酒</option>
-                    <option value="feminism">💛 女权主义</option>
-                    <option value="coffee">☕ 咖啡</option>
-                    <option value="gaming">🎮 游戏</option>
-                  </select>
+                  <div className="grid grid-cols-3 gap-2">
+                    {(() => {
+                      // 兴趣ID到中文名称的映射
+                      const interestMap: { [key: string]: string } = {
+                        'baking': '🍰 烘焙',
+                        'lgbtq_rights': '🏳️‍🌈 LGBTQ+',
+                        'hiking': '⛰️ 徒步',
+                        'gardening': '🌱 园艺',
+                        'rnb': '🎵 音乐',
+                        'art': '🎨 艺术',
+                        'writing': '📝 写作',
+                        'country': '🖼️ 绘画',
+                        'skiing': '📚 阅读',
+                        'museums': '🏛️ 博物馆',
+                        'vegetarian': '🥦 素食',
+                        'horror': '📺 电影',
+                        'dancing': '💃 跳舞',
+                        'yoga': '🧘 瑜伽',
+                        'dogs': '🐶 狗',
+                        'crafts': '🧷 手工艺',
+                        'festivals': '🎉 节日',
+                        'tennis': '🎾 运动',
+                        'cats': '🐱 猫',
+                        'concerts': '🎟️ 音乐会',
+                        'foodie': '🍜 美食',
+                        'exploring_cities': '🏙️ 旅游',
+                        'camping': '⛺ 露营',
+                        'wine': '🍷 葡萄酒',
+                        'feminism': '💛 女权主义',
+                        'coffee': '☕ 咖啡',
+                        'gaming': '🎮 游戏'
+                      }
+                      
+                      const currentInterests = editedProfile.interests || []
+                      
+                      if (currentInterests.length > 0) {
+                        return currentInterests.map((interest, index) => (
+                          <div key={index} className="flex items-center justify-between px-2 py-1 border border-gray-300 rounded-md bg-white text-sm">
+                            <span className="text-gray-900 truncate">{interestMap[interest] || interest}</span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const newInterests = currentInterests.filter((_, i) => i !== index)
+                                handleInputChange('interests', newInterests)
+                              }}
+                              className="text-red-500 hover:text-red-700 text-xs ml-1 hover:bg-red-50 rounded-full px-1 flex-shrink-0"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ))
+                      } else {
+                        return (
+                          <div className="col-span-3">
+                            <p className="text-gray-500 italic px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm text-center">
+                              暂无选择的兴趣
+                            </p>
+                          </div>
+                        )
+                      }
+                    })()}
+                  </div>
                 ) : (
                   <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
                     {(() => {
@@ -825,56 +821,6 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 )}
               </div>
 
-              {/* 家乡 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Home className="h-4 w-4 mr-2" />
-                  家乡
-                </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedProfile.hometown || ''}
-                    onChange={(e) => handleInputChange('hometown', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="你的家乡"
-                  />
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.hometown || '未设置'}
-                  </p>
-                )}
-              </div>
-
-              {/* 语言 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Languages className="h-4 w-4 mr-2" />
-                  语言
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.languages || ''}
-                    onChange={(e) => handleInputChange('languages', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择语言</option>
-                    <option value="中文">中文</option>
-                    <option value="英语">英语</option>
-                    <option value="日语">日语</option>
-                    <option value="韩语">韩语</option>
-                    <option value="法语">法语</option>
-                    <option value="德语">德语</option>
-                    <option value="西班牙语">西班牙语</option>
-                    <option value="其他">其他</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.languages || '未设置'}
-                  </p>
-                )}
-              </div>
-
               {/* 关系状态 */}
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
@@ -913,14 +859,22 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="">选择计划</option>
-                    <option value="想要孩子">想要孩子</option>
-                    <option value="对孩子开放">对孩子开放</option>
-                    <option value="不想要孩子">不想要孩子</option>
-                    <option value="已有孩子">已有孩子</option>
+                    <option value="dont_want_kids">不想要孩子</option>
+                    <option value="open_to_kids">对孩子持开放态度</option>
+                    <option value="want_kids">想要孩子</option>
+                    <option value="not_sure">不确定</option>
                   </select>
                 ) : (
                   <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.family_plans || '未设置'}
+                    {(() => {
+                      const familyPlansMap: { [key: string]: string } = {
+                        'dont_want_kids': '不想要孩子',
+                        'open_to_kids': '对孩子持开放态度',
+                        'want_kids': '想要孩子',
+                        'not_sure': '不确定'
+                      }
+                      return familyPlansMap[profile.family_plans || ''] || profile.family_plans || '未设置'
+                    })()}
                   </p>
                 )}
               </div>
@@ -933,68 +887,23 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 </label>
                 {isEditing ? (
                   <select
-                    value={editedProfile.has_kids === true ? 'true' : editedProfile.has_kids === false ? 'false' : ''}
-                    onChange={(e) => handleInputChange('has_kids', e.target.value === 'true')}
+                    value={editedProfile.has_kids || ''}
+                    onChange={(e) => handleInputChange('has_kids', e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="">请选择</option>
-                    <option value="false">没有孩子</option>
-                    <option value="true">有孩子</option>
+                    <option value="">选择状态</option>
+                    <option value="dont_have_kids">没有孩子</option>
+                    <option value="have_kids">有孩子</option>
                   </select>
                 ) : (
                   <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.has_kids ? '有孩子' : '没有孩子'}
-                  </p>
-                )}
-              </div>
-
-              {/* 婚姻状况 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Heart className="h-4 w-4 mr-2" />
-                  婚姻状况
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.marital_status || ''}
-                    onChange={(e) => handleInputChange('marital_status', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择状况</option>
-                    <option value="单身">单身</option>
-                    <option value="离异">离异</option>
-                    <option value="丧偶">丧偶</option>
-                    <option value="分居">分居</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.marital_status || '未设置'}
-                  </p>
-                )}
-              </div>
-
-              {/* 运动 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Activity className="h-4 w-4 mr-2" />
-                  运动
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.exercise_frequency || ''}
-                    onChange={(e) => handleInputChange('exercise_frequency', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择频率</option>
-                    <option value="每天">每天</option>
-                    <option value="每周几次">每周几次</option>
-                    <option value="每月几次">每月几次</option>
-                    <option value="很少">很少</option>
-                    <option value="从不">从不</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.exercise_frequency || '未设置'}
+                    {(() => {
+                      const hasKidsMap: { [key: string]: string } = {
+                        'dont_have_kids': '没有孩子',
+                        'have_kids': '有孩子'
+                      }
+                      return hasKidsMap[profile.has_kids as string || ''] || (profile.has_kids ? '有孩子' : '没有孩子')
+                    })()}
                   </p>
                 )}
               </div>
@@ -1012,14 +921,22 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="">选择状态</option>
-                    <option value="从不">从不</option>
-                    <option value="偶尔">偶尔</option>
-                    <option value="经常">经常</option>
-                    <option value="正在戒烟">正在戒烟</option>
+                    <option value="yes_smoke">是的，我吸烟</option>
+                    <option value="sometimes_smoke">我有时吸烟</option>
+                    <option value="no_smoke">不，我不吸烟</option>
+                    <option value="trying_quit">我正在尝试戒烟</option>
                   </select>
                 ) : (
                   <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.smoking_status || '未设置'}
+                    {(() => {
+                      const smokingMap: { [key: string]: string } = {
+                        'yes_smoke': '是的，我吸烟',
+                        'sometimes_smoke': '我有时吸烟',
+                        'no_smoke': '不，我不吸烟',
+                        'trying_quit': '我正在尝试戒烟'
+                      }
+                      return smokingMap[profile.smoking_status || ''] || profile.smoking_status || '未设置'
+                    })()}
                   </p>
                 )}
               </div>
@@ -1037,14 +954,24 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="">选择状态</option>
-                    <option value="从不">从不</option>
-                    <option value="偶尔">偶尔</option>
-                    <option value="经常">经常</option>
-                    <option value="仅社交场合">仅社交场合</option>
+                    <option value="yes_drink">是的，我喝酒</option>
+                    <option value="sometimes_drink">我有时喝酒</option>
+                    <option value="rarely_drink">我很少喝酒</option>
+                    <option value="no_drink">不，我不喝酒</option>
+                    <option value="sober">我戒酒了</option>
                   </select>
                 ) : (
                   <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.drinking_status || '未设置'}
+                    {(() => {
+                      const drinkingMap: { [key: string]: string } = {
+                        'yes_drink': '是的，我喝酒',
+                        'sometimes_drink': '我有时喝酒',
+                        'rarely_drink': '我很少喝酒',
+                        'no_drink': '不，我不喝酒',
+                        'sober': '我戒酒了'
+                      }
+                      return drinkingMap[profile.drinking_status || ''] || profile.drinking_status || '未设置'
+                    })()}
                   </p>
                 )}
               </div>
@@ -1062,14 +989,26 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
                     <option value="">选择风格</option>
-                    <option value="随意">随意</option>
-                    <option value="认真">认真</option>
-                    <option value="以结婚为目的">以结婚为目的</option>
-                    <option value="先做朋友">先做朋友</option>
+                    <option value="long_term">长期关系</option>
+                    <option value="life_partner">人生伴侣</option>
+                    <option value="casual_dates">有趣的随意约会</option>
+                    <option value="intimacy_no_commitment">肉体关系</option>
+                    <option value="marriage">婚姻</option>
+                    <option value="ethical_non_monogamy">开放式关系</option>
                   </select>
                 ) : (
                   <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.dating_style || '未设置'}
+                    {(() => {
+                      const datingStyleMap: { [key: string]: string } = {
+                        'long_term': '长期关系',
+                        'life_partner': '人生伴侣',
+                        'casual_dates': '有趣的随意约会',
+                        'intimacy_no_commitment': '肉体关系',
+                        'marriage': '婚姻',
+                        'ethical_non_monogamy': '开放式关系'
+                      }
+                      return datingStyleMap[profile.dating_style || ''] || profile.dating_style || '未设置'
+                    })()}
                   </p>
                 )}
               </div>

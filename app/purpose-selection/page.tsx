@@ -145,7 +145,7 @@ export default function PurposeSelection() {
         {/* 标题和介绍 */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-black mb-3">
-            您来社交俱乐部是为了什么？
+            您来ConnectEd Elite Social Club是为了什么？
           </h1>
           <p className="text-sm text-gray-600 leading-relaxed">
             浪漫和心动，还是一段美好的友谊？选择一个模式来找到您的人。

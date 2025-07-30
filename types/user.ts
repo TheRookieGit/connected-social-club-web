@@ -30,12 +30,9 @@ export interface User {
   degree?: string
   values_preferences?: string[]
   personality_type?: string
-  hometown?: string
   languages?: string[]
   family_plans?: string
-  has_kids?: boolean
-  marital_status?: string
-  exercise_frequency?: string
+  has_kids?: string | boolean
   smoking_status?: string
   drinking_status?: string
   dating_style?: string
@@ -131,12 +128,10 @@ export interface ProfileOptions {
   ethnicities: string[]
   religions: string[]
   personality_types: string[]
-  exercise_frequencies: string[]
   smoking_statuses: string[]
   drinking_statuses: string[]
   dating_styles: string[]
   family_plans: string[]
-  marital_statuses: string[]
   relationship_statuses: string[]
   languages: string[]
   values: string[]

@@ -274,7 +274,7 @@ export default function GenderSelection() {
             <Info className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
             <div className="text-xs text-gray-600">
               <button className="text-black underline hover:no-underline">
-                关于社交俱乐部中性别设置的说明
+                关于ConnectEd Elite Social Club中性别设置的说明
               </button>
             </div>
           </div>

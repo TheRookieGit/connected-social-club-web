@@ -142,7 +142,7 @@ export default function AdminPanel() {
       <div className="max-w-6xl mx-auto">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">管理员控制面板</h1>
-          <p className="text-gray-600">社交俱乐部管理后台</p>
+          <p className="text-gray-600">ConnectEd Elite Social Club管理后台</p>
         </div>
 
         {/* 快速操作卡片 */}

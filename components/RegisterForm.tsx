@@ -2,11 +2,11 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/navigation'
-import { Mail, Lock, User, Eye, EyeOff, Calendar, Phone, Send, ChevronDown } from 'lucide-react'
+import { Mail, Lock, User, Eye, EyeOff, Phone, Send, ChevronDown } from 'lucide-react'
 
 const countryCodes = [
-  { code: '+86', name: '中国', flag: '🇨🇳' },
   { code: '+1', name: '美国', flag: '🇺🇸' },
+  { code: '+86', name: '中国', flag: '🇨🇳' },
   { code: '+44', name: '英国', flag: '🇬🇧' },
   { code: '+81', name: '日本', flag: '🇯🇵' },
   { code: '+82', name: '韩国', flag: '🇰🇷' },
@@ -88,9 +88,7 @@ export default function RegisterForm() {
     email: '',
     phone: '',
     password: '',
-    confirmPassword: '',
-    birthDate: '',
-    gender: ''
+    confirmPassword: ''
   })
   
   const [selectedCountry, setSelectedCountry] = useState(countryCodes[0])
@@ -328,9 +326,7 @@ export default function RegisterForm() {
           name: formData.name,
           email: formData.email,
           phone: selectedCountry.code + formData.phone,
-          password: formData.password,
-          birthDate: formData.birthDate,
-          gender: formData.gender
+          password: formData.password
         }),
       })
 
@@ -515,45 +511,7 @@ export default function RegisterForm() {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label htmlFor="birthDate" className="block text-sm font-medium text-gray-700 mb-2">
-            出生日期
-          </label>
-          <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Calendar className="h-5 w-5 text-gray-400" />
-            </div>
-            <input
-              id="birthDate"
-              name="birthDate"
-              type="date"
-              value={formData.birthDate}
-              onChange={handleChange}
-              className="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-              required
-            />
-          </div>
-        </div>
 
-        <div>
-          <label htmlFor="gender" className="block text-sm font-medium text-gray-700 mb-2">
-            性别
-          </label>
-          <select
-            id="gender"
-            name="gender"
-            value={formData.gender}
-            onChange={handleChange}
-            className="block w-full py-3 px-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent"
-            required
-          >
-            <option value="">请选择</option>
-            <option value="male">男</option>
-            <option value="female">女</option>
-          </select>
-        </div>
-      </div>
 
       <div>
         <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
