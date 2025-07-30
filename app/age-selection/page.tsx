@@ -15,16 +15,45 @@ export default function AgeSelection() {
   useEffect(() => {
     // 从localStorage获取用户信息
     const userStr = localStorage.getItem('user')
+    const token = localStorage.getItem('token')
+    
     if (userStr) {
       try {
         const user = JSON.parse(userStr)
         setUserName(user.name || user.first_name || '用户')
+        
+        // 检查用户是否已经完成某些步骤
+        if (token) {
+          checkRegistrationStatus(token)
+        }
       } catch (error) {
         console.error('解析用户信息失败:', error)
         setUserName('用户')
       }
     }
   }, [])
+
+  const checkRegistrationStatus = async (token: string) => {
+    try {
+      const response = await fetch('/api/user/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        if (data.success && data.user) {
+          // 不管注册是否完成，只要用户存在就直接跳转到dashboard
+          console.log('用户已存在，跳转到dashboard')
+          router.push('/dashboard')
+          return
+        }
+      }
+    } catch (error) {
+      console.error('检查注册状态失败:', error)
+    }
+  }
 
   // 防止后退功能
   useEffect(() => {
