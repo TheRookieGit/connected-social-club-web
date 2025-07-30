@@ -677,25 +677,34 @@ export default function Dashboard() {
                       return
                     }
 
-                    const response = await fetch('/api/user/registration-status', {
-                      headers: {
-                        'Authorization': `Bearer ${token}`
-                      }
-                    })
+                    // 询问用户是否要重新开始整个流程
+                    const shouldRestart = confirm('您希望：\n\n1. 点击"确定" - 重新开始整个注册流程（从性别选择开始）\n2. 点击"取消" - 继续完善当前缺失的资料\n\n请选择：')
+                    
+                    if (shouldRestart) {
+                      // 重新开始整个流程
+                      router.push('/gender-selection')
+                    } else {
+                      // 继续完善当前缺失的资料
+                      const response = await fetch('/api/user/registration-status', {
+                        headers: {
+                          'Authorization': `Bearer ${token}`
+                        }
+                      })
 
-                    if (response.ok) {
-                      const data = await response.json()
-                      if (data.success) {
-                        if (data.isComplete) {
-                          alert('您的资料已经完整了！')
+                      if (response.ok) {
+                        const data = await response.json()
+                        if (data.success) {
+                          if (data.isComplete) {
+                            alert('您的资料已经完整了！')
+                          } else {
+                            router.push(data.nextStep)
+                          }
                         } else {
-                          router.push(data.nextStep)
+                          alert('检查状态失败: ' + data.error)
                         }
                       } else {
-                        alert('检查状态失败: ' + data.error)
+                        alert('请求失败，请重试')
                       }
-                    } else {
-                      alert('请求失败，请重试')
                     }
                   } catch (error) {
                     console.error('检查注册状态失败:', error)
@@ -835,25 +844,34 @@ export default function Dashboard() {
                         return
                       }
 
-                      const response = await fetch('/api/user/registration-status', {
-                        headers: {
-                          'Authorization': `Bearer ${token}`
-                        }
-                      })
+                      // 询问用户是否要重新开始整个流程
+                      const shouldRestart = confirm('您希望：\n\n1. 点击"确定" - 重新开始整个注册流程（从性别选择开始）\n2. 点击"取消" - 继续完善当前缺失的资料\n\n请选择：')
+                      
+                      if (shouldRestart) {
+                        // 重新开始整个流程
+                        router.push('/gender-selection')
+                      } else {
+                        // 继续完善当前缺失的资料
+                        const response = await fetch('/api/user/registration-status', {
+                          headers: {
+                            'Authorization': `Bearer ${token}`
+                          }
+                        })
 
-                      if (response.ok) {
-                        const data = await response.json()
-                        if (data.success) {
-                          if (data.isComplete) {
-                            alert('您的资料已经完整了！')
+                        if (response.ok) {
+                          const data = await response.json()
+                          if (data.success) {
+                            if (data.isComplete) {
+                              alert('您的资料已经完整了！')
+                            } else {
+                              router.push(data.nextStep)
+                            }
                           } else {
-                            router.push(data.nextStep)
+                            alert('检查状态失败: ' + data.error)
                           }
                         } else {
-                          alert('检查状态失败: ' + data.error)
+                          alert('请求失败，请重试')
                         }
-                      } else {
-                        alert('请求失败，请重试')
                       }
                     } catch (error) {
                       console.error('检查注册状态失败:', error)
