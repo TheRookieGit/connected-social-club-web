@@ -56,16 +56,10 @@ export default function LoginForm() {
         // 清理URL参数
         window.history.replaceState({}, document.title, window.location.pathname)
         
-        console.log('LoginForm: 检查是否需要显示位置权限请求...')
+        console.log('LoginForm: 跳转到性别选择页面...')
         
-        // 检查是否应该显示位置权限请求
-        const shouldShow = shouldAutoRequestLocation()
-        if (shouldShow) {
-          setShowLocationPermission(true)
-        } else {
-          // 直接跳转到dashboard
-          router.push('/dashboard')
-        }
+        // 跳转到性别选择页面
+        router.push('/gender-selection')
       } catch (error) {
         console.error('LoginForm: 处理LinkedIn登录数据时出错:', error)
         setError('处理登录信息时出错，请重试')
@@ -107,14 +101,8 @@ export default function LoginForm() {
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
         
-        // 检查是否应该显示位置权限请求
-        const shouldShow = shouldAutoRequestLocation()
-        if (shouldShow) {
-          setShowLocationPermission(true)
-        } else {
-          // 直接跳转到dashboard
-          router.push('/dashboard')
-        }
+        // 跳转到性别选择页面
+        router.push('/gender-selection')
       } else {
         setError(data.error || '登录失败')
       }
