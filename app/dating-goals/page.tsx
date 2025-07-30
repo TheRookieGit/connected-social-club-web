@@ -75,22 +75,13 @@ export default function DatingGoals() {
   const handleGoalSelect = (goal: string) => {
     if (isConfirmed) return // 如果已确认，不允许更改
     
-    setSelectedGoals(prev => {
-      if (prev.includes(goal)) {
-        return prev.filter(g => g !== goal)
-      } else {
-        // 限制最多选择2个选项
-        if (prev.length >= 2) {
-          return prev
-        }
-        return [...prev, goal]
-      }
-    })
+    // 改为单项选择
+    setSelectedGoals([goal])
   }
 
   const handleConfirm = async () => {
     if (selectedGoals.length === 0) {
-      alert('请至少选择一个您希望找到的目标')
+      alert('请选择一个您希望找到的目标')
       return
     }
 
@@ -108,7 +99,7 @@ export default function DatingGoals() {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            dating_goals: selectedGoals
+            dating_style: selectedGoals[0] // 保存到dating_style字段，取第一个选择（因为是单选）
           })
         })
 
@@ -159,7 +150,7 @@ export default function DatingGoals() {
             您希望找到什么？
           </h1>
           <p className="text-sm text-gray-600 leading-relaxed">
-            这是您的约会旅程，所以选择1或2个对您来说感觉正确的选项。
+            这是您的约会旅程，所以选择一个对您来说感觉正确的选项。
           </p>
         </div>
 
@@ -266,30 +257,7 @@ export default function DatingGoals() {
               </div>
             </div>
 
-            {/* 婚姻 */}
-            <div 
-              className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                selectedGoals.includes('marriage') 
-                  ? 'bg-pink-100 border-black' 
-                  : isConfirmed
-                  ? 'bg-gray-100 border-gray-200 cursor-not-allowed'
-                  : 'bg-white border-gray-300 hover:border-gray-400'
-              }`}
-              onClick={() => handleGoalSelect('marriage')}
-            >
-              <div className="flex items-center justify-between">
-                <span className="text-base font-medium text-black">婚姻</span>
-                <div className={`w-5 h-5 border-2 flex items-center justify-center ${
-                  selectedGoals.includes('marriage') 
-                    ? 'bg-black border-black' 
-                    : 'border-black'
-                }`}>
-                  {selectedGoals.includes('marriage') && (
-                    <Check className="w-3 h-3 text-white" />
-                  )}
-                </div>
-              </div>
-            </div>
+
 
             {/* 开放式关系 */}
             <div 

@@ -315,12 +315,6 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                   <Edit className="h-4 w-4" />
                   <span>编辑资料</span>
                 </button>
-                <button
-                  onClick={fetchProfile}
-                  className="px-3 py-1 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
-                >
-                  🔄 刷新
-                </button>
               </>
             )}
             <button
@@ -846,6 +840,41 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 )}
               </div>
 
+              {/* 约会目的 */}
+              <div>
+                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  约会目的
+                </label>
+                {isEditing ? (
+                  <select
+                    value={editedProfile.dating_style || ''}
+                    onChange={(e) => handleInputChange('dating_style', e.target.value)}
+                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
+                  >
+                    <option value="">选择目的</option>
+                    <option value="long_term">长期关系</option>
+                    <option value="life_partner">人生伴侣</option>
+                    <option value="casual_dates">有趣的随意约会</option>
+                    <option value="intimacy_no_commitment">肉体关系</option>
+                    <option value="ethical_non_monogamy">开放式关系</option>
+                  </select>
+                ) : (
+                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
+                    {(() => {
+                      const datingPurposeMap: { [key: string]: string } = {
+                        'long_term': '长期关系',
+                        'life_partner': '人生伴侣',
+                        'casual_dates': '有趣的随意约会',
+                        'intimacy_no_commitment': '肉体关系',
+                        'ethical_non_monogamy': '开放式关系'
+                      }
+                      return datingPurposeMap[profile.dating_style || ''] || profile.dating_style || '未设置'
+                    })()}
+                  </p>
+                )}
+              </div>
+
               {/* 家庭计划 */}
               <div>
                 <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
@@ -887,7 +916,7 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 </label>
                 {isEditing ? (
                   <select
-                    value={editedProfile.has_kids || ''}
+                    value={typeof editedProfile.has_kids === 'string' ? editedProfile.has_kids : (editedProfile.has_kids === true ? 'have_kids' : 'dont_have_kids')}
                     onChange={(e) => handleInputChange('has_kids', e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
@@ -902,7 +931,8 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                         'dont_have_kids': '没有孩子',
                         'have_kids': '有孩子'
                       }
-                      return hasKidsMap[profile.has_kids as string || ''] || (profile.has_kids ? '有孩子' : '没有孩子')
+                      const hasKidsValue = typeof profile.has_kids === 'string' ? profile.has_kids : (profile.has_kids === true ? 'have_kids' : 'dont_have_kids')
+                      return hasKidsMap[hasKidsValue] || (profile.has_kids === true ? '有孩子' : '没有孩子')
                     })()}
                   </p>
                 )}
@@ -971,43 +1001,6 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                         'sober': '我戒酒了'
                       }
                       return drinkingMap[profile.drinking_status || ''] || profile.drinking_status || '未设置'
-                    })()}
-                  </p>
-                )}
-              </div>
-
-              {/* 约会风格 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  约会风格
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.dating_style || ''}
-                    onChange={(e) => handleInputChange('dating_style', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择风格</option>
-                    <option value="long_term">长期关系</option>
-                    <option value="life_partner">人生伴侣</option>
-                    <option value="casual_dates">有趣的随意约会</option>
-                    <option value="intimacy_no_commitment">肉体关系</option>
-                    <option value="marriage">婚姻</option>
-                    <option value="ethical_non_monogamy">开放式关系</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {(() => {
-                      const datingStyleMap: { [key: string]: string } = {
-                        'long_term': '长期关系',
-                        'life_partner': '人生伴侣',
-                        'casual_dates': '有趣的随意约会',
-                        'intimacy_no_commitment': '肉体关系',
-                        'marriage': '婚姻',
-                        'ethical_non_monogamy': '开放式关系'
-                      }
-                      return datingStyleMap[profile.dating_style || ''] || profile.dating_style || '未设置'
                     })()}
                   </p>
                 )}
