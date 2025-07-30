@@ -480,8 +480,8 @@ export default function StreamChatPanel({
                       <p className="text-sm text-gray-600 mt-1">
                         {matchedUsers.length > 0 ? '点击开始甜蜜对话' : '暂无匹配用户'}
                       </p>
-                      {/* 状态信息 */}
-                      <div className="mt-3 p-3 bg-pink-50 rounded-lg text-xs text-gray-600 space-y-1">
+                      {/* 状态信息 - 已隐藏，保留代码以备后用 */}
+                      {/* <div className="mt-3 p-3 bg-pink-50 rounded-lg text-xs text-gray-600 space-y-1">
                         <div className="flex items-center space-x-2">
                           <span className="w-2 h-2 bg-pink-400 rounded-full"></span>
                           <span>用户ID: {currentUser?.id}</span>
@@ -498,7 +498,7 @@ export default function StreamChatPanel({
                           <span className={`w-2 h-2 rounded-full ${chatClient ? 'bg-green-400' : 'bg-red-400'}`}></span>
                           <span>客户端: {chatClient ? '✅ 已连接' : '❌ 未连接'}</span>
                         </div>
-                      </div>
+                      </div> */}
                     </div>
                     <div className="flex flex-col space-y-2">
                       <button
