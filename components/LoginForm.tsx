@@ -25,46 +25,61 @@ export default function LoginForm() {
 
   // 处理LinkedIn登录返回的token
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    const token = urlParams.get('token')
-    const user = urlParams.get('user')
-    const error = urlParams.get('error')
+    const handleLinkedInLogin = async () => {
+      const urlParams = new URLSearchParams(window.location.search)
+      const token = urlParams.get('token')
+      const user = urlParams.get('user')
+      const error = urlParams.get('error')
 
-    if (error) {
-      setError('LinkedIn登录失败，请重试')
-      // 清理URL参数
-      window.history.replaceState({}, document.title, window.location.pathname)
-      return
-    }
-
-    if (token && user) {
-      console.log('LoginForm: 检测到LinkedIn登录成功，开始处理...')
-      console.log('LoginForm: Token:', token.substring(0, 20) + '...')
-      
-      try {
-        // 解析用户数据
-        const userData = JSON.parse(decodeURIComponent(user))
-        console.log('LoginForm: 解析的用户数据:', userData)
-        
-        // 保存token和用户信息 - 确保用户数据格式正确
-        localStorage.setItem('token', token)
-        localStorage.setItem('user', JSON.stringify(userData))
-        
-        console.log('LoginForm: 已保存token和用户信息到localStorage')
-        console.log('LoginForm: 用户ID:', userData.id, '类型:', typeof userData.id)
-        
+      if (error) {
+        setError('LinkedIn登录失败，请重试')
         // 清理URL参数
         window.history.replaceState({}, document.title, window.location.pathname)
+        return
+      }
+
+      if (token && user) {
+        console.log('LoginForm: 检测到LinkedIn登录成功，开始处理...')
+        console.log('LoginForm: Token:', token.substring(0, 20) + '...')
         
-        console.log('LoginForm: 跳转到性别选择页面...')
-        
-        // 跳转到性别选择页面
-        router.push('/gender-selection')
-      } catch (error) {
-        console.error('LoginForm: 处理LinkedIn登录数据时出错:', error)
-        setError('处理登录信息时出错，请重试')
+        try {
+          // 解析用户数据
+          const userData = JSON.parse(decodeURIComponent(user))
+          console.log('LoginForm: 解析的用户数据:', userData)
+          
+          // 保存token和用户信息 - 确保用户数据格式正确
+          localStorage.setItem('token', token)
+          localStorage.setItem('user', JSON.stringify(userData))
+          
+          console.log('LoginForm: 已保存token和用户信息到localStorage')
+          console.log('LoginForm: 用户ID:', userData.id, '类型:', typeof userData.id)
+          
+          // 清理URL参数
+          window.history.replaceState({}, document.title, window.location.pathname)
+          
+          console.log('LoginForm: 检查注册完成状态...')
+          
+          // 检查用户是否已完成注册
+          const isRegistrationComplete = await checkRegistrationCompletion(token)
+          
+          if (isRegistrationComplete) {
+            console.log('LoginForm: 用户已完成注册，跳转到dashboard...')
+            router.push('/dashboard')
+          } else {
+            console.log('LoginForm: 用户未完成注册，跳转到性别选择页面...')
+            router.push('/gender-selection')
+          }
+        } catch (error) {
+          console.error('LoginForm: 处理LinkedIn登录数据时出错:', error)
+          setError('处理登录信息时出错，请重试')
+        }
       }
     }
+
+    // 立即执行异步函数
+    ;(async () => {
+      await handleLinkedInLogin()
+    })()
   }, [router])
 
   // 检查是否需要显示位置权限请求（从Dashboard跳转过来）
@@ -101,8 +116,16 @@ export default function LoginForm() {
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
         
-        // 跳转到性别选择页面
-        router.push('/gender-selection')
+        // 检查用户是否已完成注册
+        const isRegistrationComplete = await checkRegistrationCompletion(data.token)
+        
+        if (isRegistrationComplete) {
+          // 如果已完成注册，直接跳转到dashboard
+          router.push('/dashboard')
+        } else {
+          // 如果未完成注册，跳转到性别选择页面
+          router.push('/gender-selection')
+        }
       } else {
         setError(data.error || '登录失败')
       }
@@ -110,6 +133,71 @@ export default function LoginForm() {
       setError('网络错误，请稍后重试')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  // 检查用户是否已完成注册的函数
+  const checkRegistrationCompletion = async (token: string): Promise<boolean> => {
+    try {
+      const response = await fetch('/api/user/profile', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      })
+
+      if (!response.ok) {
+        console.log('Profile API response not ok:', response.status)
+        return false
+      }
+
+      const data = await response.json()
+      if (!data.success || !data.user) {
+        console.log('Profile API data not valid:', data)
+        return false
+      }
+
+      const user = data.user
+      console.log('Checking registration completion for user:', user.id)
+      
+      // 检查注册完成的关键字段 - 简化检查逻辑
+      const hasBasicInfo = user.gender && user.birth_date
+      const hasInterests = user.interests && user.interests.length > 0
+      const hasValues = (user.values_preferences && user.values_preferences.length > 0) || 
+                       (user.values && user.values.length > 0)
+      const hasLifestyle = user.smoking_status || user.drinking_status
+      const hasFamilyPlans = user.family_plans || user.has_kids !== null
+      const hasPhotos = user.photos && Array.isArray(user.photos) && user.photos.length >= 3
+
+      console.log('Registration completion check:', {
+        hasBasicInfo,
+        hasInterests,
+        hasValues,
+        hasLifestyle,
+        hasFamilyPlans,
+        hasPhotos,
+        user: {
+          gender: user.gender,
+          birth_date: user.birth_date,
+          interests: user.interests,
+          values_preferences: user.values_preferences,
+          values: user.values,
+          smoking_status: user.smoking_status,
+          drinking_status: user.drinking_status,
+          family_plans: user.family_plans,
+          has_kids: user.has_kids,
+          photos: user.photos
+        }
+      })
+
+      // 如果基本信息和至少3个其他字段已填写，则认为注册完成
+      const isComplete = hasBasicInfo && hasInterests && hasValues && 
+                        hasLifestyle && hasFamilyPlans && hasPhotos
+      
+      console.log('Registration completion result:', isComplete)
+      return isComplete
+    } catch (error) {
+      console.error('检查注册完成状态时出错:', error)
+      return false
     }
   }
 

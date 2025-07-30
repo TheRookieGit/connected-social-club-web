@@ -25,6 +25,53 @@ export default function PurposeSelection() {
     }
   }, [])
 
+  // 防止后退功能
+  useEffect(() => {
+    // 在页面加载时立即添加历史记录，防止直接后退
+    window.history.pushState(null, '', '/purpose-selection')
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // 如果用户已经选择了目的，就阻止离开页面
+      if (selectedPurpose) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      // 如果用户已经选择了目的，阻止后退
+      if (selectedPurpose) {
+        // 阻止默认的后退行为
+        e.preventDefault()
+        // 立即重新添加当前页面到历史记录
+        window.history.pushState(null, '', '/purpose-selection')
+        // 显示提示信息
+        alert('请完成当前页面的选择后再继续')
+        // 强制阻止导航
+        return false
+      }
+    }
+
+    // 监听浏览器后退按钮
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Backspace' && selectedPurpose) {
+        e.preventDefault()
+        alert('请完成当前页面的选择后再继续')
+        return false
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('popstate', handlePopState)
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('popstate', handlePopState)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [selectedPurpose])
+
   const handlePurposeSelect = (purpose: string) => {
     if (isConfirmed) return // 如果已确认，不允许更改
     setSelectedPurpose(purpose)
@@ -90,7 +137,7 @@ export default function PurposeSelection() {
 
       {/* 进度条 */}
       <div className="w-full h-1 bg-gray-200">
-        <div className="w-3/4 h-full bg-black"></div>
+        <div className="w-[30%] h-full bg-black"></div>
       </div>
 
       {/* 主要内容 */}

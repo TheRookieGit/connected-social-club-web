@@ -25,6 +25,53 @@ export default function DatingGoals() {
     }
   }, [])
 
+  // 防止后退功能
+  useEffect(() => {
+    // 在页面加载时立即添加历史记录，防止直接后退
+    window.history.pushState(null, '', '/dating-goals')
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // 如果用户已经选择了目标，就阻止离开页面
+      if (selectedGoals.length > 0) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      // 如果用户已经选择了目标，阻止后退
+      if (selectedGoals.length > 0) {
+        // 阻止默认的后退行为
+        e.preventDefault()
+        // 立即重新添加当前页面到历史记录
+        window.history.pushState(null, '', '/dating-goals')
+        // 显示提示信息
+        alert('请完成当前页面的选择后再继续')
+        // 强制阻止导航
+        return false
+      }
+    }
+
+    // 监听浏览器后退按钮
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Backspace' && selectedGoals.length > 0) {
+        e.preventDefault()
+        alert('请完成当前页面的选择后再继续')
+        return false
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('popstate', handlePopState)
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('popstate', handlePopState)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [selectedGoals])
+
   const handleGoalSelect = (goal: string) => {
     if (isConfirmed) return // 如果已确认，不允许更改
     
@@ -72,13 +119,13 @@ export default function DatingGoals() {
 
       // 延迟跳转，让用户看到确认状态
       setTimeout(() => {
-        router.push('/dashboard')
+        router.push('/interests')
       }, 1500)
     } catch (error) {
       console.error('处理约会目标选择时出错:', error)
       // 即使出错也继续跳转
       setTimeout(() => {
-        router.push('/dashboard')
+        router.push('/interests')
       }, 1500)
     } finally {
       setIsLoading(false)
@@ -101,7 +148,7 @@ export default function DatingGoals() {
 
       {/* 进度条 */}
       <div className="w-full h-1 bg-gray-200">
-        <div className="w-full h-full bg-black"></div>
+        <div className="w-[50%] h-full bg-black"></div>
       </div>
 
       {/* 主要内容 */}
@@ -194,7 +241,7 @@ export default function DatingGoals() {
               </div>
             </div>
 
-            {/* 亲密关系，无需承诺 */}
+            {/* 肉体关系 */}
             <div 
               className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
                 selectedGoals.includes('intimacy_no_commitment') 
@@ -206,7 +253,7 @@ export default function DatingGoals() {
               onClick={() => handleGoalSelect('intimacy_no_commitment')}
             >
               <div className="flex items-center justify-between">
-                <span className="text-base font-medium text-black">亲密关系，无需承诺</span>
+                <span className="text-base font-medium text-black">肉体关系</span>
                 <div className={`w-5 h-5 border-2 flex items-center justify-center ${
                   selectedGoals.includes('intimacy_no_commitment') 
                     ? 'bg-black border-black' 
@@ -244,7 +291,7 @@ export default function DatingGoals() {
               </div>
             </div>
 
-            {/* 道德非一夫一妻制 */}
+            {/* 开放式关系 */}
             <div 
               className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
                 selectedGoals.includes('ethical_non_monogamy') 
@@ -256,7 +303,7 @@ export default function DatingGoals() {
               onClick={() => handleGoalSelect('ethical_non_monogamy')}
             >
               <div className="flex items-center justify-between">
-                <span className="text-base font-medium text-black">道德非一夫一妻制</span>
+                <span className="text-base font-medium text-black">开放式关系</span>
                 <div className={`w-5 h-5 border-2 flex items-center justify-center ${
                   selectedGoals.includes('ethical_non_monogamy') 
                     ? 'bg-black border-black' 

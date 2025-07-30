@@ -651,30 +651,61 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 {isEditing ? (
                   <select
                     multiple
-                    value={editedProfile.values_preferences || []}
+                    value={editedProfile.values || []}
                     onChange={(e) => {
                       const selected = Array.from(e.target.selectedOptions, option => option.value)
-                      handleInputChange('values_preferences', selected)
+                      handleInputChange('values', selected)
                     }}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="家庭">家庭</option>
-                    <option value="事业">事业</option>
-                    <option value="健康">健康</option>
-                    <option value="教育">教育</option>
-                    <option value="旅行">旅行</option>
-                    <option value="艺术">艺术</option>
-                    <option value="运动">运动</option>
-                    <option value="音乐">音乐</option>
-                    <option value="阅读">阅读</option>
-                    <option value="美食">美食</option>
+                    <option value="ambition">有上进心</option>
+                    <option value="confidence">自信</option>
+                    <option value="curiosity">好奇心</option>
+                    <option value="emotional_intelligence">高情商</option>
+                    <option value="empathy">同理心</option>
+                    <option value="generosity">大方</option>
+                    <option value="gratitude">感恩</option>
+                    <option value="humility">谦逊</option>
+                    <option value="humor">幽默</option>
+                    <option value="kindness">善良</option>
+                    <option value="leadership">领导力</option>
+                    <option value="loyalty">忠诚</option>
+                    <option value="openness">开放</option>
+                    <option value="optimism">乐观</option>
+                    <option value="playfulness">有趣</option>
+                    <option value="sassiness">活泼</option>
                   </select>
                 ) : (
                   <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.values_preferences && profile.values_preferences.length > 0 
-                      ? profile.values_preferences.join(', ') 
-                      : '未设置'
-                    }
+                    {(() => {
+                      // 价值观ID到中文名称的映射
+                      const valueMap: { [key: string]: string } = {
+                        'ambition': '有上进心',
+                        'confidence': '自信',
+                        'curiosity': '好奇心',
+                        'emotional_intelligence': '高情商',
+                        'empathy': '同理心',
+                        'generosity': '大方',
+                        'gratitude': '感恩',
+                        'humility': '谦逊',
+                        'humor': '幽默',
+                        'kindness': '善良',
+                        'leadership': '领导力',
+                        'loyalty': '忠诚',
+                        'openness': '开放',
+                        'optimism': '乐观',
+                        'playfulness': '有趣',
+                        'sassiness': '活泼'
+                      }
+                      
+                      if (profile.values && profile.values.length > 0) {
+                        const translatedValues = profile.values.map(value => 
+                          valueMap[value] || value
+                        )
+                        return translatedValues.join(', ')
+                      }
+                      return '未设置'
+                    })()}
                   </p>
                 )}
               </div>
@@ -720,23 +751,76 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                     }}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
-                    <option value="旅行">旅行</option>
-                    <option value="音乐">音乐</option>
-                    <option value="电影">电影</option>
-                    <option value="阅读">阅读</option>
-                    <option value="运动">运动</option>
-                    <option value="美食">美食</option>
-                    <option value="摄影">摄影</option>
-                    <option value="艺术">艺术</option>
-                    <option value="科技">科技</option>
-                    <option value="时尚">时尚</option>
+                    <option value="baking">🍰 烘焙</option>
+                    <option value="lgbtq_rights">🏳️‍🌈 LGBTQ+</option>
+                    <option value="hiking">⛰️ 徒步</option>
+                    <option value="gardening">🌱 园艺</option>
+                    <option value="rnb">🎵 音乐</option>
+                    <option value="art">🎨 艺术</option>
+                    <option value="writing">📝 写作</option>
+                    <option value="country">🖼️ 绘画</option>
+                    <option value="skiing">📚 阅读</option>
+                    <option value="museums">🏛️ 博物馆</option>
+                    <option value="vegetarian">🥦 素食</option>
+                    <option value="horror">📺 电影</option>
+                    <option value="dancing">💃 跳舞</option>
+                    <option value="yoga">🧘 瑜伽</option>
+                    <option value="dogs">🐶 狗</option>
+                    <option value="crafts">🧷 手工艺</option>
+                    <option value="festivals">🎉 节日</option>
+                    <option value="tennis">🎾 运动</option>
+                    <option value="cats">🐱 猫</option>
+                    <option value="concerts">🎟️ 音乐会</option>
+                    <option value="foodie">🍜 美食</option>
+                    <option value="exploring_cities">🏙️ 旅游</option>
+                    <option value="camping">⛺ 露营</option>
+                    <option value="wine">🍷 葡萄酒</option>
+                    <option value="feminism">💛 女权主义</option>
+                    <option value="coffee">☕ 咖啡</option>
+                    <option value="gaming">🎮 游戏</option>
                   </select>
                 ) : (
                   <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.interests && profile.interests.length > 0 
-                      ? profile.interests.join(', ') 
-                      : '未设置'
-                    }
+                    {(() => {
+                      // 兴趣ID到中文名称的映射
+                      const interestMap: { [key: string]: string } = {
+                        'baking': '🍰 烘焙',
+                        'lgbtq_rights': '🏳️‍🌈 LGBTQ+',
+                        'hiking': '⛰️ 徒步',
+                        'gardening': '🌱 园艺',
+                        'rnb': '🎵 音乐',
+                        'art': '🎨 艺术',
+                        'writing': '📝 写作',
+                        'country': '🖼️ 绘画',
+                        'skiing': '📚 阅读',
+                        'museums': '🏛️ 博物馆',
+                        'vegetarian': '🥦 素食',
+                        'horror': '📺 电影',
+                        'dancing': '💃 跳舞',
+                        'yoga': '🧘 瑜伽',
+                        'dogs': '🐶 狗',
+                        'crafts': '🧷 手工艺',
+                        'festivals': '🎉 节日',
+                        'tennis': '🎾 运动',
+                        'cats': '🐱 猫',
+                        'concerts': '🎟️ 音乐会',
+                        'foodie': '🍜 美食',
+                        'exploring_cities': '🏙️ 旅游',
+                        'camping': '⛺ 露营',
+                        'wine': '🍷 葡萄酒',
+                        'feminism': '💛 女权主义',
+                        'coffee': '☕ 咖啡',
+                        'gaming': '🎮 游戏'
+                      }
+                      
+                      if (profile.interests && profile.interests.length > 0) {
+                        const translatedInterests = profile.interests.map(interest => 
+                          interestMap[interest] || interest
+                        )
+                        return translatedInterests.join(', ')
+                      }
+                      return '未设置'
+                    })()}
                   </p>
                 )}
               </div>
@@ -770,14 +854,11 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 </label>
                 {isEditing ? (
                   <select
-                    multiple
-                    value={editedProfile.languages || []}
-                    onChange={(e) => {
-                      const selected = Array.from(e.target.selectedOptions, option => option.value)
-                      handleInputChange('languages', selected)
-                    }}
+                    value={editedProfile.languages || ''}
+                    onChange={(e) => handleInputChange('languages', e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
+                    <option value="">选择语言</option>
                     <option value="中文">中文</option>
                     <option value="英语">英语</option>
                     <option value="日语">日语</option>
@@ -789,10 +870,7 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                   </select>
                 ) : (
                   <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.languages && profile.languages.length > 0 
-                      ? profile.languages.join(', ') 
-                      : '未设置'
-                    }
+                    {profile.languages || '未设置'}
                   </p>
                 )}
               </div>

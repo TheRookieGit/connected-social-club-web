@@ -341,7 +341,7 @@ export default function RegisterForm() {
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
         
-        // 跳转到性别选择页面
+        // 新注册用户应该总是跳转到性别选择页面
         router.push('/gender-selection')
       } else {
         setError(data.error || '注册失败')

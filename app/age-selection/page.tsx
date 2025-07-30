@@ -26,6 +26,53 @@ export default function AgeSelection() {
     }
   }, [])
 
+  // 防止后退功能
+  useEffect(() => {
+    // 在页面加载时立即添加历史记录，防止直接后退
+    window.history.pushState(null, '', '/age-selection')
+
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      // 如果用户已经输入了年龄，就阻止离开页面
+      if (age) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    const handlePopState = (e: PopStateEvent) => {
+      // 如果用户已经输入了年龄，阻止后退
+      if (age) {
+        // 阻止默认的后退行为
+        e.preventDefault()
+        // 立即重新添加当前页面到历史记录
+        window.history.pushState(null, '', '/age-selection')
+        // 显示提示信息
+        alert('请完成当前页面的选择后再继续')
+        // 强制阻止导航
+        return false
+      }
+    }
+
+    // 监听浏览器后退按钮
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Backspace' && age) {
+        e.preventDefault()
+        alert('请完成当前页面的选择后再继续')
+        return false
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('popstate', handlePopState)
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('popstate', handlePopState)
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [age])
+
   const handleAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isConfirmed) return // 如果已确认，不允许更改
     const value = e.target.value
@@ -108,7 +155,7 @@ export default function AgeSelection() {
 
       {/* 进度条 */}
       <div className="w-full h-1 bg-gray-200">
-        <div className="w-1/2 h-full bg-black"></div>
+        <div className="w-[20%] h-full bg-black"></div>
       </div>
 
       {/* 主要内容 */}

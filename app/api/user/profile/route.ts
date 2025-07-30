@@ -201,9 +201,10 @@ export async function PUT(request: NextRequest) {
       'name', 'phone', 'birth_date', 'gender', 'avatar_url', 'bio',
       'location', 'occupation', 'education', 'relationship_status',
       'height', 'weight', 'ethnicity', 'religion', 'employer', 'school',
-      'degree', 'values_preferences', 'personality_type', 'hometown',
+      'degree', 'values_preferences', 'values', 'personality_type', 'hometown',
       'languages', 'family_plans', 'has_kids', 'marital_status',
-      'exercise_frequency', 'smoking_status', 'drinking_status', 'dating_style'
+      'exercise_frequency', 'smoking_status', 'drinking_status', 'dating_style',
+      'photos', 'interests', 'preferences'
     ]
     
     const filteredData: any = {}
