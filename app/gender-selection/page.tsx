@@ -12,28 +12,6 @@ export default function GenderSelection() {
   const [isConfirmed, setIsConfirmed] = useState(false)
   const router = useRouter()
 
-  const checkIfAlreadyComplete = async (token: string) => {
-    try {
-      const response = await fetch('/api/user/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.user) {
-          // 不管注册是否完成，只要用户存在就直接跳转到dashboard
-          console.log('用户已存在，跳转到dashboard')
-          router.push('/dashboard')
-          return
-        }
-      }
-    } catch (error) {
-      console.error('检查用户完成状态失败:', error)
-    }
-  }
-
   useEffect(() => {
     // 从localStorage获取用户信息
     const userStr = localStorage.getItem('user')
@@ -46,6 +24,28 @@ export default function GenderSelection() {
         
         // 检查用户是否已经完成基本信息填写
         if (token) {
+          const checkIfAlreadyComplete = async (token: string) => {
+            try {
+              const response = await fetch('/api/user/profile', {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              })
+
+              if (response.ok) {
+                const data = await response.json()
+                if (data.success && data.user) {
+                  // 不管注册是否完成，只要用户存在就直接跳转到dashboard
+                  console.log('用户已存在，跳转到dashboard')
+                  router.push('/dashboard')
+                  return
+                }
+              }
+            } catch (error) {
+              console.error('检查用户完成状态失败:', error)
+            }
+          }
+          
           checkIfAlreadyComplete(token)
         }
       } catch (error) {
@@ -53,7 +53,7 @@ export default function GenderSelection() {
         setUserName('用户')
       }
     }
-  }, [checkIfAlreadyComplete])
+  }, [router])
 
   // 防止后退功能
   useEffect(() => {

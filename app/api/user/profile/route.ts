@@ -196,15 +196,14 @@ export async function PUT(request: NextRequest) {
     const updateData = await request.json()
     console.log('接收到的原始数据:', updateData)
     
-    // 允许更新的字段
+    // 允许更新的字段（仅限users表中实际存在的字段）
     const allowedFields = [
       'name', 'phone', 'birth_date', 'gender', 'avatar_url', 'bio',
       'location', 'occupation', 'education', 'relationship_status',
-      'height', 'weight', 'religion', 'employer', 'school',
-      'degree', 'values_preferences', 'values',
-      'family_plans', 'has_kids',
-      'smoking_status', 'drinking_status', 'dating_style',
-      'photos', 'interests', 'preferences'
+      'height', 'weight', 'ethnicity', 'religion', 'employer', 'school',
+      'degree', 'values_preferences', 'personality_type', 'hometown',
+      'languages', 'family_plans', 'has_kids', 'marital_status',
+      'exercise_frequency', 'smoking_status', 'drinking_status', 'dating_style'
     ]
     
     const filteredData: any = {}

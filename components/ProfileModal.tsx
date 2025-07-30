@@ -887,7 +887,7 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 </label>
                 {isEditing ? (
                   <select
-                    value={editedProfile.has_kids || ''}
+                    value={typeof editedProfile.has_kids === 'string' ? editedProfile.has_kids : ''}
                     onChange={(e) => handleInputChange('has_kids', e.target.value)}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
