@@ -64,7 +64,7 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string>('')
-  const [searchTerm, setSearchTerm] = useState('')
+  // const [searchTerm, setSearchTerm] = useState('')
   const [showUnreadOnly, setShowUnreadOnly] = useState(false)
   const [showPinnedOnly, setShowPinnedOnly] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
@@ -271,10 +271,11 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
 
   // 过滤对话列表
   const filteredConversations = conversations.filter(conv => {
-    const matchesSearch = conv.user.name.toLowerCase().includes(searchTerm.toLowerCase())
+    // const matchesSearch = conv.user.name.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesUnreadFilter = !showUnreadOnly || conv.unreadCount > 0 || conv.isMarkedAsUnread
     const matchesPinnedFilter = !showPinnedOnly || conv.isPinned
-    return matchesSearch && matchesUnreadFilter && matchesPinnedFilter
+    // return matchesSearch && matchesUnreadFilter && matchesPinnedFilter
+    return matchesUnreadFilter && matchesPinnedFilter
   })
 
   // 排序对话列表（置顶优先，然后按最后消息时间）
@@ -345,7 +346,8 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
           <div className="w-96 bg-gradient-to-b from-pink-50 to-rose-50 border-r border-pink-200 flex flex-col">
             {/* 搜索和过滤 */}
             <div className="p-4 space-y-3">
-              <div className="relative">
+              {/* 搜索功能已注释掉 */}
+              {/* <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-pink-400" size={18} />
                 <input
                   type="text"
@@ -354,7 +356,7 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
                   onChange={(e) => setSearchTerm(e.target.value)}
                   className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent"
                 />
-              </div>
+              </div> */}
               
               <div className="flex space-x-2">
                 <button
