@@ -117,7 +117,7 @@ export default function GenderSelection() {
             <div 
               className={`relative p-3 rounded-lg border-2 cursor-pointer transition-all ${
                 selectedGender === 'female' 
-                  ? 'bg-yellow-400 border-yellow-400' 
+                  ? 'bg-pink-100 border-black' 
                   : isConfirmed
                   ? 'bg-gray-100 border-gray-200 cursor-not-allowed'
                   : 'bg-white border-gray-300 hover:border-gray-400'
@@ -144,7 +144,7 @@ export default function GenderSelection() {
             <div 
               className={`relative p-3 rounded-lg border-2 cursor-pointer transition-all ${
                 selectedGender === 'male' 
-                  ? 'bg-yellow-400 border-yellow-400' 
+                  ? 'bg-pink-100 border-black' 
                   : isConfirmed
                   ? 'bg-gray-100 border-gray-200 cursor-not-allowed'
                   : 'bg-white border-gray-300 hover:border-gray-400'
@@ -169,7 +169,7 @@ export default function GenderSelection() {
             <div 
               className={`relative p-3 rounded-lg border-2 cursor-pointer transition-all ${
                 selectedGender === 'nonbinary' 
-                  ? 'bg-yellow-400 border-yellow-400' 
+                  ? 'bg-pink-100 border-black' 
                   : isConfirmed
                   ? 'bg-gray-100 border-gray-200 cursor-not-allowed'
                   : 'bg-white border-gray-300 hover:border-gray-400'

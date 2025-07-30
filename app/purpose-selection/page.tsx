@@ -112,7 +112,7 @@ export default function PurposeSelection() {
             <div 
               className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
                 selectedPurpose === 'dating' 
-                  ? 'bg-yellow-400 border-yellow-400' 
+                  ? 'bg-pink-100 border-black' 
                   : isConfirmed
                   ? 'bg-gray-100 border-gray-200 cursor-not-allowed'
                   : 'bg-white border-gray-300 hover:border-gray-400'
@@ -142,7 +142,7 @@ export default function PurposeSelection() {
             <div 
               className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
                 selectedPurpose === 'friendship' 
-                  ? 'bg-yellow-400 border-yellow-400' 
+                  ? 'bg-pink-100 border-black' 
                   : isConfirmed
                   ? 'bg-gray-100 border-gray-200 cursor-not-allowed'
                   : 'bg-white border-gray-300 hover:border-gray-400'
@@ -172,7 +172,7 @@ export default function PurposeSelection() {
             <div 
               className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
                 selectedPurpose === 'business' 
-                  ? 'bg-yellow-400 border-yellow-400' 
+                  ? 'bg-pink-100 border-black' 
                   : isConfirmed
                   ? 'bg-gray-100 border-gray-200 cursor-not-allowed'
                   : 'bg-white border-gray-300 hover:border-gray-400'
