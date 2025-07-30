@@ -39,6 +39,16 @@ export default function StreamChatPanel({
   const [isSearching, setIsSearching] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
+  // 自动清除错误信息
+  useEffect(() => {
+    if (errorMessage) {
+      const timer = setTimeout(() => {
+        setErrorMessage(null)
+      }, 5000) // 5秒后自动清除
+      return () => clearTimeout(timer)
+    }
+  }, [errorMessage])
+
   // 确保只在客户端渲染
   useEffect(() => {
     setIsClient(true)
@@ -372,44 +382,56 @@ export default function StreamChatPanel({
     })
   }
 
-  // 搜索用户
+  // 搜索用户 - 使用系统API而不是Stream Chat
   const searchUsers = async (query: string) => {
     if (!query.trim()) {
       setSearchResults([])
       return
     }
 
-    if (!chatClient) {
-      console.error('❌ 聊天客户端未初始化')
-      setSearchResults([])
-      return
-    }
-
     setIsSearching(true)
     try {
-      console.log(`🔍 搜索用户: ${query}`)
+      console.log(`🔍 搜索系统用户: ${query}`)
       
-      // 搜索Stream Chat中的用户 - 使用更简单的搜索条件
-      const response = await chatClient.queryUsers(
-        { 
-          $or: [
-            { name: { $autocomplete: query } },
-            { id: { $autocomplete: query } }
-          ]
-        },
-        { id: 1 }
-      )
+      const token = localStorage.getItem('token')
+      if (!token) {
+        console.error('❌ 未找到认证令牌')
+        setSearchResults([])
+        return
+      }
+
+      // 使用新的用户搜索API
+      const response = await fetch(`/api/user/search?q=${encodeURIComponent(query)}&limit=10`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`搜索请求失败: ${response.status}`)
+      }
+
+      const data = await response.json()
       
-      console.log(`✅ 搜索到 ${response.users.length} 个用户`)
-      console.log('📋 搜索结果:', response.users.map(u => ({ id: u.id, name: u.name })))
-      setSearchResults(response.users)
+      if (data.success) {
+        console.log(`✅ 搜索到 ${data.users.length} 个用户`)
+        console.log('📋 搜索结果:', data.users.map((u: any) => ({ 
+          id: u.id, 
+          name: u.name, 
+          isMatched: u.isMatched,
+          canStartChat: u.canStartChat 
+        })))
+        setSearchResults(data.users)
+      } else {
+        throw new Error(data.error || '搜索失败')
+      }
     } catch (error) {
       console.error('❌ 搜索用户失败:', error)
       setSearchResults([])
       
-      // 如果搜索失败，显示错误信息
+      // 显示错误信息
       if (error instanceof Error) {
-        console.error('详细错误:', error.message)
+        setErrorMessage(`搜索失败: ${error.message}`)
       }
     } finally {
       setIsSearching(false)
@@ -440,11 +462,14 @@ export default function StreamChatPanel({
       console.log(`💬 创建与用户 ${userName} 的聊天频道`)
       console.log('📋 参数:', { currentUserId: currentUser.id, targetUserId: userId })
       
-      // 检查是否已存在频道
+      // 检查是否已存在频道 - 修复权限问题，只查询当前用户参与的频道
       const existingChannels = await chatClient.queryChannels({
         type: 'messaging',
-        members: { $in: [currentUser.id.toString(), userId] }
-      })
+        members: { $in: [currentUser.id.toString()] },
+        $and: [
+          { members: { $in: [userId] } }
+        ]
+      }, {}, { limit: 10 })
 
       if (existingChannels.length > 0) {
         console.log('✅ 找到现有频道，切换到该频道')
@@ -721,20 +746,55 @@ export default function StreamChatPanel({
                       {searchResults.map((user) => (
                         <div
                           key={user.id}
-                          className="flex items-center space-x-3 p-3 bg-pink-50 rounded-lg hover:bg-pink-100 transition-colors cursor-pointer"
-                          onClick={() => createChatWithUser(user.id, user.name || user.id)}
+                          className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
+                            user.canStartChat 
+                              ? 'bg-pink-50 hover:bg-pink-100 cursor-pointer' 
+                              : 'bg-gray-50 cursor-not-allowed opacity-60'
+                          }`}
+                          onClick={() => {
+                            if (user.canStartChat) {
+                              createChatWithUser(user.id.toString(), user.name || user.id)
+                            } else {
+                              setErrorMessage('只能与已匹配的用户开始聊天')
+                            }
+                          }}
                         >
-                          <div className="w-8 h-8 bg-gradient-to-br from-pink-200 to-rose-200 rounded-full flex items-center justify-center text-sm font-bold text-pink-600">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                            user.canStartChat 
+                              ? 'bg-gradient-to-br from-pink-200 to-rose-200 text-pink-600'
+                              : 'bg-gray-200 text-gray-500'
+                          }`}>
                             {(user.name || user.id).charAt(0)}
                           </div>
                           <div className="flex-1">
-                            <p className="text-sm font-medium text-gray-900">{user.name || `用户${user.id}`}</p>
-                            <p className="text-xs text-gray-500">ID: {user.id}</p>
+                            <div className="flex items-center space-x-2">
+                              <p className="text-sm font-medium text-gray-900">{user.name || `用户${user.id}`}</p>
+                              {user.isMatched && (
+                                <span className="px-2 py-1 text-xs bg-green-100 text-green-600 rounded-full">
+                                  已匹配
+                                </span>
+                              )}
+                              {!user.isMatched && (
+                                <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-600 rounded-full">
+                                  未匹配
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-xs text-gray-500">
+                              {user.location && `📍 ${user.location} • `}
+                              {user.canStartChat ? '点击开始聊天' : '需要先匹配才能聊天'}
+                            </p>
                           </div>
-                          <div className="text-pink-500">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                            </svg>
+                          <div className={user.canStartChat ? 'text-pink-500' : 'text-gray-400'}>
+                            {user.canStartChat ? (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                              </svg>
+                            ) : (
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                              </svg>
+                            )}
                           </div>
                         </div>
                       ))}
