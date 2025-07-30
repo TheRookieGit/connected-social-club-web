@@ -29,8 +29,8 @@ export default function AgeSelection() {
   const handleAgeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isConfirmed) return // 如果已确认，不允许更改
     const value = e.target.value
-    // 只允许输入数字，且范围在18-100之间
-    if (value === '' || (/^\d+$/.test(value) && parseInt(value) >= 18 && parseInt(value) <= 100)) {
+    // 只允许输入数字，且长度不超过3位
+    if (value === '' || (/^\d{1,3}$/.test(value))) {
       setAge(value)
     }
   }
