@@ -2,11 +2,11 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, ChevronRight, Info, Check } from 'lucide-react'
+import { ChevronRight, Info, Check } from 'lucide-react'
 
 export default function GenderSelection() {
   const [selectedGender, setSelectedGender] = useState('')
-  const [showMoreDetails, setShowMoreDetails] = useState(false)
+
   const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isConfirmed, setIsConfirmed] = useState(false)
@@ -141,24 +141,7 @@ export default function GenderSelection() {
                 </div>
               </div>
               
-              {/* 更多详情选项 - 只在选中时显示 */}
-              {selectedGender === 'female' && !isConfirmed && (
-                <div className="mt-2">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.stopPropagation()
-                      setShowMoreDetails(!showMoreDetails)
-                    }}
-                    className="flex items-center text-xs text-gray-600 hover:text-gray-800"
-                  >
-                    添加更多关于您的性别信息
-                    <ChevronDown className={`w-3 h-3 ml-1 transition-transform ${
-                      showMoreDetails ? 'rotate-180' : ''
-                    }`} />
-                  </button>
-                </div>
-              )}
+
             </div>
 
             {/* 男性选项 */}
