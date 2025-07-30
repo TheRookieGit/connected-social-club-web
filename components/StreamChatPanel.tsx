@@ -33,6 +33,7 @@ export default function StreamChatPanel({
   const [channels, setChannels] = useState<any[]>([])
   const [selectedChannel, setSelectedChannel] = useState<any>(null)
   const [showChannelMenu, setShowChannelMenu] = useState<string | null>(null)
+  const [pinnedChannels, setPinnedChannels] = useState<Set<string>>(new Set())
 
   // 确保只在客户端渲染
   useEffect(() => {
@@ -303,6 +304,70 @@ export default function StreamChatPanel({
     return null
   }
 
+  // 置顶频道
+  const togglePinChannel = (channelId: string) => {
+    setPinnedChannels(prev => {
+      const newSet = new Set(prev)
+      if (newSet.has(channelId)) {
+        newSet.delete(channelId)
+      } else {
+        newSet.add(channelId)
+      }
+      return newSet
+    })
+    setShowChannelMenu(null)
+  }
+
+  // 删除频道
+  const deleteChannel = async (channel: any) => {
+    if (!chatClient || !currentUser) return
+
+    try {
+      console.log(`🗑️ 删除频道: ${channel.id}`)
+      
+      // 从Stream Chat中删除频道
+      await channel.delete()
+      
+      // 从本地状态中移除频道
+      setChannels(prev => prev.filter(c => c.id !== channel.id))
+      
+      // 如果删除的是当前选中的频道，清除选中状态
+      if (selectedChannel?.id === channel.id) {
+        setSelectedChannel(null)
+      }
+      
+      // 从置顶列表中移除
+      setPinnedChannels(prev => {
+        const newSet = new Set(prev)
+        newSet.delete(channel.id)
+        return newSet
+      })
+      
+      console.log(`✅ 频道删除成功: ${channel.id}`)
+    } catch (error) {
+      console.error(`❌ 删除频道失败: ${channel.id}`, error)
+      alert('删除频道失败，请重试')
+    }
+    
+    setShowChannelMenu(null)
+  }
+
+  // 获取排序后的频道列表（置顶的在前）
+  const getSortedChannels = () => {
+    return [...channels].sort((a, b) => {
+      const aPinned = pinnedChannels.has(a.id)
+      const bPinned = pinnedChannels.has(b.id)
+      
+      if (aPinned && !bPinned) return -1
+      if (!aPinned && bPinned) return 1
+      
+      // 如果置顶状态相同，按最后消息时间排序
+      const aTime = a.state.last_message?.created_at || 0
+      const bTime = b.state.last_message?.created_at || 0
+      return new Date(bTime).getTime() - new Date(aTime).getTime()
+    })
+  }
+
   // 服务器端渲染时返回加载状态
   if (!isClient) {
     return (
@@ -492,10 +557,11 @@ export default function StreamChatPanel({
                 {/* 自定义频道列表 */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-2">
                   {channels.length > 0 ? (
-                    channels.map((channel) => {
+                    getSortedChannels().map((channel) => {
                       const otherUser = getOtherUser(channel)
                       const lastMessage = channel.state.last_message
                       const isSelected = selectedChannel?.id === channel.id
+                      const isPinned = pinnedChannels.has(channel.id)
                       
                       return (
                         <div
@@ -507,6 +573,12 @@ export default function StreamChatPanel({
                           } rounded-2xl p-4`}
                           onClick={() => setSelectedChannel(channel)}
                         >
+                          {/* 置顶标识 */}
+                          {isPinned && (
+                            <div className="absolute top-2 right-2 z-10">
+                              <Pin size={12} className="text-pink-500" />
+                            </div>
+                          )}
                           <div className="flex items-center space-x-3">
                             {/* 头像 */}
                             <div className="relative">
@@ -587,19 +659,21 @@ export default function StreamChatPanel({
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation()
-                                        // 这里可以添加置顶功能
-                                        setShowChannelMenu(null)
+                                        togglePinChannel(channel.id)
                                       }}
-                                      className="w-full px-4 py-2 text-left text-sm hover:bg-pink-50 flex items-center space-x-2"
+                                      className={`w-full px-4 py-2 text-left text-sm hover:bg-pink-50 flex items-center space-x-2 ${
+                                        isPinned ? 'text-pink-600' : 'text-gray-700'
+                                      }`}
                                     >
                                       <Pin size={14} />
-                                      <span>置顶对话</span>
+                                      <span>{isPinned ? '取消置顶' : '置顶对话'}</span>
                                     </button>
                                     <button
                                       onClick={(e) => {
                                         e.stopPropagation()
-                                        // 这里可以添加删除功能
-                                        setShowChannelMenu(null)
+                                        if (confirm('确定要删除这个对话吗？此操作不可撤销。')) {
+                                          deleteChannel(channel)
+                                        }
                                       }}
                                       className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center space-x-2"
                                     >
