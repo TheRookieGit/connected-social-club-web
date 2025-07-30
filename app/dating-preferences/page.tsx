@@ -4,8 +4,9 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { ChevronRight, Info, Check, Eye } from 'lucide-react'
 
-export default function PurposeSelection() {
-  const [selectedPurpose, setSelectedPurpose] = useState('')
+export default function DatingPreferences() {
+  const [openToEveryone, setOpenToEveryone] = useState(false)
+  const [selectedGenders, setSelectedGenders] = useState<string[]>([])
   const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isConfirmed, setIsConfirmed] = useState(false)
@@ -25,14 +26,31 @@ export default function PurposeSelection() {
     }
   }, [])
 
-  const handlePurposeSelect = (purpose: string) => {
+  const handleToggleEveryone = () => {
     if (isConfirmed) return // 如果已确认，不允许更改
-    setSelectedPurpose(purpose)
+    setOpenToEveryone(!openToEveryone)
+    if (!openToEveryone) {
+      // 如果开启"约会所有人"，清空其他选择
+      setSelectedGenders([])
+    }
+  }
+
+  const handleGenderSelect = (gender: string) => {
+    if (isConfirmed) return // 如果已确认，不允许更改
+    if (openToEveryone) return // 如果选择了"约会所有人"，不允许单独选择
+
+    setSelectedGenders(prev => {
+      if (prev.includes(gender)) {
+        return prev.filter(g => g !== gender)
+      } else {
+        return [...prev, gender]
+      }
+    })
   }
 
   const handleConfirm = async () => {
-    if (!selectedPurpose) {
-      alert('请选择您的使用目的')
+    if (!openToEveryone && selectedGenders.length === 0) {
+      alert('请选择您想要约会的对象')
       return
     }
 
@@ -40,7 +58,7 @@ export default function PurposeSelection() {
     setIsLoading(true)
     
     try {
-      // 更新用户使用目的信息到服务器
+      // 更新用户约会偏好信息到服务器
       const token = localStorage.getItem('token')
       if (token) {
         const response = await fetch('/api/user/profile', {
@@ -50,24 +68,24 @@ export default function PurposeSelection() {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            purpose: selectedPurpose
+            dating_preferences: openToEveryone ? ['everyone'] : selectedGenders
           })
         })
 
         if (!response.ok) {
-          console.error('更新使用目的信息失败')
+          console.error('更新约会偏好信息失败')
         }
       }
 
       // 延迟跳转，让用户看到确认状态
       setTimeout(() => {
-        router.push('/dating-preferences')
+        router.push('/dashboard')
       }, 1500)
     } catch (error) {
-      console.error('处理使用目的选择时出错:', error)
+      console.error('处理约会偏好选择时出错:', error)
       // 即使出错也继续跳转
       setTimeout(() => {
-        router.push('/dating-preferences')
+        router.push('/dashboard')
       }, 1500)
     } finally {
       setIsLoading(false)
@@ -90,7 +108,7 @@ export default function PurposeSelection() {
 
       {/* 进度条 */}
       <div className="w-full h-1 bg-gray-200">
-        <div className="w-3/4 h-full bg-black"></div>
+        <div className="w-full h-full bg-black"></div>
       </div>
 
       {/* 主要内容 */}
@@ -98,100 +116,107 @@ export default function PurposeSelection() {
         {/* 标题和介绍 */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-black mb-3">
-            您来社交俱乐部是为了什么？
+            您想认识谁？
           </h1>
           <p className="text-sm text-gray-600 leading-relaxed">
-            浪漫和心动，还是一段美好的友谊？选择一个模式来找到您的人。
+            您可以选择多个答案，并且随时可以更改。
           </p>
         </div>
 
-        {/* 使用目的选择 */}
+        {/* 约会所有人开关 */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between p-4 border-2 border-gray-300 rounded-lg">
+            <span className="text-base font-medium text-black">
+              我对约会所有人持开放态度
+            </span>
+            <button
+              onClick={handleToggleEveryone}
+              disabled={isConfirmed}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                openToEveryone ? 'bg-black' : 'bg-gray-300'
+              } ${isConfirmed ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  openToEveryone ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+          </div>
+        </div>
+
+        {/* 性别选择选项 */}
         <div className="mb-8">
           <div className="space-y-3">
-            {/* 约会选项 */}
+            {/* 男性选项 */}
             <div 
               className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                selectedPurpose === 'dating' 
+                selectedGenders.includes('male') 
                   ? 'bg-pink-100 border-black' 
-                  : isConfirmed
+                  : isConfirmed || openToEveryone
                   ? 'bg-gray-100 border-gray-200 cursor-not-allowed'
                   : 'bg-white border-gray-300 hover:border-gray-400'
               }`}
-              onClick={() => handlePurposeSelect('dating')}
+              onClick={() => handleGenderSelect('male')}
             >
               <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="text-lg font-bold text-black mb-1">约会</div>
-                  <div className="text-sm text-gray-600">
-                    寻找一段关系，随意的，或介于两者之间的
-                  </div>
-                </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ml-4 ${
-                  selectedPurpose === 'dating' 
+                <span className="text-base font-medium text-black">男性</span>
+                <div className={`w-5 h-5 border-2 flex items-center justify-center ${
+                  selectedGenders.includes('male') 
                     ? 'bg-black border-black' 
                     : 'border-black'
                 }`}>
-                  {selectedPurpose === 'dating' && (
+                  {selectedGenders.includes('male') && (
                     <Check className="w-3 h-3 text-white" />
                   )}
                 </div>
               </div>
             </div>
 
-            {/* 交友选项 */}
+            {/* 女性选项 */}
             <div 
               className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                selectedPurpose === 'friendship' 
+                selectedGenders.includes('female') 
                   ? 'bg-pink-100 border-black' 
-                  : isConfirmed
+                  : isConfirmed || openToEveryone
                   ? 'bg-gray-100 border-gray-200 cursor-not-allowed'
                   : 'bg-white border-gray-300 hover:border-gray-400'
               }`}
-              onClick={() => handlePurposeSelect('friendship')}
+              onClick={() => handleGenderSelect('female')}
             >
               <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="text-lg font-bold text-black mb-1">挚友</div>
-                  <div className="text-sm text-gray-600">
-                    结交新朋友并找到您的社区
-                  </div>
-                </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ml-4 ${
-                  selectedPurpose === 'friendship' 
+                <span className="text-base font-medium text-black">女性</span>
+                <div className={`w-5 h-5 border-2 flex items-center justify-center ${
+                  selectedGenders.includes('female') 
                     ? 'bg-black border-black' 
                     : 'border-black'
                 }`}>
-                  {selectedPurpose === 'friendship' && (
+                  {selectedGenders.includes('female') && (
                     <Check className="w-3 h-3 text-white" />
                   )}
                 </div>
               </div>
             </div>
 
-            {/* 商务选项 */}
+            {/* 非二元性别选项 */}
             <div 
               className={`relative p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                selectedPurpose === 'business' 
+                selectedGenders.includes('nonbinary') 
                   ? 'bg-pink-100 border-black' 
-                  : isConfirmed
+                  : isConfirmed || openToEveryone
                   ? 'bg-gray-100 border-gray-200 cursor-not-allowed'
                   : 'bg-white border-gray-300 hover:border-gray-400'
               }`}
-              onClick={() => handlePurposeSelect('business')}
+              onClick={() => handleGenderSelect('nonbinary')}
             >
               <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="text-lg font-bold text-black mb-1">商务</div>
-                  <div className="text-sm text-gray-600">
-                    专业地建立人脉并发展职业
-                  </div>
-                </div>
-                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ml-4 ${
-                  selectedPurpose === 'business' 
+                <span className="text-base font-medium text-black">非二元性别</span>
+                <div className={`w-5 h-5 border-2 flex items-center justify-center ${
+                  selectedGenders.includes('nonbinary') 
                     ? 'bg-black border-black' 
                     : 'border-black'
                 }`}>
-                  {selectedPurpose === 'business' && (
+                  {selectedGenders.includes('nonbinary') && (
                     <Check className="w-3 h-3 text-white" />
                   )}
                 </div>
@@ -205,7 +230,7 @@ export default function PurposeSelection() {
           <div className="flex items-start space-x-2">
             <Eye className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
             <div className="text-xs text-gray-600">
-              您只会看到与您处于相同模式的人。
+              您只会看到想要约会您性别的人。
             </div>
           </div>
         </div>
@@ -214,9 +239,9 @@ export default function PurposeSelection() {
         {!isConfirmed && (
           <button
             onClick={handleConfirm}
-            disabled={!selectedPurpose}
+            disabled={!openToEveryone && selectedGenders.length === 0}
             className={`w-full py-3 px-4 rounded-lg font-medium transition-all ${
-              selectedPurpose
+              openToEveryone || selectedGenders.length > 0
                 ? 'bg-black text-white hover:bg-gray-800'
                 : 'bg-gray-300 text-gray-500 cursor-not-allowed'
             }`}
@@ -232,7 +257,7 @@ export default function PurposeSelection() {
               <Check className="w-6 h-6 text-green-600" />
             </div>
             <p className="text-sm text-gray-600">
-              使用目的已保存，正在跳转...
+              约会偏好已保存，正在跳转...
             </p>
           </div>
         )}
