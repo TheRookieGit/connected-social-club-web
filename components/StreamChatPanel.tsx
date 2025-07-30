@@ -37,6 +37,7 @@ export default function StreamChatPanel({
   const [searchTerm, setSearchTerm] = useState('')
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   // 确保只在客户端渲染
   useEffect(() => {
@@ -373,7 +374,13 @@ export default function StreamChatPanel({
 
   // 搜索用户
   const searchUsers = async (query: string) => {
-    if (!query.trim() || !chatClient) {
+    if (!query.trim()) {
+      setSearchResults([])
+      return
+    }
+
+    if (!chatClient) {
+      console.error('❌ 聊天客户端未初始化')
       setSearchResults([])
       return
     }
@@ -382,7 +389,7 @@ export default function StreamChatPanel({
     try {
       console.log(`🔍 搜索用户: ${query}`)
       
-      // 搜索Stream Chat中的用户
+      // 搜索Stream Chat中的用户 - 使用更简单的搜索条件
       const response = await chatClient.queryUsers(
         { 
           $or: [
@@ -394,10 +401,16 @@ export default function StreamChatPanel({
       )
       
       console.log(`✅ 搜索到 ${response.users.length} 个用户`)
+      console.log('📋 搜索结果:', response.users.map(u => ({ id: u.id, name: u.name })))
       setSearchResults(response.users)
     } catch (error) {
       console.error('❌ 搜索用户失败:', error)
       setSearchResults([])
+      
+      // 如果搜索失败，显示错误信息
+      if (error instanceof Error) {
+        console.error('详细错误:', error.message)
+      }
     } finally {
       setIsSearching(false)
     }
@@ -417,10 +430,15 @@ export default function StreamChatPanel({
 
   // 创建与用户的聊天频道
   const createChatWithUser = async (userId: string, userName: string) => {
-    if (!chatClient || !currentUser) return
+    if (!chatClient || !currentUser) {
+      console.error('❌ 缺少必要参数:', { chatClient: !!chatClient, currentUser: !!currentUser })
+      setErrorMessage('聊天服务未初始化，请刷新页面重试')
+      return
+    }
 
     try {
       console.log(`💬 创建与用户 ${userName} 的聊天频道`)
+      console.log('📋 参数:', { currentUserId: currentUser.id, targetUserId: userId })
       
       // 检查是否已存在频道
       const existingChannels = await chatClient.queryChannels({
@@ -436,13 +454,16 @@ export default function StreamChatPanel({
         return
       }
 
-      // 创建新频道
-      const channelId = `chat-${Math.min(Number(currentUser.id), Number(userId))}-${Math.max(Number(currentUser.id), Number(userId))}`
+      // 创建新频道 - 使用更简单的频道ID格式
+      const channelId = `messaging-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+      console.log(`🔧 创建频道ID: ${channelId}`)
+      
       const channel = chatClient.channel('messaging', channelId, {
         members: [currentUser.id.toString(), userId],
         created_by_id: currentUser.id.toString()
       })
 
+      console.log('📡 开始监听频道...')
       await channel.watch()
       console.log(`✅ 成功创建频道: ${channelId}`)
       
@@ -454,7 +475,14 @@ export default function StreamChatPanel({
       
     } catch (error) {
       console.error('❌ 创建聊天频道失败:', error)
-      alert('创建聊天频道失败，请重试')
+      
+      // 更详细的错误信息
+      let message = '创建聊天频道失败，请重试'
+      if (error instanceof Error) {
+        message = `创建失败: ${error.message}`
+      }
+      
+      setErrorMessage(message)
     }
   }
 
@@ -647,6 +675,26 @@ export default function StreamChatPanel({
                 
                 {/* 搜索框 */}
                 <div className="p-4 border-b border-pink-200">
+                  {/* 错误提示 */}
+                  {errorMessage && (
+                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                      <div className="flex items-center space-x-2">
+                        <svg className="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z" />
+                        </svg>
+                        <span className="text-sm text-red-700">{errorMessage}</span>
+                        <button
+                          onClick={() => setErrorMessage(null)}
+                          className="ml-auto text-red-500 hover:text-red-700"
+                        >
+                          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="relative">
                     <input
                       type="text"
