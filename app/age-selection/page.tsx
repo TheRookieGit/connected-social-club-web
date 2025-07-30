@@ -35,10 +35,20 @@ export default function AgeSelection() {
               if (response.ok) {
                 const data = await response.json()
                 if (data.success && data.user) {
-                  // 不管注册是否完成，只要用户存在就直接跳转到dashboard
-                  console.log('用户已存在，跳转到dashboard')
-                  router.push('/dashboard')
-                  return
+                  // 检查URL参数，看是否是从dashboard的"重新开始"按钮来的
+                  const urlParams = new URLSearchParams(window.location.search)
+                  const isRestart = urlParams.get('restart')
+                  
+                  if (isRestart === 'true') {
+                    // 如果是重新开始，不跳转，让用户重新选择
+                    console.log('重新开始注册流程，允许用户重新选择年龄')
+                    return
+                  } else {
+                    // 正常访问，如果用户已存在就跳转到dashboard
+                    console.log('用户已存在，跳转到dashboard')
+                    router.push('/dashboard')
+                    return
+                  }
                 }
               }
             } catch (error) {

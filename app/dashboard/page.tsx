@@ -682,7 +682,7 @@ export default function Dashboard() {
                     
                     if (shouldRestart) {
                       // 重新开始整个流程
-                      router.push('/gender-selection')
+                      router.push('/gender-selection?restart=true')
                     } else {
                       // 继续完善当前缺失的资料
                       const response = await fetch('/api/user/registration-status', {
