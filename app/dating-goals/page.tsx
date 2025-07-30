@@ -99,7 +99,8 @@ export default function DatingGoals() {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            dating_style: selectedGoals[0] // 保存到dating_style字段，取第一个选择（因为是单选）
+            dating_style: selectedGoals[0], // 保存到dating_style字段，取第一个选择（因为是单选）
+            relationship_goals: selectedGoals // 同时保存到relationship_goals字段作为数组
           })
         })
 

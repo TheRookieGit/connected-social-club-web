@@ -36,6 +36,7 @@ export interface User {
   smoking_status?: string
   drinking_status?: string
   dating_style?: string
+  relationship_goals?: string[]
 }
 
 export interface UserProfile extends User {
