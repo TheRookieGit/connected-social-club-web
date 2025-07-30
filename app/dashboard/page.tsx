@@ -666,6 +666,15 @@ export default function Dashboard() {
                   className={currentUser?.avatar_url ? 'hidden' : ''}
                 />
               </button>
+
+              {/* 重新进行注册流程按钮 */}
+              <button
+                onClick={() => router.push('/test-registration-flow')}
+                className="p-2 text-gray-600 hover:text-blue-500 transition-colors"
+                title="重新进行注册流程的填写"
+              >
+                <Badge size={24} />
+              </button>
               
               {/* 管理员控制台入口 */}
               {(() => {
@@ -783,6 +792,17 @@ export default function Dashboard() {
                     开始聊天
                   </motion.button>
                 )}
+
+                {/* 重新进行注册流程按钮 */}
+                <motion.button
+                  onClick={() => router.push('/test-registration-flow')}
+                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm flex items-center space-x-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <Badge size={16} />
+                  <span>完善资料</span>
+                </motion.button>
               </div>
             </div>
             
