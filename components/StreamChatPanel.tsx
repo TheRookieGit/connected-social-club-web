@@ -34,9 +34,9 @@ export default function StreamChatPanel({
   const [selectedChannel, setSelectedChannel] = useState<any>(null)
   const [showChannelMenu, setShowChannelMenu] = useState<string | null>(null)
   const [pinnedChannels, setPinnedChannels] = useState<Set<string>>(new Set())
-  const [searchTerm, setSearchTerm] = useState('')
-  const [searchResults, setSearchResults] = useState<any[]>([])
-  const [isSearching, setIsSearching] = useState(false)
+  // const [searchTerm, setSearchTerm] = useState('')
+  // const [searchResults, setSearchResults] = useState<any[]>([])
+  // const [isSearching, setIsSearching] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [showRetryButton, setShowRetryButton] = useState(false)
 
@@ -460,72 +460,72 @@ export default function StreamChatPanel({
   }
 
   // 搜索用户 - 使用系统API而不是Stream Chat
-  const searchUsers = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([])
-      return
-    }
+  // const searchUsers = async (query: string) => {
+  //   if (!query.trim()) {
+  //     setSearchResults([])
+  //     return
+  //   }
 
-    setIsSearching(true)
-    try {
-      console.log(`🔍 搜索系统用户: ${query}`)
+  //   setIsSearching(true)
+  //   try {
+  //     console.log(`🔍 搜索系统用户: ${query}`)
       
-      const token = localStorage.getItem('token')
-      if (!token) {
-        console.error('❌ 未找到认证令牌')
-        setSearchResults([])
-        return
-      }
+  //     const token = localStorage.getItem('token')
+  //     if (!token) {
+  //       console.error('❌ 未找到认证令牌')
+  //       setSearchResults([])
+  //       return
+  //     }
 
-      // 使用新的用户搜索API
-      const response = await fetch(`/api/user/search?q=${encodeURIComponent(query)}&limit=10`, {
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
+  //     // 使用新的用户搜索API
+  //     const response = await fetch(`/api/user/search?q=${encodeURIComponent(query)}&limit=10`, {
+  //       headers: {
+  //         'Authorization': `Bearer ${token}`
+  //       }
+  //     })
 
-      if (!response.ok) {
-        throw new Error(`搜索请求失败: ${response.status}`)
-      }
+  //     if (!response.ok) {
+  //       throw new Error(`搜索请求失败: ${response.status}`)
+  //     }
 
-      const data = await response.json()
+  //     const data = await response.json()
       
-      if (data.success) {
-        console.log(`✅ 搜索到 ${data.users.length} 个用户`)
-        console.log('📋 搜索结果:', data.users.map((u: any) => ({ 
-          id: u.id, 
-          name: u.name, 
-          isMatched: u.isMatched,
-          canStartChat: u.canStartChat 
-        })))
-        setSearchResults(data.users)
-      } else {
-        throw new Error(data.error || '搜索失败')
-      }
-    } catch (error) {
-      console.error('❌ 搜索用户失败:', error)
-      setSearchResults([])
+  //     if (data.success) {
+  //       console.log(`✅ 搜索到 ${data.users.length} 个用户`)
+  //       console.log('📋 搜索结果:', data.users.map((u: any) => ({ 
+  //         id: u.id, 
+  //         name: u.name, 
+  //         isMatched: u.isMatched,
+  //         canStartChat: u.canStartChat 
+  //       })))
+  //       setSearchResults(data.users)
+  //     } else {
+  //       throw new Error(data.error || '搜索失败')
+  //     }
+  //   } catch (error) {
+  //     console.error('❌ 搜索用户失败:', error)
+  //     setSearchResults([])
       
-      // 显示错误信息
-      if (error instanceof Error) {
-        setErrorMessage(`搜索失败: ${error.message}`)
-      }
-    } finally {
-      setIsSearching(false)
-    }
-  }
+  //     // 显示错误信息
+  //     if (error instanceof Error) {
+  //       setErrorMessage(`搜索失败: ${error.message}`)
+  //     }
+  //   } finally {
+  //     setIsSearching(false)
+  //   }
+  // }
 
   // 处理搜索输入
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setSearchTerm(value)
+  // const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const value = e.target.value
+  //   setSearchTerm(value)
     
-    if (value.trim()) {
-      searchUsers(value)
-    } else {
-      setSearchResults([])
-    }
-  }
+  //   if (value.trim()) {
+  //     searchUsers(value)
+  //   } else {
+  //     setSearchResults([])
+  //   }
+  // }
 
   // 创建与用户的聊天频道
   const createChatWithUser = async (userId: string, userName: string) => {
@@ -551,8 +551,8 @@ export default function StreamChatPanel({
       if (existingChannels.length > 0) {
         console.log('✅ 找到现有频道，切换到该频道')
         setSelectedChannel(existingChannels[0])
-        setSearchTerm('')
-        setSearchResults([])
+        // setSearchTerm('')
+        // setSearchResults([])
         return
       }
 
@@ -572,8 +572,8 @@ export default function StreamChatPanel({
       // 添加到频道列表并选中
       setChannels(prev => [channel, ...prev])
       setSelectedChannel(channel)
-      setSearchTerm('')
-      setSearchResults([])
+      // setSearchTerm('')
+      // setSearchResults([])
       
     } catch (error) {
       console.error('❌ 创建聊天频道失败:', error)
@@ -818,6 +818,8 @@ export default function StreamChatPanel({
                     </div>
                   )}
                   
+                  {/* 搜索功能已注释掉 */}
+                  {/* 
                   <div className="relative">
                     <input
                       type="text"
@@ -837,7 +839,6 @@ export default function StreamChatPanel({
                     </div>
                   </div>
                   
-                  {/* 搜索结果 */}
                   {searchResults.length > 0 && (
                     <div className="mt-3 space-y-2">
                       <h4 className="text-sm font-medium text-gray-700 mb-2">搜索结果</h4>
@@ -898,6 +899,7 @@ export default function StreamChatPanel({
                       ))}
                     </div>
                   )}
+                  */}
                 </div>
                 
                 {/* 自定义频道列表 */}
