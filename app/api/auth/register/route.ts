@@ -16,10 +16,10 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const { name, email, phone, password, birthDate, gender } = await request.json()
+    const { name, email, phone, password } = await request.json()
 
     // 验证输入
-    if (!name || !email || !phone || !password || !birthDate || !gender) {
+    if (!name || !email || !phone || !password) {
       return NextResponse.json(
         { success: false, error: '所有字段都是必填的' },
         { status: 400 }
@@ -68,9 +68,7 @@ export async function POST(request: NextRequest) {
           email: email.toLowerCase(),
           password: hashedPassword,
           name,
-          phone,
-          birth_date: birthDate,
-          gender
+          phone
         }
       ])
       .select()
@@ -103,9 +101,7 @@ export async function POST(request: NextRequest) {
         id: newUser.id,
         email: newUser.email,
         name: newUser.name,
-        phone: newUser.phone,
-        birthDate: newUser.birthDate,
-        gender: newUser.gender
+        phone: newUser.phone
       },
       token
     })

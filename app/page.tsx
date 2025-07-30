@@ -30,7 +30,7 @@ export default function Home() {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-2">
               <Heart className="h-8 w-8 text-red-500" />
-              <span className="text-xl font-bold text-gray-900">社交俱乐部</span>
+              <span className="text-xl font-bold text-gray-900">ConnectEd Elite Social Club</span>
             </div>
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-600 hover:text-red-500 transition-colors">
@@ -63,7 +63,7 @@ export default function Home() {
                 <span className="text-red-500">真爱</span>
               </h1>
               <p className="text-xl text-gray-600 mb-8">
-                加入我们的社交俱乐部，与志同道合的人相遇，开启一段美好的恋爱之旅。
+                加入我们的ConnectEd Elite Social Club，与志同道合的人相遇，开启一段美好的恋爱之旅。
               </p>
             </div>
 

@@ -200,10 +200,10 @@ export async function PUT(request: NextRequest) {
     const allowedFields = [
       'name', 'phone', 'birth_date', 'gender', 'avatar_url', 'bio',
       'location', 'occupation', 'education', 'relationship_status',
-      'height', 'weight', 'ethnicity', 'religion', 'employer', 'school',
-      'degree', 'values_preferences', 'values', 'personality_type', 'hometown',
-      'languages', 'family_plans', 'has_kids', 'marital_status',
-      'exercise_frequency', 'smoking_status', 'drinking_status', 'dating_style',
+      'height', 'weight', 'religion', 'employer', 'school',
+      'degree', 'values_preferences', 'values',
+      'family_plans', 'has_kids',
+      'smoking_status', 'drinking_status', 'dating_style',
       'photos', 'interests', 'preferences'
     ]
     

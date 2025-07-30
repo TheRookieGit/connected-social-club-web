@@ -27,16 +27,16 @@ async function sendEmail(email: string, code: string): Promise<boolean> {
       const mailOptions = {
         from: process.env.EMAIL_USER,
         to: email,
-        subject: '社交俱乐部 - 邮箱验证码',
+        subject: 'ConnectEd Elite Social Club - 邮箱验证码',
         html: `
           <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
             <div style="background: linear-gradient(135deg, #ff6b6b, #ee5a24); padding: 20px; text-align: center;">
-              <h1 style="color: white; margin: 0;">社交俱乐部</h1>
+                              <h1 style="color: white; margin: 0;">ConnectEd Elite Social Club</h1>
             </div>
             <div style="padding: 30px; background: #f8f9fa;">
               <h2 style="color: #333; margin-bottom: 20px;">邮箱验证码</h2>
               <p style="color: #666; line-height: 1.6;">
-                您好！感谢您注册社交俱乐部。请使用以下验证码完成邮箱验证：
+                您好！感谢您注册ConnectEd Elite Social Club。请使用以下验证码完成邮箱验证：
               </p>
               <div style="background: #fff; border: 2px dashed #ff6b6b; padding: 20px; text-align: center; margin: 20px 0;">
                 <span style="font-size: 32px; font-weight: bold; color: #ff6b6b; letter-spacing: 5px;">${code}</span>
@@ -50,7 +50,7 @@ async function sendEmail(email: string, code: string): Promise<boolean> {
             </div>
             <div style="background: #333; padding: 20px; text-align: center;">
               <p style="color: #fff; margin: 0; font-size: 14px;">
-                © 2024 社交俱乐部. 保留所有权利.
+                © 2024 ConnectEd Elite Social Club. 保留所有权利.
               </p>
             </div>
           </div>
@@ -63,9 +63,9 @@ async function sendEmail(email: string, code: string): Promise<boolean> {
     } else {
       // 如果没有配置邮件服务，使用模拟发送
       console.log(`📧 模拟发送邮件到 ${email}`)
-      console.log(`📧 邮件主题: 社交俱乐部 - 邮箱验证码`)
+      console.log(`📧 邮件主题: ConnectEd Elite Social Club - 邮箱验证码`)
       console.log(`📧 验证码: ${code}`)
-      console.log(`📧 邮件内容: 您好！感谢您注册社交俱乐部。请使用验证码 ${code} 完成邮箱验证，有效期10分钟。`)
+              console.log(`📧 邮件内容: 您好！感谢您注册ConnectEd Elite Social Club。请使用验证码 ${code} 完成邮箱验证，有效期10分钟。`)
       console.log(`💡 提示: 要发送真实邮件，请在 .env.local 文件中配置 EMAIL_USER 和 EMAIL_PASS`)
       return true
     }

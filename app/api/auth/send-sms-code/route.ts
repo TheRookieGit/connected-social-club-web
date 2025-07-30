@@ -30,7 +30,7 @@ async function sendSMS(phone: string, code: string): Promise<boolean> {
       )
       
       await client.messages.create({
-        body: `您的社交俱乐部验证码是：${code}，有效期10分钟。`,
+        body: `您的ConnectEd Elite Social Club验证码是：${code}，有效期10分钟。`,
         from: process.env.TWILIO_PHONE_NUMBER,
         to: phone
       })
