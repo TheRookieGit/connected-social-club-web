@@ -24,6 +24,28 @@ export default function AgeSelection() {
         
         // 检查用户是否已经完成某些步骤
         if (token) {
+          const checkRegistrationStatus = async (token: string) => {
+            try {
+              const response = await fetch('/api/user/profile', {
+                headers: {
+                  'Authorization': `Bearer ${token}`,
+                },
+              })
+
+              if (response.ok) {
+                const data = await response.json()
+                if (data.success && data.user) {
+                  // 不管注册是否完成，只要用户存在就直接跳转到dashboard
+                  console.log('用户已存在，跳转到dashboard')
+                  router.push('/dashboard')
+                  return
+                }
+              }
+            } catch (error) {
+              console.error('检查注册状态失败:', error)
+            }
+          }
+          
           checkRegistrationStatus(token)
         }
       } catch (error) {
@@ -31,29 +53,7 @@ export default function AgeSelection() {
         setUserName('用户')
       }
     }
-  }, [])
-
-  const checkRegistrationStatus = async (token: string) => {
-    try {
-      const response = await fetch('/api/user/profile', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      })
-
-      if (response.ok) {
-        const data = await response.json()
-        if (data.success && data.user) {
-          // 不管注册是否完成，只要用户存在就直接跳转到dashboard
-          console.log('用户已存在，跳转到dashboard')
-          router.push('/dashboard')
-          return
-        }
-      }
-    } catch (error) {
-      console.error('检查注册状态失败:', error)
-    }
-  }
+  }, [router])
 
   // 防止后退功能
   useEffect(() => {
