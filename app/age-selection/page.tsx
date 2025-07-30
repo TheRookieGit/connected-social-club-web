@@ -12,27 +12,6 @@ export default function AgeSelection() {
   const [showConfirmation, setShowConfirmation] = useState(false)
   const router = useRouter()
 
-  useEffect(() => {
-    // 从localStorage获取用户信息
-    const userStr = localStorage.getItem('user')
-    const token = localStorage.getItem('token')
-    
-    if (userStr) {
-      try {
-        const user = JSON.parse(userStr)
-        setUserName(user.name || user.first_name || '用户')
-        
-        // 检查用户是否已经完成某些步骤
-        if (token) {
-          checkRegistrationStatus(token)
-        }
-      } catch (error) {
-        console.error('解析用户信息失败:', error)
-        setUserName('用户')
-      }
-    }
-  }, [])
-
   const checkRegistrationStatus = async (token: string) => {
     try {
       const response = await fetch('/api/user/profile', {
@@ -54,6 +33,27 @@ export default function AgeSelection() {
       console.error('检查注册状态失败:', error)
     }
   }
+
+  useEffect(() => {
+    // 从localStorage获取用户信息
+    const userStr = localStorage.getItem('user')
+    const token = localStorage.getItem('token')
+    
+    if (userStr) {
+      try {
+        const user = JSON.parse(userStr)
+        setUserName(user.name || user.first_name || '用户')
+        
+        // 检查用户是否已经完成某些步骤
+        if (token) {
+          checkRegistrationStatus(token)
+        }
+      } catch (error) {
+        console.error('解析用户信息失败:', error)
+        setUserName('用户')
+      }
+    }
+  }, [checkRegistrationStatus])
 
   // 防止后退功能
   useEffect(() => {

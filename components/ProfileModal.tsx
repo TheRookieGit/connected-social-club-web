@@ -651,10 +651,10 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 {isEditing ? (
                   <select
                     multiple
-                    value={editedProfile.values || []}
+                    value={editedProfile.values_preferences || []}
                     onChange={(e) => {
                       const selected = Array.from(e.target.selectedOptions, option => option.value)
-                      handleInputChange('values', selected)
+                      handleInputChange('values_preferences', selected)
                     }}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
@@ -698,8 +698,8 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                         'sassiness': '活泼'
                       }
                       
-                      if (profile.values && profile.values.length > 0) {
-                        const translatedValues = profile.values.map(value => 
+                      if (profile.values_preferences && profile.values_preferences.length > 0) {
+                        const translatedValues = profile.values_preferences.map((value: string) => 
                           valueMap[value] || value
                         )
                         return translatedValues.join(', ')
@@ -933,10 +933,11 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                 </label>
                 {isEditing ? (
                   <select
-                    value={editedProfile.has_kids ? 'true' : 'false'}
+                    value={editedProfile.has_kids === true ? 'true' : editedProfile.has_kids === false ? 'false' : ''}
                     onChange={(e) => handleInputChange('has_kids', e.target.value === 'true')}
                     className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
                   >
+                    <option value="">请选择</option>
                     <option value="false">没有孩子</option>
                     <option value="true">有孩子</option>
                   </select>
