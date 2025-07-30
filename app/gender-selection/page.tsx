@@ -62,13 +62,13 @@ export default function GenderSelection() {
 
       // 延迟跳转，让用户看到确认状态
       setTimeout(() => {
-        router.push('/dashboard')
+        router.push('/age-selection')
       }, 1500)
     } catch (error) {
       console.error('处理性别选择时出错:', error)
       // 即使出错也继续跳转
       setTimeout(() => {
-        router.push('/dashboard')
+        router.push('/age-selection')
       }, 1500)
     } finally {
       setIsLoading(false)
