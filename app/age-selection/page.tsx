@@ -95,18 +95,14 @@ export default function AgeSelection() {
   return (
     <div className="min-h-screen bg-white">
       {/* 顶部状态栏 */}
-      <div className="flex justify-between items-center px-4 py-2 bg-white border-b border-gray-100">
-        <div className="flex items-center space-x-2">
-          <span className="text-sm font-medium text-gray-900">7:09</span>
-          <div className="w-4 h-4 text-black">❤️</div>
+      <div className="flex justify-between items-center px-4 py-3 bg-white border-b border-gray-100">
+        <div className="flex items-center">
+          {/* 左侧留空 */}
         </div>
-        <div className="flex items-center space-x-1">
-          <div className="w-4 h-3 bg-black rounded-sm"></div>
-          <div className="w-4 h-3 bg-black rounded-sm"></div>
-          <div className="w-4 h-3 bg-black rounded-sm"></div>
-          <div className="w-4 h-3 bg-black rounded-sm"></div>
-          <div className="w-6 h-3 bg-black rounded-sm"></div>
-          <div className="w-4 h-3 bg-black rounded-sm"></div>
+        <div className="flex items-center">
+          <span className="text-sm font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
+            ConnectEd Elite Social Club
+          </span>
         </div>
       </div>
 
