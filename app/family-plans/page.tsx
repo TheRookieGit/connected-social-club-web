@@ -97,7 +97,7 @@ export default function FamilyPlans() {
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            has_kids: hasKids,
+            has_kids: hasKids === 'have_kids', // 转换为布尔值：'have_kids' -> true, 'dont_have_kids' -> false
             family_plans: kidsPlans
           })
         })
