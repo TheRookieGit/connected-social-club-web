@@ -201,7 +201,6 @@ export default function GenderSelection() {
           <div className="flex items-start space-x-2">
             <Info className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
             <div className="text-xs text-gray-600">
-              您可以随时更新此信息。
               <button className="text-black underline hover:no-underline">
                 关于社交俱乐部中性别设置的说明
               </button>
