@@ -2,12 +2,11 @@
 const nextConfig = {
   // 禁用静态优化和缓存
   experimental: {
-    serverComponentsExternalPackages: [],
-    // 设置函数超时时间
     serverActions: {
       bodySizeLimit: '2mb',
     },
   },
+  serverExternalPackages: [],
   // 禁用图片优化缓存
   images: {
     unoptimized: true,
