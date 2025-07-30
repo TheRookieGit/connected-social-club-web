@@ -38,16 +38,20 @@ export default function StreamChatPanel({
   const [searchResults, setSearchResults] = useState<any[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [showRetryButton, setShowRetryButton] = useState(false)
 
   // 自动清除错误信息
   useEffect(() => {
     if (errorMessage) {
       const timer = setTimeout(() => {
         setErrorMessage(null)
-      }, 5000) // 5秒后自动清除
+        setShowRetryButton(false)
+      }, 10000) // 10秒后自动清除
       return () => clearTimeout(timer)
     }
   }, [errorMessage])
+
+  // retryFetchChannels 将在 fetchUserChannels 之后定义
 
   // 确保只在客户端渲染
   useEffect(() => {
@@ -184,16 +188,21 @@ export default function StreamChatPanel({
     }
   }, [currentUser, isClient, chatClient])
 
-  // 获取用户的所有频道
+  // 获取用户的所有频道 - 修复权限问题
   const fetchUserChannels = useCallback(async () => {
     if (!chatClient || !currentUser) return
 
     try {
       console.log('📡 获取用户频道列表...')
-      const userChannels = await chatClient.queryChannels({
-        type: 'messaging',
-        members: { $in: [currentUser.id.toString()] }
-      })
+      // 修复权限问题：使用更安全的查询方式
+      const userChannels = await chatClient.queryChannels(
+        {
+          type: 'messaging',
+          members: { $in: [currentUser.id.toString()] }
+        },
+        { last_message_at: -1 }, // 按最新消息排序
+        { limit: 50 } // 限制数量
+      )
       
       console.log(`✅ 获取到 ${userChannels.length} 个频道`)
       setChannels(userChannels)
@@ -204,8 +213,76 @@ export default function StreamChatPanel({
       }
     } catch (error) {
       console.error('❌ 获取频道列表失败:', error)
+      
+      // 检查是否是 StreamChat 权限错误 (error code 70)
+      if (error instanceof Error && (
+        error.message.includes('cannot be returned because you don\'t have access') ||
+        error.message.includes('error code 70') ||
+        error.message.includes('QueryChannels failed')
+      )) {
+        console.log('📌 检测到StreamChat权限错误，尝试备用策略...')
+        
+        try {
+          // 备用策略：使用更保守的查询方式
+          console.log('🔄 尝试备用查询策略...')
+                     const fallbackChannels = await chatClient.queryChannels(
+             {
+               type: 'messaging',
+               // 使用更严格的条件，尝试不同的查询方式
+               members: { $eq: [currentUser.id.toString()] }
+             },
+             { last_message_at: -1 },
+             { limit: 20 } // 进一步减少限制
+           )
+          
+          console.log(`✅ 备用策略成功，获取到 ${fallbackChannels.length} 个频道`)
+          setChannels(fallbackChannels)
+          
+          if (fallbackChannels.length > 0 && !selectedChannel) {
+            setSelectedChannel(fallbackChannels[0])
+          }
+          
+          // 清除之前的错误信息，因为备用策略成功了
+          setErrorMessage(null)
+          return
+          
+                 } catch (fallbackError) {
+           console.error('❌ 备用策略也失败了:', fallbackError)
+           
+                        // 最终退化方案：尝试查询零个频道
+             try {
+               console.log('🔄 最终退化方案：清空频道列表...')
+               setChannels([])
+               setErrorMessage('频道列表暂时不可用，您可以通过搜索用户开始新对话')
+               setShowRetryButton(true)
+               return
+             } catch (finalError) {
+               console.error('❌ 最终退化方案失败:', finalError)
+             }
+         }
+         
+                    // 如果所有策略都失败，设置空列表和友好提示
+           setChannels([])
+           setErrorMessage('聊天服务暂时不可用，请使用搜索功能开始对话')
+           setShowRetryButton(true)
+        
+              } else {
+          // 其他类型的错误
+          console.error('❌ 其他类型的错误:', error)
+          setChannels([])
+          setErrorMessage('获取聊天列表失败，请刷新重试')
+          setShowRetryButton(true)
+        }
     }
-  }, [chatClient, currentUser, selectedChannel])
+      }, [chatClient, currentUser, selectedChannel])
+
+  // 重试获取频道列表
+  const retryFetchChannels = useCallback(() => {
+    console.log('🔄 用户手动重试获取频道列表...')
+    setErrorMessage(null)
+    setShowRetryButton(false)
+    fetchUserChannels()
+  }, [fetchUserChannels])
 
   // 为匹配的用户创建频道
   const createChannelsForMatchedUsers = useCallback(async () => {
@@ -670,10 +747,14 @@ export default function StreamChatPanel({
                           console.log('🔍 查询当前用户的所有频道')
                           if (chatClient && currentUser) {
                             try {
-                              const channels = await chatClient.queryChannels({
-                                type: 'messaging',
-                                members: { $in: [currentUser.id.toString()] }
-                              })
+                              const channels = await chatClient.queryChannels(
+                                {
+                                  type: 'messaging',
+                                  members: { $in: [currentUser.id.toString()] }
+                                },
+                                { last_message_at: -1 },
+                                { limit: 50 }
+                              )
                               console.log('📊 查询结果:', {
                                 count: channels.length,
                                 channels: channels.map(c => ({
@@ -709,7 +790,10 @@ export default function StreamChatPanel({
                         </svg>
                         <span className="text-sm text-red-700">{errorMessage}</span>
                         <button
-                          onClick={() => setErrorMessage(null)}
+                          onClick={() => {
+                            setErrorMessage(null)
+                            setShowRetryButton(false)
+                          }}
                           className="ml-auto text-red-500 hover:text-red-700"
                         >
                           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -717,6 +801,20 @@ export default function StreamChatPanel({
                           </svg>
                         </button>
                       </div>
+                      {/* 重试按钮 */}
+                      {showRetryButton && (
+                        <div className="mt-2 flex justify-center">
+                          <button
+                            onClick={retryFetchChannels}
+                            className="px-4 py-2 bg-pink-500 text-white text-sm rounded-lg hover:bg-pink-600 transition-colors flex items-center space-x-2"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            <span>重试加载</span>
+                          </button>
+                        </div>
+                      )}
                     </div>
                   )}
                   
