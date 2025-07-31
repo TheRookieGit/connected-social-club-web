@@ -10,6 +10,7 @@ export default function GenderSelection() {
   const [userName, setUserName] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [isConfirmed, setIsConfirmed] = useState(false)
+  const [hasCheckedProfile, setHasCheckedProfile] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -23,7 +24,7 @@ export default function GenderSelection() {
         setUserName(user.name || user.first_name || '用户')
         
         // 检查用户是否已经完成基本信息填写
-        if (token) {
+        if (token && !hasCheckedProfile) {
           const checkIfAlreadyComplete = async (token: string) => {
             try {
               const response = await fetch('/api/user/profile', {
@@ -35,24 +36,39 @@ export default function GenderSelection() {
               if (response.ok) {
                 const data = await response.json()
                 if (data.success && data.user) {
-                  // 检查URL参数，看是否是从dashboard的"重新开始"按钮来的
-                  const urlParams = new URLSearchParams(window.location.search)
-                  const isRestart = urlParams.get('restart')
-                  
-                  if (isRestart === 'true') {
-                    // 如果是重新开始，不跳转，让用户重新选择
-                    console.log('重新开始注册流程，允许用户重新选择性别')
-                    return
+                  // 检查用户是否已经设置了性别
+                  if (data.user.gender) {
+                    // 检查URL参数，看是否是从dashboard的"重新开始"按钮来的
+                    const urlParams = new URLSearchParams(window.location.search)
+                    const isRestart = urlParams.get('restart')
+                    
+                    if (isRestart === 'true') {
+                      // 如果是重新开始，不跳转，让用户重新选择
+                      console.log('重新开始注册流程，允许用户重新选择性别')
+                      setHasCheckedProfile(true)
+                      return
+                    } else {
+                      // 用户已经设置了性别，跳转到下一步或dashboard
+                      console.log('用户已设置性别，检查下一步')
+                      if (data.user.birth_date) {
+                        // 如果也有生日，跳转到dashboard
+                        router.push('/dashboard')
+                      } else {
+                        // 只有性别没有生日，跳转到年龄选择
+                        router.push('/age-selection')
+                      }
+                      return
+                    }
                   } else {
-                    // 正常访问，如果用户已存在就跳转到dashboard
-                    console.log('用户已存在，跳转到dashboard')
-                    router.push('/dashboard')
-                    return
+                    // 新注册用户，还没有设置性别，继续注册流程
+                    console.log('新注册用户，继续性别选择')
                   }
                 }
               }
+              setHasCheckedProfile(true)
             } catch (error) {
               console.error('检查用户完成状态失败:', error)
+              setHasCheckedProfile(true)
             }
           }
           
@@ -145,6 +161,9 @@ export default function GenderSelection() {
           console.error('更新性别信息失败')
         }
       }
+
+      // 标记已经检查过用户资料，防止自动跳转
+      setHasCheckedProfile(true)
 
       // 检查是否是重新开始模式
       const urlParams = new URLSearchParams(window.location.search)

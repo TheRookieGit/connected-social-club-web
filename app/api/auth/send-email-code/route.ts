@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import nodemailer from 'nodemailer'
-
-// 存储验证码的临时对象（生产环境应使用Redis）
-const emailCodes = new Map<string, { code: string; expires: number }>()
+import verificationStorage from '@/lib/verificationStorage'
 
 // 生成6位数字验证码
 function generateCode(): string {
@@ -100,13 +98,13 @@ export async function POST(request: NextRequest) {
     const expires = Date.now() + 10 * 60 * 1000 // 10分钟过期
 
     // 存储验证码
-    emailCodes.set(email, { code, expires })
+    verificationStorage.setEmailCode(email, code, expires)
 
     // 发送邮件
     const sendResult = await sendEmail(email, code)
 
     if (!sendResult) {
-      emailCodes.delete(email)
+      verificationStorage.deleteEmailCode(email)
       return NextResponse.json(
         { error: '发送验证码失败，请稍后重试' },
         { status: 500 }
@@ -139,7 +137,7 @@ export async function PUT(request: NextRequest) {
       )
     }
 
-    const storedData = emailCodes.get(email)
+    const storedData = verificationStorage.getEmailCode(email)
     
     if (!storedData) {
       return NextResponse.json(
@@ -149,7 +147,7 @@ export async function PUT(request: NextRequest) {
     }
 
     if (Date.now() > storedData.expires) {
-      emailCodes.delete(email)
+      verificationStorage.deleteEmailCode(email)
       return NextResponse.json(
         { error: '验证码已过期' },
         { status: 400 }
@@ -164,7 +162,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // 验证成功，删除验证码
-    emailCodes.delete(email)
+    verificationStorage.deleteEmailCode(email)
 
     return NextResponse.json({
       success: true,

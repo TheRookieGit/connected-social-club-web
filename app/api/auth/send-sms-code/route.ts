@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import twilio from 'twilio'
-
-// 存储验证码的临时对象（生产环境应使用Redis）
-const smsCodes = new Map<string, { code: string; expires: number }>()
+import verificationStorage from '@/lib/verificationStorage'
 
 // 生成6位数字验证码
 function generateCode(): string {

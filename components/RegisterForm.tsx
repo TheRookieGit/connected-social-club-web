@@ -302,17 +302,17 @@ export default function RegisterForm() {
       return
     }
 
-    // 验证邮箱是否已验证
-    if (!verificationStatus.emailVerified) {
-      setError('请先验证邮箱地址')
-      return
-    }
+    // 暂时注释掉邮箱验证
+    // if (!verificationStatus.emailVerified) {
+    //   setError('请先验证邮箱地址')
+    //   return
+    // }
 
-    // 验证手机是否已验证
-    if (!verificationStatus.phoneVerified) {
-      setError('请先验证手机号码')
-      return
-    }
+    // 暂时注释掉手机验证
+    // if (!verificationStatus.phoneVerified) {
+    //   setError('请先验证手机号码')
+    //   return
+    // }
     
     setIsLoading(true)
     
@@ -325,7 +325,7 @@ export default function RegisterForm() {
         body: JSON.stringify({
           name: formData.name,
           email: formData.email,
-          phone: selectedCountry.code + formData.phone,
+          phone: '', // 暂时不发送手机号
           password: formData.password
         }),
       })
@@ -397,8 +397,8 @@ export default function RegisterForm() {
           />
         </div>
         
-        {/* 启用邮箱验证环节 */}
-        <div className="mt-3 flex space-x-2">
+        {/* 暂时注释掉邮箱验证环节 */}
+        {/* <div className="mt-3 flex space-x-2">
           <input
             name="emailCode"
             type="text"
@@ -424,10 +424,11 @@ export default function RegisterForm() {
           >
             {verificationStatus.emailVerified ? '已验证' : '验证'}
           </button>
-        </div>
+        </div> */}
       </div>
 
-      <div>
+      {/* 暂时注释掉手机号输入 */}
+      {/* <div>
         <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
           手机号
         </label>
@@ -466,7 +467,7 @@ export default function RegisterForm() {
           
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Phone className="h-5 w-5 text-gray-400" />
+              <Phone className="h-5 w-5 text-white" />
             </div>
             <input
               id="phone"
@@ -478,11 +479,10 @@ export default function RegisterForm() {
               placeholder="请输入手机号"
               required
             />
-          </div>
-        </div>
+        </div> */}
         
-        {/* 手机验证码功能 */}
-        <div className="mt-3 flex space-x-2">
+        {/* 暂时注释掉手机验证码功能 */}
+        {/* <div className="mt-3 flex space-x-2">
           <input
             name="phoneCode"
             type="text"
@@ -508,10 +508,7 @@ export default function RegisterForm() {
           >
             {verificationStatus.phoneVerified ? '已验证' : '验证'}
           </button>
-        </div>
-      </div>
-
-
+        </div> */}
 
       <div>
         <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">

@@ -18,10 +18,10 @@ export async function POST(request: NextRequest) {
 
     const { name, email, phone, password } = await request.json()
 
-    // 验证输入
-    if (!name || !email || !phone || !password) {
+    // 验证输入（暂时注释掉手机号验证）
+    if (!name || !email || !password) {
       return NextResponse.json(
-        { success: false, error: '所有字段都是必填的' },
+        { success: false, error: '姓名、邮箱和密码是必填的' },
         { status: 400 }
       )
     }
