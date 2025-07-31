@@ -5,6 +5,7 @@ import { motion } from 'framer-motion'
 import { Heart, Users, MessageCircle, Star } from 'lucide-react'
 import LoginForm from '@/components/LoginForm'
 import RegisterForm from '@/components/RegisterForm'
+import Footer from '@/components/Footer'
 
 export default function Home() {
   const [isLogin, setIsLogin] = useState(true)
@@ -166,6 +167,9 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* Footer */}
+      <Footer />
     </div>
   )
 } 
