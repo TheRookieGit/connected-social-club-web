@@ -25,18 +25,33 @@ import { CSS } from '@dnd-kit/utilities'
 
 interface DraggablePhotoGridProps {
   photos: string[]
-  onPhotosChange: (newPhotos: string[]) => void
+  onPhotosChange?: (newPhotos: string[]) => void
   onAddPhoto?: () => void
+  onPhotoClick?: (index: number) => void
+  onUploadPhoto?: (file: File) => Promise<void>
+  isUploading?: boolean
   maxPhotos?: number
+  showDragHandles?: boolean
+  showDeleteButtons?: boolean
 }
 
 interface SortablePhotoItemProps {
   photo: string
   index: number
-  onDelete: (index: number) => void
+  onDelete?: (index: number) => void
+  onPhotoClick?: (index: number) => void
+  showDragHandles?: boolean
+  showDeleteButtons?: boolean
 }
 
-function SortablePhotoItem({ photo, index, onDelete }: SortablePhotoItemProps) {
+function SortablePhotoItem({ 
+  photo, 
+  index, 
+  onDelete, 
+  onPhotoClick,
+  showDragHandles = true,
+  showDeleteButtons = true 
+}: SortablePhotoItemProps) {
   const {
     attributes,
     listeners,
@@ -56,7 +71,8 @@ function SortablePhotoItem({ photo, index, onDelete }: SortablePhotoItemProps) {
     <div
       ref={setNodeRef}
       style={style}
-      className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group"
+      className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden group cursor-pointer"
+      onClick={() => onPhotoClick?.(index)}
     >
       <Image
         src={photo}
@@ -72,21 +88,29 @@ function SortablePhotoItem({ photo, index, onDelete }: SortablePhotoItemProps) {
       />
       
       {/* 拖拽手柄 */}
-      <div
-        {...attributes}
-        {...listeners}
-        className="absolute top-2 left-2 w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
-      >
-        <GripVertical className="w-4 h-4 text-white" />
-      </div>
+      {showDragHandles && (
+        <div
+          {...attributes}
+          {...listeners}
+          className="absolute top-2 left-2 w-8 h-8 bg-black bg-opacity-50 rounded-full flex items-center justify-center cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-opacity"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <GripVertical className="w-4 h-4 text-white" />
+        </div>
+      )}
       
       {/* 删除按钮 */}
-      <button
-        onClick={() => onDelete(index)}
-        className="absolute top-2 right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
-      >
-        <Trash2 className="w-4 h-4 text-white" />
-      </button>
+      {showDeleteButtons && onDelete && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation()
+            onDelete(index)
+          }}
+          className="absolute top-2 right-2 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-red-600"
+        >
+          <Trash2 className="w-4 h-4 text-white" />
+        </button>
+      )}
       
       {/* 照片编号 */}
       <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
@@ -100,7 +124,12 @@ export default function DraggablePhotoGrid({
   photos, 
   onPhotosChange, 
   onAddPhoto,
-  maxPhotos = 6 
+  onPhotoClick,
+  onUploadPhoto,
+  isUploading = false,
+  maxPhotos = 6,
+  showDragHandles = true,
+  showDeleteButtons = true
 }: DraggablePhotoGridProps) {
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -112,7 +141,7 @@ export default function DraggablePhotoGrid({
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
 
-    if (active.id !== over?.id) {
+    if (active.id !== over?.id && onPhotosChange) {
       const oldIndex = photos.indexOf(active.id as string)
       const newIndex = photos.indexOf(over?.id as string)
       
@@ -122,7 +151,7 @@ export default function DraggablePhotoGrid({
   }
 
   const handleDeletePhoto = (index: number) => {
-    if (confirm('确定要删除这张照片吗？')) {
+    if (confirm('确定要删除这张照片吗？') && onPhotosChange) {
       const newPhotos = photos.filter((_, i) => i !== index)
       onPhotosChange(newPhotos)
     }
@@ -142,7 +171,10 @@ export default function DraggablePhotoGrid({
                 key={photo}
                 photo={photo}
                 index={index}
-                onDelete={handleDeletePhoto}
+                onDelete={onPhotosChange ? handleDeletePhoto : undefined}
+                onPhotoClick={onPhotoClick}
+                showDragHandles={showDragHandles}
+                showDeleteButtons={showDeleteButtons}
               />
             ))}
             
@@ -153,8 +185,14 @@ export default function DraggablePhotoGrid({
                 onClick={onAddPhoto}
               >
                 <div className="text-center">
-                  <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">添加照片</p>
+                  {isUploading ? (
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-400 mx-auto mb-2"></div>
+                  ) : (
+                    <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  )}
+                  <p className="text-sm text-gray-500">
+                    {isUploading ? '上传中...' : '添加照片'}
+                  </p>
                 </div>
               </div>
             )}
@@ -163,14 +201,16 @@ export default function DraggablePhotoGrid({
       </DndContext>
       
       {/* 使用说明 */}
-      <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
-        <p className="mb-1">💡 使用提示：</p>
-        <ul className="space-y-1">
-          <li>• 拖拽照片可以调整顺序</li>
-          <li>• 悬停照片显示删除按钮</li>
-          <li>• 点击&quot;添加照片&quot;上传新照片</li>
-        </ul>
-      </div>
+      {showDragHandles && (
+        <div className="text-xs text-gray-500 bg-gray-50 p-3 rounded-lg">
+          <p className="mb-1">💡 使用提示：</p>
+          <ul className="space-y-1">
+            <li>• 拖拽照片可以调整顺序</li>
+            <li>• 悬停照片显示删除按钮</li>
+            <li>• 点击&quot;添加照片&quot;上传新照片</li>
+          </ul>
+        </div>
+      )}
     </div>
   )
 } 

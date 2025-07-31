@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { ArrowLeft, Camera, User, Heart, MessageCircle, MapPin, Calendar, Briefcase, GraduationCap, X, Edit, Save, Plus, Upload } from 'lucide-react'
+import DraggablePhotoGrid from '@/components/DraggablePhotoGrid'
 
 interface UserProfile {
   id: string
@@ -44,6 +45,8 @@ export default function UserPhotos() {
   const [isEditing, setIsEditing] = useState(false)
   const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({})
   const [isUploading, setIsUploading] = useState(false)
+  const [isUpdatingPhotos, setIsUpdatingPhotos] = useState(false)
+  const [deletedPhotos, setDeletedPhotos] = useState<string[]>([])
   const router = useRouter()
 
   useEffect(() => {
@@ -235,6 +238,50 @@ export default function UserPhotos() {
     }
   }
 
+  // 处理照片变化（排序或删除）
+  const handlePhotosChange = async (newPhotos: string[]) => {
+    if (!profile) return
+
+    setIsUpdatingPhotos(true)
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('未找到登录令牌')
+      }
+
+      const response = await fetch('/api/user/update-photos', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          photos: newPhotos,
+          deletedPhotos: deletedPhotos
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '更新照片失败')
+      }
+
+      const result = await response.json()
+      console.log('照片更新成功:', result)
+
+      // 更新本地状态
+      setProfile(prev => prev ? { ...prev, photos: newPhotos } : null)
+      setEditedProfile(prev => ({ ...prev, photos: newPhotos }))
+      setDeletedPhotos([]) // 清空删除记录
+
+    } catch (error) {
+      console.error('更新照片失败:', error)
+      alert(`更新照片失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    } finally {
+      setIsUpdatingPhotos(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -400,37 +447,14 @@ export default function UserPhotos() {
               </button>
             </div>
           ) : (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-              {photos.map((photo, index) => (
-                <div
-                  key={index}
-                  className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden cursor-pointer hover:opacity-90 transition-opacity"
-                  onClick={() => handlePhotoClick(index)}
-                >
-                  <Image
-                    src={photo}
-                    alt={`照片 ${index + 1}`}
-                    width={300}
-                    height={300}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                    {index + 1}
-                  </div>
-                </div>
-              ))}
-              
-              {/* 添加更多照片的卡片 */}
-              <div
-                className="relative aspect-square bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-all"
-                onClick={handleAddPhoto}
-              >
-                <div className="text-center">
-                  <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
-                  <p className="text-sm text-gray-500">添加更多</p>
-                </div>
-              </div>
-            </div>
+            <DraggablePhotoGrid
+              photos={photos}
+              onPhotosChange={handlePhotosChange}
+              onPhotoClick={handlePhotoClick}
+              onAddPhoto={handleAddPhoto}
+              isUploading={isUploading}
+              maxPhotos={6}
+            />
           )}
         </div>
 
