@@ -9,7 +9,7 @@ import RegisterForm from '@/components/RegisterForm'
 import Footer from '@/components/Footer'
 
 export default function Home() {
-  const [isLogin, setIsLogin] = useState(null)
+  const [isLogin, setIsLogin] = useState<boolean>(true)
 
   useEffect(() => {
     // 检查URL参数来决定显示哪个表单
