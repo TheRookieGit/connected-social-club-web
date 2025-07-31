@@ -2,7 +2,13 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import Image from 'next/image'
-import { UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, Heart, User, Ruler, Weight, Camera, Upload, Globe, BookOpen, Home, Baby, Activity, Coffee, Wine, MessageCircle, Settings } from 'lucide-react'
+import { 
+  UserIcon, Edit, Save, X, MapPin, Calendar, Briefcase, GraduationCap, 
+  Heart, User, Ruler, Weight, Camera, Upload, Globe, BookOpen, Home, 
+  Baby, Activity, Coffee, Wine, MessageCircle, Settings, Star, 
+  Award, Palette, Music, Gamepad2, Utensils, Plane, Mountain, 
+  BookOpenCheck, Users2, Sparkles, Target, Shield, Zap
+} from 'lucide-react'
 
 interface ProfileModalProps {
   isOpen: boolean
@@ -18,6 +24,7 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
   const [isEditing, setIsEditing] = useState(false)
   const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({})
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [activeTab, setActiveTab] = useState('basic')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const fetchProfile = useCallback(async () => {
@@ -27,7 +34,6 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
 
       console.log('🔄 开始获取个人资料...', new Date().toISOString())
 
-      // 创建更强的缓存绕过参数
       const timestamp = Date.now()
       const randomId = Math.random().toString(36).substring(7)
       const cacheBreaker = `t=${timestamp}&r=${randomId}&force=true`
@@ -39,7 +45,6 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           'Pragma': 'no-cache',
           'Expires': '0',
-          // 添加更多强制刷新头部
           'X-Requested-With': 'XMLHttpRequest',
           'X-Force-Refresh': 'true',
           'X-Cache-Bypass': 'true',
@@ -49,36 +54,13 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
         }
       })
 
-      console.log('📡 获取资料API响应状态:', response.status)
-      console.log('📡 响应头:', Object.fromEntries(response.headers.entries()))
-
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ 获取个人资料响应:', data)
-        
-        // 验证数据完整性
         const userData = data.user || data
-        console.log('✅ 解析后的用户数据:', userData)
-        console.log('✅ 用户bio字段:', userData.bio)
-        console.log('✅ 用户location字段:', userData.location)
-        console.log('✅ 数据时间戳:', userData.data_timestamp)
-        console.log('✅ 服务器时间:', data.server_time)
-        
-        // 确保数据新鲜度
-        if (data.server_time) {
-          const serverTime = new Date(data.timestamp || Date.now())
-          const clientTime = new Date()
-          const timeDiff = Math.abs(clientTime.getTime() - serverTime.getTime())
-          console.log('⏰ 服务器时间差:', timeDiff, 'ms')
-        }
-        
         setProfile(userData)
         setEditedProfile(userData)
-        console.log('✅ 个人资料已加载到状态中')
       } else {
         console.error('❌ 获取个人资料失败:', response.status)
-        const errorData = await response.json()
-        console.error('❌ 错误详情:', errorData)
       }
     } catch (error) {
       console.error('❌ 获取用户资料失败:', error)
@@ -107,12 +89,6 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
       const token = localStorage.getItem('token')
       if (!token) return
 
-      console.log('🔄 开始保存个人资料...', new Date().toISOString())
-      console.log('📝 编辑的数据:', editedProfile)
-      console.log('📝 bio字段值:', editedProfile.bio)
-      console.log('📝 location字段值:', editedProfile.location)
-
-      // 创建更强的缓存绕过参数
       const timestamp = Date.now()
       const randomId = Math.random().toString(36).substring(7)
 
@@ -124,7 +100,6 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
           'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
           'Pragma': 'no-cache',
           'Expires': '0',
-          // 添加更多强制刷新头部
           'X-Requested-With': 'XMLHttpRequest',
           'X-Force-Refresh': 'true',
           'X-Cache-Bypass': 'true',
@@ -134,41 +109,23 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
         },
         body: JSON.stringify({
           ...editedProfile,
-          // 添加客户端时间戳确保数据唯一性
           client_timestamp: new Date().toISOString(),
           update_id: `client-${timestamp}-${randomId}`
         })
       })
 
-      console.log('📡 API响应状态:', response.status)
-      console.log('📡 响应头:', Object.fromEntries(response.headers.entries()))
-
       if (response.ok) {
         const updatedResponse = await response.json()
-        console.log('✅ 更新个人资料响应:', updatedResponse)
-        
-        // 验证更新结果
         const updatedUserData = updatedResponse.user || updatedResponse
-        console.log('✅ 更新后的用户数据:', updatedUserData)
-        console.log('✅ 更新后的bio字段:', updatedUserData.bio)
-        console.log('✅ 更新确认:', updatedUserData.update_confirmed)
-        console.log('✅ 更新时间:', updatedUserData.confirmed_at)
-        
         setProfile(updatedUserData)
         setEditedProfile(updatedUserData)
         setIsEditing(false)
         
-        // 强制重新获取数据验证保存效果
         setTimeout(() => {
-          console.log('🔄 验证保存效果...')
           fetchProfile()
         }, 500)
-        
-        console.log('✅ 个人资料保存成功，状态已更新')
       } else {
         console.error('❌ 更新个人资料失败:', response.status)
-        const errorData = await response.json()
-        console.error('❌ 错误详情:', errorData)
       }
     } catch (error) {
       console.error('❌ 更新用户资料失败:', error)
@@ -188,13 +145,9 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
       const token = localStorage.getItem('token')
       if (!token) return
 
-      console.log('🔄 开始上传头像...', new Date().toISOString())
-      console.log('📁 文件信息:', { name: file.name, size: file.size, type: file.type })
-
       const formData = new FormData()
       formData.append('avatar', file)
 
-      // 创建更强的缓存绕过参数
       const timestamp = Date.now()
       const randomId = Math.random().toString(36).substring(7)
 
@@ -215,25 +168,15 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
         body: formData
       })
 
-      console.log('📡 头像上传API响应状态:', response.status)
-      console.log('📡 响应头:', Object.fromEntries(response.headers.entries()))
-
       if (response.ok) {
         const data = await response.json()
-        console.log('✅ 头像上传成功:', data)
-        
-        // 更新本地状态
         if (profile) {
           const updatedProfile = { ...profile, avatar_url: data.avatar_url }
           setProfile(updatedProfile)
           setEditedProfile(updatedProfile)
         }
-        
-        console.log('✅ 头像已更新到状态中')
       } else {
-        console.error('❌ 头像上传失败:', response.status)
         const errorData = await response.json()
-        console.error('❌ 错误详情:', errorData)
         alert(`头像上传失败: ${errorData.error || '未知错误'}`)
       }
     } catch (error) {
@@ -255,15 +198,23 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
     fileInputRef.current?.click()
   }
 
+  const tabs = [
+    { id: 'basic', label: '基本信息', icon: User, color: 'text-blue-600' },
+    { id: 'photos', label: '照片', icon: Camera, color: 'text-purple-600' },
+    { id: 'interests', label: '兴趣爱好', icon: Heart, color: 'text-pink-600' },
+    { id: 'lifestyle', label: '生活方式', icon: Activity, color: 'text-green-600' },
+    { id: 'values', label: '价值观', icon: Star, color: 'text-yellow-600' }
+  ]
+
   if (!isOpen) return null
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl p-8">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">加载中...</p>
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-red-500 border-t-transparent mx-auto mb-6"></div>
+            <p className="text-gray-600 text-lg">加载个人资料中...</p>
           </div>
         </div>
       </div>
@@ -272,11 +223,11 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
 
   if (!profile) {
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-8">
+      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+        <div className="bg-white rounded-3xl shadow-2xl w-full max-w-4xl p-8">
           <div className="text-center">
-            <UserIcon className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-            <p className="text-gray-600">未找到用户资料</p>
+            <UserIcon className="h-20 w-20 text-gray-400 mx-auto mb-6" />
+            <p className="text-gray-600 text-lg">未找到用户资料</p>
           </div>
         </div>
       </div>
@@ -284,772 +235,761 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden">
         {/* 头部 */}
-        <div className="flex items-center justify-between p-6 border-b">
-          <h3 className="text-xl font-semibold text-gray-900">个人资料</h3>
-          <div className="flex items-center space-x-2">
-            {isEditing ? (
-              <>
-                <button
-                  onClick={handleSave}
-                  className="flex items-center space-x-1 px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-                >
-                  <Save className="h-4 w-4" />
-                  <span>保存</span>
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="px-3 py-1 text-gray-600 hover:text-gray-800 transition-colors"
-                >
-                  取消
-                </button>
-              </>
-            ) : (
-              <>
+        <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-4">
+              <div className="relative">
+                <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center overflow-hidden backdrop-blur-sm">
+                  {profile.avatar_url ? (
+                    <Image 
+                      src={profile.avatar_url} 
+                      alt={profile.name}
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-white">
+                      {profile.name ? profile.name.charAt(0).toUpperCase() : '?'}
+                    </span>
+                  )}
+                  
+                  <button
+                    onClick={triggerFileInput}
+                    disabled={isUploadingAvatar}
+                    className="absolute -bottom-1 -right-1 w-8 h-8 bg-white/90 hover:bg-white text-red-500 rounded-full flex items-center justify-center transition-all duration-200 shadow-lg"
+                    title="更换头像"
+                  >
+                    {isUploadingAvatar ? (
+                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-red-500 border-t-transparent"></div>
+                    ) : (
+                      <Camera className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
+                
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </div>
+              
+              <div>
+                <h2 className="text-2xl font-bold">{profile.name}</h2>
+                <p className="text-white/80">{profile.email}</p>
+                {profile.location && (
+                  <div className="flex items-center text-white/70 text-sm mt-1">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {profile.location}
+                  </div>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              {isEditing ? (
+                <>
+                  <button
+                    onClick={handleSave}
+                    className="flex items-center space-x-2 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl transition-all duration-200"
+                  >
+                    <Save className="h-4 w-4" />
+                    <span>保存</span>
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="px-4 py-2 text-white/80 hover:text-white transition-colors"
+                  >
+                    取消
+                  </button>
+                </>
+              ) : (
                 <button
                   onClick={handleEdit}
-                  className="flex items-center space-x-1 px-3 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                  className="flex items-center space-x-2 px-4 py-2 bg-white/20 hover:bg-white/30 backdrop-blur-sm rounded-xl transition-all duration-200"
                 >
                   <Edit className="h-4 w-4" />
                   <span>编辑资料</span>
                 </button>
-              </>
-            )}
-            <button
-              onClick={onClose}
-              className="p-1 text-gray-400 hover:text-gray-600 transition-colors"
-            >
-              <X className="h-6 w-6" />
-            </button>
+              )}
+              <button
+                onClick={onClose}
+                className="p-2 text-white/70 hover:text-white hover:bg-white/10 rounded-xl transition-all duration-200"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* 内容 */}
-        <div className="p-6">
-          {/* 头像区域 */}
-          <div className="text-center">
-            <div className="relative inline-block">
-              <div className="w-32 h-32 bg-gradient-to-br from-red-100 to-pink-100 rounded-full flex items-center justify-center mx-auto mb-4 overflow-hidden relative">
-                {profile.avatar_url ? (
-                  <Image 
-                    src={profile.avatar_url} 
-                    alt={profile.name}
-                    width={128}
-                    height={128}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      console.log('头像加载失败，使用首字母代替')
-                      const target = e.currentTarget as HTMLImageElement
-                      target.style.display = 'none'
-                      const fallback = target.nextElementSibling as HTMLElement
-                      if (fallback) {
-                        fallback.style.display = 'flex'
-                      }
-                    }}
-                  />
-                ) : null}
-                <span 
-                  className="text-4xl font-bold text-red-600"
-                  style={{ display: profile.avatar_url ? 'none' : 'flex' }}
-                >
-                  {profile.name ? profile.name.charAt(0).toUpperCase() : '?'}
-                </span>
-                
-                {/* 头像上传按钮 */}
-                <button
-                  onClick={triggerFileInput}
-                  disabled={isUploadingAvatar}
-                  className="absolute bottom-0 right-0 w-10 h-10 bg-red-500 hover:bg-red-600 disabled:bg-gray-400 text-white rounded-full flex items-center justify-center transition-colors duration-200 shadow-lg"
-                  title="上传头像"
-                >
-                  {isUploadingAvatar ? (
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  ) : (
-                    <Camera className="h-5 w-5" />
-                  )}
-                </button>
-              </div>
-              
-              {/* 隐藏的文件输入 */}
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/jpg,image/png,image/webp"
-                onChange={handleFileSelect}
-                className="hidden"
-              />
-            </div>
-            
-            {/* 上传提示 */}
-            {isUploadingAvatar && (
-              <div className="text-sm text-gray-500 mb-2">
-                正在上传头像...
-              </div>
-            )}
-            
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">{profile.name}</h2>
-            <p className="text-gray-600 mb-6">{profile.email}</p>
+        {/* 标签页导航 */}
+        <div className="border-b border-gray-200 bg-gray-50">
+          <div className="flex space-x-1 p-4">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center space-x-2 px-4 py-3 rounded-xl font-medium transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? 'bg-white text-gray-900 shadow-sm border border-gray-200'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
+                }`}
+              >
+                <tab.icon className={`h-5 w-5 ${tab.color}`} />
+                <span>{tab.label}</span>
+              </button>
+            ))}
           </div>
+        </div>
 
-          {/* 完整资料信息 */}
-          <div className="space-y-6">
-            {/* 照片展示区域 */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="flex items-center text-sm font-medium text-gray-700">
-                  <Camera className="h-4 w-4 mr-2" />
-                  我的照片
-                </label>
-                <button
-                  onClick={() => {
-                    onClose()
-                    window.open('/user-photos', '_blank')
-                  }}
-                  className="text-xs text-blue-600 hover:text-blue-800 underline"
-                >
-                  查看全部照片
-                </button>
+        {/* 标签页内容 */}
+        <div className="p-6 overflow-y-auto max-h-[60vh] min-h-[500px]">
+          {activeTab === 'basic' && (
+            <div className="space-y-6 min-h-[450px]">
+              {/* 个人简介 */}
+              <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6">
+                <div className="flex items-center mb-4">
+                  <User className="h-6 w-6 text-blue-600 mr-3" />
+                  <h3 className="text-lg font-semibold text-gray-900">个人简介</h3>
+                </div>
+                {isEditing ? (
+                  <textarea
+                    value={editedProfile.bio || ''}
+                    onChange={(e) => handleInputChange('bio', e.target.value)}
+                    className="w-full p-4 border border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/80 backdrop-blur-sm"
+                    rows={4}
+                    placeholder="介绍一下你自己，让其他人更好地了解你..."
+                  />
+                ) : (
+                  <p className="text-gray-700 bg-white/60 backdrop-blur-sm p-4 rounded-xl min-h-[100px] leading-relaxed">
+                    {profile.bio || '这个人很懒，还没有写个人简介...'}
+                  </p>
+                )}
               </div>
-              <div className="bg-gray-50 p-3 rounded-lg">
+
+              {/* 基础信息网格 */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* 年龄 */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center mb-3">
+                    <Calendar className="h-5 w-5 text-red-500 mr-2" />
+                    <h4 className="font-medium text-gray-900">年龄</h4>
+                  </div>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {profile.birth_date ? 
+                      `${Math.floor((Date.now() - new Date(profile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}岁` : 
+                      '未设置'
+                    }
+                  </p>
+                </div>
+
+                {/* 身高 */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center mb-3">
+                    <Ruler className="h-5 w-5 text-green-500 mr-2" />
+                    <h4 className="font-medium text-gray-900">身高</h4>
+                  </div>
+                  {isEditing ? (
+                    <input
+                      type="number"
+                      value={editedProfile.height || ''}
+                      onChange={(e) => handleInputChange('height', parseInt(e.target.value) || 0)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                      placeholder="身高(cm)"
+                      min="100"
+                      max="250"
+                    />
+                  ) : (
+                    <p className="text-2xl font-bold text-gray-900">
+                      {profile.height ? `${profile.height}cm` : '未设置'}
+                    </p>
+                  )}
+                </div>
+
+                {/* 职业 */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center mb-3">
+                    <Briefcase className="h-5 w-5 text-blue-500 mr-2" />
+                    <h4 className="font-medium text-gray-900">职业</h4>
+                  </div>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={editedProfile.occupation || ''}
+                      onChange={(e) => handleInputChange('occupation', e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="你的职业"
+                    />
+                  ) : (
+                    <p className="text-lg font-medium text-gray-900">
+                      {profile.occupation || '未设置'}
+                    </p>
+                  )}
+                </div>
+
+                {/* 教育 */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center mb-3">
+                    <GraduationCap className="h-5 w-5 text-purple-500 mr-2" />
+                    <h4 className="font-medium text-gray-900">教育</h4>
+                  </div>
+                  {isEditing ? (
+                    <select
+                      value={editedProfile.degree || ''}
+                      onChange={(e) => handleInputChange('degree', e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                    >
+                      <option value="">选择学位</option>
+                      <option value="博士">博士</option>
+                      <option value="硕士">硕士</option>
+                      <option value="本科">本科</option>
+                      <option value="非本科（大专/自考）">非本科（大专/自考）</option>
+                    </select>
+                  ) : (
+                    <p className="text-lg font-medium text-gray-900">
+                      {profile.degree || '未设置'}
+                    </p>
+                  )}
+                </div>
+
+                {/* 关系状态 */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center mb-3">
+                    <Heart className="h-5 w-5 text-pink-500 mr-2" />
+                    <h4 className="font-medium text-gray-900">关系状态</h4>
+                  </div>
+                  {isEditing ? (
+                    <select
+                      value={editedProfile.relationship_status || ''}
+                      onChange={(e) => handleInputChange('relationship_status', e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                    >
+                      <option value="">选择状态</option>
+                      <option value="单身">单身</option>
+                      <option value="恋爱中">恋爱中</option>
+                      <option value="已婚">已婚</option>
+                      <option value="离异">离异</option>
+                    </select>
+                  ) : (
+                    <p className="text-lg font-medium text-gray-900">
+                      {profile.relationship_status || '未设置'}
+                    </p>
+                  )}
+                </div>
+
+                {/* 约会目的 */}
+                <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center mb-3">
+                    <MessageCircle className="h-5 w-5 text-indigo-500 mr-2" />
+                    <h4 className="font-medium text-gray-900">约会目的</h4>
+                  </div>
+                  {isEditing ? (
+                    <select
+                      value={editedProfile.dating_style || ''}
+                      onChange={(e) => handleInputChange('dating_style', e.target.value)}
+                      className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                    >
+                      <option value="">选择目的</option>
+                      <option value="long_term">长期关系</option>
+                      <option value="life_partner">人生伴侣</option>
+                      <option value="casual_dates">有趣的随意约会</option>
+                      <option value="intimacy_no_commitment">肉体关系</option>
+                      <option value="ethical_non_monogamy">开放式关系</option>
+                    </select>
+                  ) : (
+                    <p className="text-lg font-medium text-gray-900">
+                      {(() => {
+                        const datingPurposeMap: { [key: string]: string } = {
+                          'long_term': '长期关系',
+                          'life_partner': '人生伴侣',
+                          'casual_dates': '有趣的随意约会',
+                          'intimacy_no_commitment': '肉体关系',
+                          'ethical_non_monogamy': '开放式关系'
+                        }
+                        return datingPurposeMap[profile.dating_style || ''] || profile.dating_style || '未设置'
+                      })()}
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'photos' && (
+            <div className="space-y-6 min-h-[450px]">
+              <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center">
+                    <Camera className="h-6 w-6 text-purple-600 mr-3" />
+                    <h3 className="text-lg font-semibold text-gray-900">我的照片</h3>
+                  </div>
+                  <button
+                    onClick={() => {
+                      onClose()
+                      window.open('/user-photos', '_blank')
+                    }}
+                    className="px-4 py-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors"
+                  >
+                    管理照片
+                  </button>
+                </div>
+                
                 {profile.photos && profile.photos.length > 0 ? (
-                  <div className="grid grid-cols-3 gap-2">
-                    {profile.photos.slice(0, 3).map((photo, index) => (
-                      <div key={index} className="aspect-square bg-gray-200 rounded overflow-hidden">
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {profile.photos.map((photo, index) => (
+                      <div key={index} className="aspect-square bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
                         <Image
                           src={photo}
                           alt={`照片 ${index + 1}`}
-                          width={100}
-                          height={100}
+                          width={200}
+                          height={200}
                           className="w-full h-full object-cover"
                         />
                       </div>
                     ))}
-                    {profile.photos.length > 3 && (
-                      <div className="aspect-square bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
-                        +{profile.photos.length - 3}
-                      </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-12">
+                    <Camera className="h-16 w-16 text-purple-300 mx-auto mb-4" />
+                    <p className="text-gray-500 mb-4">还没有上传照片</p>
+                    <button
+                      onClick={() => {
+                        onClose()
+                        window.open('/user-photos', '_blank')
+                      }}
+                      className="px-6 py-3 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors"
+                    >
+                      上传第一张照片
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+                     {activeTab === 'interests' && (
+             <div className="space-y-6 min-h-[450px]">
+               <div className="bg-gradient-to-r from-pink-50 to-red-50 rounded-2xl p-6">
+                 <div className="flex items-center justify-between mb-6">
+                   <div className="flex items-center">
+                     <Heart className="h-6 w-6 text-pink-600 mr-3" />
+                     <h3 className="text-lg font-semibold text-gray-900">兴趣爱好</h3>
+                   </div>
+                   {!isEditing && (
+                     <button
+                       onClick={handleEdit}
+                       className="px-4 py-2 bg-pink-500 text-white rounded-xl hover:bg-pink-600 transition-colors"
+                     >
+                       编辑兴趣
+                     </button>
+                   )}
+                 </div>
+                 
+                 {isEditing ? (
+                   <div className="space-y-6">
+                     {/* 当前选择的兴趣 */}
+                     <div>
+                       <h4 className="text-sm font-medium text-gray-700 mb-3">当前选择 ({editedProfile.interests?.length || 0}/5)</h4>
+                       {editedProfile.interests && editedProfile.interests.length > 0 ? (
+                         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                           {editedProfile.interests.map((interest, index) => {
+                             const interestMap: { [key: string]: { icon: any, label: string, color: string } } = {
+                               'baking': { icon: Utensils, label: '烘焙', color: 'bg-white text-pink-600' },
+                               'lgbtq_rights': { icon: Heart, label: 'LGBTQ+', color: 'bg-white text-pink-600' },
+                               'hiking': { icon: Mountain, label: '徒步', color: 'bg-white text-pink-600' },
+                               'gardening': { icon: Palette, label: '园艺', color: 'bg-white text-pink-600' },
+                               'rnb': { icon: Music, label: '音乐', color: 'bg-white text-pink-600' },
+                               'art': { icon: Palette, label: '艺术', color: 'bg-white text-pink-600' },
+                               'writing': { icon: BookOpenCheck, label: '写作', color: 'bg-white text-pink-600' },
+                               'country': { icon: Palette, label: '绘画', color: 'bg-white text-pink-600' },
+                               'skiing': { icon: Mountain, label: '阅读', color: 'bg-white text-pink-600' },
+                               'museums': { icon: BookOpen, label: '博物馆', color: 'bg-white text-pink-600' },
+                               'vegetarian': { icon: Utensils, label: '素食', color: 'bg-white text-pink-600' },
+                               'horror': { icon: Activity, label: '电影', color: 'bg-white text-pink-600' },
+                               'dancing': { icon: Activity, label: '跳舞', color: 'bg-white text-pink-600' },
+                               'yoga': { icon: Activity, label: '瑜伽', color: 'bg-white text-pink-600' },
+                               'dogs': { icon: Heart, label: '狗', color: 'bg-white text-pink-600' },
+                               'crafts': { icon: Palette, label: '手工艺', color: 'bg-white text-pink-600' },
+                               'festivals': { icon: Activity, label: '节日', color: 'bg-white text-pink-600' },
+                               'tennis': { icon: Activity, label: '运动', color: 'bg-white text-pink-600' },
+                               'cats': { icon: Heart, label: '猫', color: 'bg-white text-pink-600' },
+                               'concerts': { icon: Music, label: '音乐会', color: 'bg-white text-pink-600' },
+                               'foodie': { icon: Utensils, label: '美食', color: 'bg-white text-pink-600' },
+                               'exploring_cities': { icon: Plane, label: '旅游', color: 'bg-white text-pink-600' },
+                               'camping': { icon: Mountain, label: '露营', color: 'bg-white text-pink-600' },
+                               'wine': { icon: Wine, label: '葡萄酒', color: 'bg-white text-pink-600' },
+                               'feminism': { icon: Heart, label: '女权主义', color: 'bg-white text-pink-600' },
+                               'coffee': { icon: Coffee, label: '咖啡', color: 'bg-white text-pink-600' },
+                               'gaming': { icon: Gamepad2, label: '游戏', color: 'bg-white text-pink-600' }
+                             }
+                             
+                             const interestInfo = interestMap[interest] || { icon: Heart, label: interest, color: 'bg-gray-100 text-gray-600' }
+                             const IconComponent = interestInfo.icon
+                             
+                             return (
+                               <div key={index} className={`${interestInfo.color} rounded-xl p-3 flex items-center justify-between`}>
+                                 <div className="flex items-center space-x-2">
+                                   <IconComponent className="h-4 w-4" />
+                                   <span className="font-medium text-sm">{interestInfo.label}</span>
+                                 </div>
+                                 <button
+                                   onClick={() => {
+                                     const newInterests = editedProfile.interests?.filter((_, i) => i !== index) || []
+                                     handleInputChange('interests', newInterests)
+                                   }}
+                                   className="text-red-500 hover:text-red-700 hover:bg-red-50 rounded-full p-1"
+                                 >
+                                   <X className="h-4 w-4" />
+                                 </button>
+                               </div>
+                             )
+                           })}
+                         </div>
+                       ) : (
+                         <p className="text-gray-500 text-sm italic">还没有选择任何兴趣</p>
+                       )}
+                     </div>
+
+                     {/* 选择更多兴趣 */}
+                     <div>
+                       <h4 className="text-sm font-medium text-gray-700 mb-3">选择更多兴趣</h4>
+                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                         {(() => {
+                             const allInterests = [
+    { id: 'baking', icon: Utensils, label: '烘焙', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'lgbtq_rights', icon: Heart, label: 'LGBTQ+', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'hiking', icon: Mountain, label: '徒步', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'gardening', icon: Palette, label: '园艺', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'rnb', icon: Music, label: '音乐', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'art', icon: Palette, label: '艺术', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'writing', icon: BookOpenCheck, label: '写作', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'country', icon: Palette, label: '绘画', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'skiing', icon: Mountain, label: '阅读', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'museums', icon: BookOpen, label: '博物馆', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'vegetarian', icon: Utensils, label: '素食', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'horror', icon: Activity, label: '电影', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'dancing', icon: Activity, label: '跳舞', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'yoga', icon: Activity, label: '瑜伽', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'dogs', icon: Heart, label: '狗', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'crafts', icon: Palette, label: '手工艺', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'festivals', icon: Activity, label: '节日', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'tennis', icon: Activity, label: '运动', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'cats', icon: Heart, label: '猫', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'concerts', icon: Music, label: '音乐会', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'foodie', icon: Utensils, label: '美食', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'exploring_cities', icon: Plane, label: '旅游', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'camping', icon: Mountain, label: '露营', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'wine', icon: Wine, label: '葡萄酒', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'feminism', icon: Heart, label: '女权主义', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'coffee', icon: Coffee, label: '咖啡', color: 'bg-white text-pink-600 hover:bg-pink-50' },
+    { id: 'gaming', icon: Gamepad2, label: '游戏', color: 'bg-white text-pink-600 hover:bg-pink-50' }
+  ]
+                           
+                           const currentInterests = editedProfile.interests || []
+                           
+                           return allInterests.map((interest) => {
+                             const IconComponent = interest.icon
+                             const isSelected = currentInterests.includes(interest.id)
+                             const isDisabled = !isSelected && currentInterests.length >= 5
+                             
+                             return (
+                               <button
+                                 key={interest.id}
+                                 onClick={() => {
+                                   if (isSelected) {
+                                     const newInterests = currentInterests.filter(id => id !== interest.id)
+                                     handleInputChange('interests', newInterests)
+                                   } else if (!isDisabled) {
+                                     const newInterests = [...currentInterests, interest.id]
+                                     handleInputChange('interests', newInterests)
+                                   }
+                                 }}
+                                 disabled={isDisabled}
+                                 className={`${interest.color} rounded-xl p-3 flex items-center space-x-2 transition-all duration-200 ${
+                                   isSelected 
+                                     ? 'ring-2 ring-pink-500 ring-offset-2' 
+                                     : isDisabled 
+                                       ? 'opacity-50 cursor-not-allowed' 
+                                       : 'hover:scale-105'
+                                 }`}
+                               >
+                                 <IconComponent className="h-4 w-4" />
+                                 <span className="font-medium text-sm">{interest.label}</span>
+                                 {isSelected && (
+                                   <div className="ml-auto">
+                                     <div className="w-4 h-4 bg-pink-500 rounded-full flex items-center justify-center">
+                                       <div className="w-2 h-2 bg-white rounded-full"></div>
+                                     </div>
+                                   </div>
+                                 )}
+                               </button>
+                             )
+                           })
+                         })()}
+                       </div>
+                       {editedProfile.interests && editedProfile.interests.length >= 5 && (
+                         <p className="text-sm text-gray-500 mt-2">最多只能选择5个兴趣</p>
+                       )}
+                     </div>
+                   </div>
+                 ) : (
+                   <>
+                     {profile.interests && profile.interests.length > 0 ? (
+                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                         {profile.interests.map((interest, index) => {
+                             const interestMap: { [key: string]: { icon: any, label: string, color: string } } = {
+    'baking': { icon: Utensils, label: '烘焙', color: 'bg-white text-pink-600' },
+    'lgbtq_rights': { icon: Heart, label: 'LGBTQ+', color: 'bg-white text-pink-600' },
+    'hiking': { icon: Mountain, label: '徒步', color: 'bg-white text-pink-600' },
+    'gardening': { icon: Palette, label: '园艺', color: 'bg-white text-pink-600' },
+    'rnb': { icon: Music, label: '音乐', color: 'bg-white text-pink-600' },
+    'art': { icon: Palette, label: '艺术', color: 'bg-white text-pink-600' },
+    'writing': { icon: BookOpenCheck, label: '写作', color: 'bg-white text-pink-600' },
+    'country': { icon: Palette, label: '绘画', color: 'bg-white text-pink-600' },
+    'skiing': { icon: Mountain, label: '阅读', color: 'bg-white text-pink-600' },
+    'museums': { icon: BookOpen, label: '博物馆', color: 'bg-white text-pink-600' },
+    'vegetarian': { icon: Utensils, label: '素食', color: 'bg-white text-pink-600' },
+    'horror': { icon: Activity, label: '电影', color: 'bg-white text-pink-600' },
+    'dancing': { icon: Activity, label: '跳舞', color: 'bg-white text-pink-600' },
+    'yoga': { icon: Activity, label: '瑜伽', color: 'bg-white text-pink-600' },
+    'dogs': { icon: Heart, label: '狗', color: 'bg-white text-pink-600' },
+    'crafts': { icon: Palette, label: '手工艺', color: 'bg-white text-pink-600' },
+    'festivals': { icon: Activity, label: '节日', color: 'bg-white text-pink-600' },
+    'tennis': { icon: Activity, label: '运动', color: 'bg-white text-pink-600' },
+    'cats': { icon: Heart, label: '猫', color: 'bg-white text-pink-600' },
+    'concerts': { icon: Music, label: '音乐会', color: 'bg-white text-pink-600' },
+    'foodie': { icon: Utensils, label: '美食', color: 'bg-white text-pink-600' },
+    'exploring_cities': { icon: Plane, label: '旅游', color: 'bg-white text-pink-600' },
+    'camping': { icon: Mountain, label: '露营', color: 'bg-white text-pink-600' },
+    'wine': { icon: Wine, label: '葡萄酒', color: 'bg-white text-pink-600' },
+    'feminism': { icon: Heart, label: '女权主义', color: 'bg-white text-pink-600' },
+    'coffee': { icon: Coffee, label: '咖啡', color: 'bg-white text-pink-600' },
+    'gaming': { icon: Gamepad2, label: '游戏', color: 'bg-white text-pink-600' }
+  }
+                           
+                           const interestInfo = interestMap[interest] || { icon: Heart, label: interest, color: 'bg-gray-100 text-gray-600' }
+                           const IconComponent = interestInfo.icon
+                           
+                           return (
+                             <div key={index} className={`${interestInfo.color} rounded-2xl p-4 flex items-center space-x-3`}>
+                               <IconComponent className="h-5 w-5" />
+                               <span className="font-medium">{interestInfo.label}</span>
+                             </div>
+                           )
+                         })}
+                       </div>
+                     ) : (
+                       <div className="text-center py-12">
+                         <Heart className="h-16 w-16 text-pink-300 mx-auto mb-4" />
+                         <p className="text-gray-500">还没有添加兴趣爱好</p>
+                       </div>
+                     )}
+                   </>
+                 )}
+               </div>
+             </div>
+           )}
+
+          {activeTab === 'lifestyle' && (
+            <div className="space-y-6 min-h-[450px]">
+              <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-2xl p-6">
+                <div className="flex items-center mb-6">
+                  <Activity className="h-6 w-6 text-green-600 mr-3" />
+                  <h3 className="text-lg font-semibold text-gray-900">生活方式</h3>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* 家庭计划 */}
+                  <div className="bg-white rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center mb-4">
+                      <Baby className="h-5 w-5 text-pink-500 mr-2" />
+                      <h4 className="font-medium text-gray-900">家庭计划</h4>
+                    </div>
+                    {isEditing ? (
+                      <select
+                        value={editedProfile.family_plans || ''}
+                        onChange={(e) => handleInputChange('family_plans', e.target.value)}
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-pink-500 focus:border-pink-500"
+                      >
+                        <option value="">选择计划</option>
+                        <option value="dont_want_kids">不想要孩子</option>
+                        <option value="open_to_kids">对孩子持开放态度</option>
+                        <option value="want_kids">想要孩子</option>
+                        <option value="not_sure">不确定</option>
+                      </select>
+                    ) : (
+                      <p className="text-lg font-medium text-gray-900">
+                        {(() => {
+                          const familyPlansMap: { [key: string]: string } = {
+                            'dont_want_kids': '不想要孩子',
+                            'open_to_kids': '对孩子持开放态度',
+                            'want_kids': '想要孩子',
+                            'not_sure': '不确定'
+                          }
+                          return familyPlansMap[profile.family_plans || ''] || profile.family_plans || '未设置'
+                        })()}
+                      </p>
                     )}
                   </div>
+
+                  {/* 孩子 */}
+                  <div className="bg-white rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center mb-4">
+                      <Baby className="h-5 w-5 text-blue-500 mr-2" />
+                      <h4 className="font-medium text-gray-900">孩子</h4>
+                    </div>
+                    {isEditing ? (
+                      <select
+                        value={typeof editedProfile.has_kids === 'string' ? editedProfile.has_kids : (editedProfile.has_kids === true ? 'have_kids' : 'dont_have_kids')}
+                        onChange={(e) => handleInputChange('has_kids', e.target.value)}
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      >
+                        <option value="">选择状态</option>
+                        <option value="dont_have_kids">没有孩子</option>
+                        <option value="have_kids">有孩子</option>
+                      </select>
+                    ) : (
+                      <p className="text-lg font-medium text-gray-900">
+                        {(() => {
+                          const hasKidsMap: { [key: string]: string } = {
+                            'dont_have_kids': '没有孩子',
+                            'have_kids': '有孩子'
+                          }
+                          const hasKidsValue = typeof profile.has_kids === 'string' ? profile.has_kids : (profile.has_kids === true ? 'have_kids' : 'dont_have_kids')
+                          return hasKidsMap[hasKidsValue] || (profile.has_kids === true ? '有孩子' : '没有孩子')
+                        })()}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 吸烟 */}
+                  <div className="bg-white rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center mb-4">
+                      <Coffee className="h-5 w-5 text-orange-500 mr-2" />
+                      <h4 className="font-medium text-gray-900">吸烟</h4>
+                    </div>
+                    {isEditing ? (
+                      <select
+                        value={editedProfile.smoking_status || ''}
+                        onChange={(e) => handleInputChange('smoking_status', e.target.value)}
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
+                      >
+                        <option value="">选择状态</option>
+                        <option value="yes_smoke">是的，我吸烟</option>
+                        <option value="sometimes_smoke">我有时吸烟</option>
+                        <option value="no_smoke">不，我不吸烟</option>
+                        <option value="trying_quit">我正在尝试戒烟</option>
+                      </select>
+                    ) : (
+                      <p className="text-lg font-medium text-gray-900">
+                        {(() => {
+                          const smokingMap: { [key: string]: string } = {
+                            'yes_smoke': '是的，我吸烟',
+                            'sometimes_smoke': '我有时吸烟',
+                            'no_smoke': '不，我不吸烟',
+                            'trying_quit': '我正在尝试戒烟'
+                          }
+                          return smokingMap[profile.smoking_status || ''] || profile.smoking_status || '未设置'
+                        })()}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* 饮酒 */}
+                  <div className="bg-white rounded-2xl p-6 shadow-sm">
+                    <div className="flex items-center mb-4">
+                      <Wine className="h-5 w-5 text-purple-500 mr-2" />
+                      <h4 className="font-medium text-gray-900">饮酒</h4>
+                    </div>
+                    {isEditing ? (
+                      <select
+                        value={editedProfile.drinking_status || ''}
+                        onChange={(e) => handleInputChange('drinking_status', e.target.value)}
+                        className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                      >
+                        <option value="">选择状态</option>
+                        <option value="yes_drink">是的，我喝酒</option>
+                        <option value="sometimes_drink">我有时喝酒</option>
+                        <option value="rarely_drink">我很少喝酒</option>
+                        <option value="no_drink">不，我不喝酒</option>
+                        <option value="sober">我戒酒了</option>
+                      </select>
+                    ) : (
+                      <p className="text-lg font-medium text-gray-900">
+                        {(() => {
+                          const drinkingMap: { [key: string]: string } = {
+                            'yes_drink': '是的，我喝酒',
+                            'sometimes_drink': '我有时喝酒',
+                            'rarely_drink': '我很少喝酒',
+                            'no_drink': '不，我不喝酒',
+                            'sober': '我戒酒了'
+                          }
+                          return drinkingMap[profile.drinking_status || ''] || profile.drinking_status || '未设置'
+                        })()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'values' && (
+            <div className="space-y-6 min-h-[450px]">
+              <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl p-6">
+                <div className="flex items-center mb-6">
+                  <Star className="h-6 w-6 text-yellow-600 mr-3" />
+                  <h3 className="text-lg font-semibold text-gray-900">个人价值观</h3>
+                </div>
+                
+                {profile.values_preferences && profile.values_preferences.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {profile.values_preferences.map((value, index) => {
+                      const valueMap: { [key: string]: { icon: any, label: string, color: string } } = {
+                        'ambition': { icon: Target, label: '有上进心', color: 'bg-blue-100 text-blue-600' },
+                        'confidence': { icon: Star, label: '自信', color: 'bg-yellow-100 text-yellow-600' },
+                        'curiosity': { icon: Sparkles, label: '好奇心', color: 'bg-purple-100 text-purple-600' },
+                        'emotional_intelligence': { icon: Heart, label: '高情商', color: 'bg-pink-100 text-pink-600' },
+                        'empathy': { icon: Users2, label: '同理心', color: 'bg-green-100 text-green-600' },
+                        'generosity': { icon: Heart, label: '大方', color: 'bg-red-100 text-red-600' },
+                        'gratitude': { icon: Star, label: '感恩', color: 'bg-amber-100 text-amber-600' },
+                        'humility': { icon: Shield, label: '谦逊', color: 'bg-gray-100 text-gray-600' },
+                        'humor': { icon: Sparkles, label: '幽默', color: 'bg-indigo-100 text-indigo-600' },
+                        'kindness': { icon: Heart, label: '善良', color: 'bg-rose-100 text-rose-600' },
+                        'leadership': { icon: Target, label: '领导力', color: 'bg-blue-100 text-blue-600' },
+                        'loyalty': { icon: Shield, label: '忠诚', color: 'bg-emerald-100 text-emerald-600' },
+                        'openness': { icon: Zap, label: '开放', color: 'bg-cyan-100 text-cyan-600' },
+                        'optimism': { icon: Star, label: '乐观', color: 'bg-yellow-100 text-yellow-600' },
+                        'playfulness': { icon: Sparkles, label: '有趣', color: 'bg-violet-100 text-violet-600' },
+                        'sassiness': { icon: Zap, label: '活泼', color: 'bg-orange-100 text-orange-600' }
+                      }
+                      
+                      const valueInfo = valueMap[value] || { icon: Star, label: value, color: 'bg-gray-100 text-gray-600' }
+                      const IconComponent = valueInfo.icon
+                      
+                      return (
+                        <div key={index} className={`${valueInfo.color} rounded-2xl p-4 flex items-center space-x-3`}>
+                          <IconComponent className="h-5 w-5" />
+                          <span className="font-medium">{valueInfo.label}</span>
+                        </div>
+                      )
+                    })}
+                  </div>
                 ) : (
-                  <p className="text-gray-500 text-sm">暂无照片</p>
+                  <div className="text-center py-12">
+                    <Star className="h-16 w-16 text-yellow-300 mx-auto mb-4" />
+                    <p className="text-gray-500">还没有添加个人价值观</p>
+                  </div>
                 )}
               </div>
             </div>
-
-            {/* 个人简介 */}
-            <div>
-              <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                <User className="h-4 w-4 mr-2" />
-                个人简介
-              </label>
-              {isEditing ? (
-                <textarea
-                  value={editedProfile.bio || ''}
-                  onChange={(e) => handleInputChange('bio', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  rows={3}
-                  placeholder="介绍一下你自己..."
-                />
-              ) : (
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg min-h-[80px]">
-                  {profile.bio || '暂未填写'}
-                </p>
-              )}
-            </div>
-
-            {/* 基础信息 */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* 年龄 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  年龄
-                </label>
-                <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                  {profile.birth_date ? 
-                    `${Math.floor((Date.now() - new Date(profile.birth_date).getTime()) / (365.25 * 24 * 60 * 60 * 1000))}岁` : 
-                    '未设置'
-                  }
-                </p>
-              </div>
-
-              {/* 身高 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Ruler className="h-4 w-4 mr-2" />
-                  身高
-                </label>
-                {isEditing ? (
-                  <input
-                    type="number"
-                    value={editedProfile.height || ''}
-                    onChange={(e) => handleInputChange('height', parseInt(e.target.value) || 0)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="身高(cm)"
-                    min="100"
-                    max="250"
-                  />
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.height ? `${profile.height}cm` : '未设置'}
-                  </p>
-                )}
-              </div>
-
-
-
-              {/* 宗教 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <BookOpen className="h-4 w-4 mr-2" />
-                  宗教
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.religion || ''}
-                    onChange={(e) => handleInputChange('religion', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择宗教</option>
-                    <option value="无宗教信仰">无宗教信仰</option>
-                    <option value="基督教">基督教</option>
-                    <option value="天主教">天主教</option>
-                    <option value="伊斯兰教">伊斯兰教</option>
-                    <option value="佛教">佛教</option>
-                    <option value="印度教">印度教</option>
-                    <option value="犹太教">犹太教</option>
-                    <option value="其他">其他</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.religion || '未设置'}
-                  </p>
-                )}
-              </div>
-
-              {/* 雇主 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Briefcase className="h-4 w-4 mr-2" />
-                  雇主
-                </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedProfile.employer || ''}
-                    onChange={(e) => handleInputChange('employer', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="你的雇主"
-                  />
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.employer || '未设置'}
-                  </p>
-                )}
-              </div>
-
-              {/* 位置 */}
-              <div>
-                <label className="flex items-center justify-between text-sm font-medium text-gray-700 mb-2">
-                  <div className="flex items-center">
-                    <MapPin className="h-4 w-4 mr-2" />
-                    位置
-                  </div>
-                  <button
-                    onClick={() => window.open('/location-settings', '_blank')}
-                    className="text-xs text-blue-600 hover:text-blue-800 flex items-center"
-                    title="位置权限设置"
-                  >
-                    <Settings className="h-3 w-3 mr-1" />
-                    位置设置
-                  </button>
-                </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedProfile.location || ''}
-                    onChange={(e) => handleInputChange('location', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="你的位置"
-                  />
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.location || '未设置'}
-                  </p>
-                )}
-              </div>
-
-              {/* 职业 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Briefcase className="h-4 w-4 mr-2" />
-                  职业
-                </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedProfile.occupation || ''}
-                    onChange={(e) => handleInputChange('occupation', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="你的职业"
-                  />
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.occupation || '未设置'}
-                  </p>
-                )}
-              </div>
-
-              {/* 学校 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <GraduationCap className="h-4 w-4 mr-2" />
-                  学校
-                </label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={editedProfile.school || ''}
-                    onChange={(e) => handleInputChange('school', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                    placeholder="你的学校"
-                  />
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.school || '未设置'}
-                  </p>
-                )}
-              </div>
-
-              {/* 学位 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <GraduationCap className="h-4 w-4 mr-2" />
-                  学位
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.degree || ''}
-                    onChange={(e) => handleInputChange('degree', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择学位</option>
-                    <option value="博士">博士</option>
-                    <option value="硕士">硕士</option>
-                    <option value="本科">本科</option>
-                    <option value="非本科（大专/自考）">非本科（大专/自考）</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.degree || '未设置'}
-                  </p>
-                )}
-              </div>
-
-              {/* 价值观 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Heart className="h-4 w-4 mr-2" />
-                  价值观
-                </label>
-                {isEditing ? (
-                  <div className="grid grid-cols-3 gap-2">
-                    {(() => {
-                      // 价值观ID到中文名称的映射
-                      const valueMap: { [key: string]: string } = {
-                        'ambition': '有上进心',
-                        'confidence': '自信',
-                        'curiosity': '好奇心',
-                        'emotional_intelligence': '高情商',
-                        'empathy': '同理心',
-                        'generosity': '大方',
-                        'gratitude': '感恩',
-                        'humility': '谦逊',
-                        'humor': '幽默',
-                        'kindness': '善良',
-                        'leadership': '领导力',
-                        'loyalty': '忠诚',
-                        'openness': '开放',
-                        'optimism': '乐观',
-                        'playfulness': '有趣',
-                        'sassiness': '活泼'
-                      }
-                      
-                      const currentValues = editedProfile.values_preferences || []
-                      
-                      if (currentValues.length > 0) {
-                        return currentValues.map((value, index) => (
-                          <div key={index} className="flex items-center justify-between px-2 py-1 border border-gray-300 rounded-md bg-white text-sm">
-                            <span className="text-gray-900 truncate">{valueMap[value] || value}</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newValues = currentValues.filter((_, i) => i !== index)
-                                handleInputChange('values_preferences', newValues)
-                              }}
-                              className="text-red-500 hover:text-red-700 text-xs ml-1 hover:bg-red-50 rounded-full px-1 flex-shrink-0"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))
-                      } else {
-                        return (
-                          <div className="col-span-3">
-                            <p className="text-gray-500 italic px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm text-center">
-                              暂无选择的价值观
-                            </p>
-                          </div>
-                        )
-                      }
-                    })()}
-                  </div>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {(() => {
-                      // 价值观ID到中文名称的映射
-                      const valueMap: { [key: string]: string } = {
-                        'ambition': '有上进心',
-                        'confidence': '自信',
-                        'curiosity': '好奇心',
-                        'emotional_intelligence': '高情商',
-                        'empathy': '同理心',
-                        'generosity': '大方',
-                        'gratitude': '感恩',
-                        'humility': '谦逊',
-                        'humor': '幽默',
-                        'kindness': '善良',
-                        'leadership': '领导力',
-                        'loyalty': '忠诚',
-                        'openness': '开放',
-                        'optimism': '乐观',
-                        'playfulness': '有趣',
-                        'sassiness': '活泼'
-                      }
-                      
-                      if (profile.values_preferences && profile.values_preferences.length > 0) {
-                        const translatedValues = profile.values_preferences.map(value => 
-                          valueMap[value] || value
-                        )
-                        return translatedValues.join(', ')
-                      }
-                      return '未设置'
-                    })()}
-                  </p>
-                )}
-              </div>
-
-
-
-              {/* 兴趣 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Heart className="h-4 w-4 mr-2" />
-                  兴趣
-                </label>
-                {isEditing ? (
-                  <div className="grid grid-cols-3 gap-2">
-                    {(() => {
-                      // 兴趣ID到中文名称的映射
-                      const interestMap: { [key: string]: string } = {
-                        'baking': '🍰 烘焙',
-                        'lgbtq_rights': '🏳️‍🌈 LGBTQ+',
-                        'hiking': '⛰️ 徒步',
-                        'gardening': '🌱 园艺',
-                        'rnb': '🎵 音乐',
-                        'art': '🎨 艺术',
-                        'writing': '📝 写作',
-                        'country': '🖼️ 绘画',
-                        'skiing': '📚 阅读',
-                        'museums': '🏛️ 博物馆',
-                        'vegetarian': '🥦 素食',
-                        'horror': '📺 电影',
-                        'dancing': '💃 跳舞',
-                        'yoga': '🧘 瑜伽',
-                        'dogs': '🐶 狗',
-                        'crafts': '🧷 手工艺',
-                        'festivals': '🎉 节日',
-                        'tennis': '🎾 运动',
-                        'cats': '🐱 猫',
-                        'concerts': '🎟️ 音乐会',
-                        'foodie': '🍜 美食',
-                        'exploring_cities': '🏙️ 旅游',
-                        'camping': '⛺ 露营',
-                        'wine': '🍷 葡萄酒',
-                        'feminism': '💛 女权主义',
-                        'coffee': '☕ 咖啡',
-                        'gaming': '🎮 游戏'
-                      }
-                      
-                      const currentInterests = editedProfile.interests || []
-                      
-                      if (currentInterests.length > 0) {
-                        return currentInterests.map((interest, index) => (
-                          <div key={index} className="flex items-center justify-between px-2 py-1 border border-gray-300 rounded-md bg-white text-sm">
-                            <span className="text-gray-900 truncate">{interestMap[interest] || interest}</span>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                const newInterests = currentInterests.filter((_, i) => i !== index)
-                                handleInputChange('interests', newInterests)
-                              }}
-                              className="text-red-500 hover:text-red-700 text-xs ml-1 hover:bg-red-50 rounded-full px-1 flex-shrink-0"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))
-                      } else {
-                        return (
-                          <div className="col-span-3">
-                            <p className="text-gray-500 italic px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-sm text-center">
-                              暂无选择的兴趣
-                            </p>
-                          </div>
-                        )
-                      }
-                    })()}
-                  </div>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {(() => {
-                      // 兴趣ID到中文名称的映射
-                      const interestMap: { [key: string]: string } = {
-                        'baking': '🍰 烘焙',
-                        'lgbtq_rights': '🏳️‍🌈 LGBTQ+',
-                        'hiking': '⛰️ 徒步',
-                        'gardening': '🌱 园艺',
-                        'rnb': '🎵 音乐',
-                        'art': '🎨 艺术',
-                        'writing': '📝 写作',
-                        'country': '🖼️ 绘画',
-                        'skiing': '📚 阅读',
-                        'museums': '🏛️ 博物馆',
-                        'vegetarian': '🥦 素食',
-                        'horror': '📺 电影',
-                        'dancing': '💃 跳舞',
-                        'yoga': '🧘 瑜伽',
-                        'dogs': '🐶 狗',
-                        'crafts': '🧷 手工艺',
-                        'festivals': '🎉 节日',
-                        'tennis': '🎾 运动',
-                        'cats': '🐱 猫',
-                        'concerts': '🎟️ 音乐会',
-                        'foodie': '🍜 美食',
-                        'exploring_cities': '🏙️ 旅游',
-                        'camping': '⛺ 露营',
-                        'wine': '🍷 葡萄酒',
-                        'feminism': '💛 女权主义',
-                        'coffee': '☕ 咖啡',
-                        'gaming': '🎮 游戏'
-                      }
-                      
-                      if (profile.interests && profile.interests.length > 0) {
-                        const translatedInterests = profile.interests.map(interest => 
-                          interestMap[interest] || interest
-                        )
-                        return translatedInterests.join(', ')
-                      }
-                      return '未设置'
-                    })()}
-                  </p>
-                )}
-              </div>
-
-              {/* 关系状态 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Heart className="h-4 w-4 mr-2" />
-                  关系状态
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.relationship_status || ''}
-                    onChange={(e) => handleInputChange('relationship_status', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择状态</option>
-                    <option value="单身">单身</option>
-                    <option value="恋爱中">恋爱中</option>
-                    <option value="已婚">已婚</option>
-                    <option value="离异">离异</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {profile.relationship_status || '未设置'}
-                  </p>
-                )}
-              </div>
-
-              {/* 约会目的 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  约会目的
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.dating_style || ''}
-                    onChange={(e) => handleInputChange('dating_style', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择目的</option>
-                    <option value="long_term">长期关系</option>
-                    <option value="life_partner">人生伴侣</option>
-                    <option value="casual_dates">有趣的随意约会</option>
-                    <option value="intimacy_no_commitment">肉体关系</option>
-                    <option value="ethical_non_monogamy">开放式关系</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {(() => {
-                      const datingPurposeMap: { [key: string]: string } = {
-                        'long_term': '长期关系',
-                        'life_partner': '人生伴侣',
-                        'casual_dates': '有趣的随意约会',
-                        'intimacy_no_commitment': '肉体关系',
-                        'ethical_non_monogamy': '开放式关系'
-                      }
-                      return datingPurposeMap[profile.dating_style || ''] || profile.dating_style || '未设置'
-                    })()}
-                  </p>
-                )}
-              </div>
-
-              {/* 家庭计划 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Baby className="h-4 w-4 mr-2" />
-                  家庭计划
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.family_plans || ''}
-                    onChange={(e) => handleInputChange('family_plans', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择计划</option>
-                    <option value="dont_want_kids">不想要孩子</option>
-                    <option value="open_to_kids">对孩子持开放态度</option>
-                    <option value="want_kids">想要孩子</option>
-                    <option value="not_sure">不确定</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {(() => {
-                      const familyPlansMap: { [key: string]: string } = {
-                        'dont_want_kids': '不想要孩子',
-                        'open_to_kids': '对孩子持开放态度',
-                        'want_kids': '想要孩子',
-                        'not_sure': '不确定'
-                      }
-                      return familyPlansMap[profile.family_plans || ''] || profile.family_plans || '未设置'
-                    })()}
-                  </p>
-                )}
-              </div>
-
-              {/* 孩子 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Baby className="h-4 w-4 mr-2" />
-                  孩子
-                </label>
-                {isEditing ? (
-                  <select
-                    value={typeof editedProfile.has_kids === 'string' ? editedProfile.has_kids : (editedProfile.has_kids === true ? 'have_kids' : 'dont_have_kids')}
-                    onChange={(e) => handleInputChange('has_kids', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择状态</option>
-                    <option value="dont_have_kids">没有孩子</option>
-                    <option value="have_kids">有孩子</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {(() => {
-                      const hasKidsMap: { [key: string]: string } = {
-                        'dont_have_kids': '没有孩子',
-                        'have_kids': '有孩子'
-                      }
-                      const hasKidsValue = typeof profile.has_kids === 'string' ? profile.has_kids : (profile.has_kids === true ? 'have_kids' : 'dont_have_kids')
-                      return hasKidsMap[hasKidsValue] || (profile.has_kids === true ? '有孩子' : '没有孩子')
-                    })()}
-                  </p>
-                )}
-              </div>
-
-              {/* 吸烟 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Coffee className="h-4 w-4 mr-2" />
-                  吸烟
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.smoking_status || ''}
-                    onChange={(e) => handleInputChange('smoking_status', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择状态</option>
-                    <option value="yes_smoke">是的，我吸烟</option>
-                    <option value="sometimes_smoke">我有时吸烟</option>
-                    <option value="no_smoke">不，我不吸烟</option>
-                    <option value="trying_quit">我正在尝试戒烟</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {(() => {
-                      const smokingMap: { [key: string]: string } = {
-                        'yes_smoke': '是的，我吸烟',
-                        'sometimes_smoke': '我有时吸烟',
-                        'no_smoke': '不，我不吸烟',
-                        'trying_quit': '我正在尝试戒烟'
-                      }
-                      return smokingMap[profile.smoking_status || ''] || profile.smoking_status || '未设置'
-                    })()}
-                  </p>
-                )}
-              </div>
-
-              {/* 饮酒 */}
-              <div>
-                <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                  <Wine className="h-4 w-4 mr-2" />
-                  饮酒
-                </label>
-                {isEditing ? (
-                  <select
-                    value={editedProfile.drinking_status || ''}
-                    onChange={(e) => handleInputChange('drinking_status', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-red-500"
-                  >
-                    <option value="">选择状态</option>
-                    <option value="yes_drink">是的，我喝酒</option>
-                    <option value="sometimes_drink">我有时喝酒</option>
-                    <option value="rarely_drink">我很少喝酒</option>
-                    <option value="no_drink">不，我不喝酒</option>
-                    <option value="sober">我戒酒了</option>
-                  </select>
-                ) : (
-                  <p className="text-gray-900 bg-gray-50 p-3 rounded-lg">
-                    {(() => {
-                      const drinkingMap: { [key: string]: string } = {
-                        'yes_drink': '是的，我喝酒',
-                        'sometimes_drink': '我有时喝酒',
-                        'rarely_drink': '我很少喝酒',
-                        'no_drink': '不，我不喝酒',
-                        'sober': '我戒酒了'
-                      }
-                      return drinkingMap[profile.drinking_status || ''] || profile.drinking_status || '未设置'
-                    })()}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
+          )}
         </div>
       </div>
     </div>
