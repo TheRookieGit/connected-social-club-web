@@ -10,6 +10,7 @@ import UserCard from '@/components/UserCard'
 import ProfileModal from '@/components/ProfileModal'
 import PendingMatchesPanel from '@/components/PendingMatchesPanel'
 import LocationDisplay from '@/components/LocationDisplay'
+import DraggablePhotoGrid from '@/components/DraggablePhotoGrid'
 import { syncUserDataToLocalStorage } from '@/lib/hooks'
 import { UserProfile } from '@/types/user'
 import dynamic from 'next/dynamic'
@@ -56,6 +57,8 @@ export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [showLocationPermission, setShowLocationPermission] = useState(false)
+  const [isUpdatingPhotos, setIsUpdatingPhotos] = useState(false)
+  const [deletedPhotos, setDeletedPhotos] = useState<string[]>([])
 
   // 获取已匹配的用户
   const fetchMatchedUsers = async () => {
@@ -551,6 +554,66 @@ export default function Dashboard() {
     router.push('/')
   }
 
+  // 处理照片变化（排序或删除）
+  const handlePhotosChange = async (newPhotos: string[]) => {
+    if (!currentUser) return
+
+    setIsUpdatingPhotos(true)
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('未找到登录令牌')
+      }
+
+      const response = await fetch('/api/user/update-photos', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          photos: newPhotos,
+          deletedPhotos: deletedPhotos
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '更新照片失败')
+      }
+
+      const result = await response.json()
+      console.log('照片更新成功:', result)
+
+      // 更新本地状态
+      setCurrentUser(prev => prev ? { ...prev, photos: newPhotos } : null)
+      setDeletedPhotos([]) // 清空删除记录
+
+      // 同步到localStorage
+      const updatedUser = { ...currentUser, photos: newPhotos }
+      syncUserDataToLocalStorage(updatedUser, '照片更新')
+
+    } catch (error) {
+      console.error('更新照片失败:', error)
+      alert(`更新照片失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    } finally {
+      setIsUpdatingPhotos(false)
+    }
+  }
+
+  // 处理添加照片
+  const handleAddPhoto = () => {
+    router.push('/photos')
+  }
+
+  // 处理删除照片
+  const handleDeletePhoto = (index: number) => {
+    if (!currentUser?.photos) return
+    
+    const photoToDelete = currentUser.photos[index]
+    setDeletedPhotos(prev => [...prev, photoToDelete])
+  }
+
   // 当接受匹配后的回调函数
   const handleMatchAccepted = async () => {
     console.log('🔄 [前端] 匹配被接受，开始刷新数据...')
@@ -933,6 +996,52 @@ export default function Dashboard() {
               </div>
             )}
           </div>
+        </motion.div>
+
+        {/* 我的照片区域 */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.15 }}
+          className="mb-8"
+        >
+          <div className="mb-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900 mb-2">我的照片</h2>
+                <p className="text-gray-500">管理你的个人照片</p>
+              </div>
+              {isUpdatingPhotos && (
+                <div className="flex items-center space-x-2 text-sm text-blue-600">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span>更新中...</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {currentUser?.photos && currentUser.photos.length > 0 ? (
+            <DraggablePhotoGrid
+              photos={currentUser.photos}
+              onPhotosChange={handlePhotosChange}
+              onAddPhoto={handleAddPhoto}
+              maxPhotos={6}
+            />
+          ) : (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">还没有照片</h3>
+              <p className="text-gray-500 mb-4">上传一些照片来展示你的魅力吧！</p>
+              <motion.button
+                onClick={handleAddPhoto}
+                className="px-6 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                上传照片
+              </motion.button>
+            </div>
+          )}
         </motion.div>
 
         {/* 推荐用户区域 */}
