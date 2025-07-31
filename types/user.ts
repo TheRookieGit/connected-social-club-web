@@ -14,6 +14,7 @@ export interface User {
   weight?: number
   interests?: string[]
   avatar_url?: string
+  photos?: string[]
   is_online?: boolean
   is_verified?: boolean
   is_premium?: boolean

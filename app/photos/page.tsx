@@ -64,9 +64,10 @@ export default function Photos() {
     input.accept = 'image/*'
     input.multiple = false
 
-    input.onchange = (e) => {
+    input.onchange = async (e) => {
       const file = (e.target as HTMLInputElement).files?.[0]
       if (file) {
+        // 先显示本地预览
         const reader = new FileReader()
         reader.onload = (e) => {
           const result = e.target?.result as string
@@ -92,7 +93,8 @@ export default function Photos() {
   }
 
   const handleConfirm = async () => {
-    if (photos.filter(photo => photo).length < 3) {
+    const validPhotos = photos.filter(photo => photo)
+    if (validPhotos.length < 3) {
       return // 至少需要3张照片
     }
 
@@ -100,24 +102,45 @@ export default function Photos() {
     setIsLoading(true)
     
     try {
-      // 更新用户照片信息到服务器
       const token = localStorage.getItem('token')
-      if (token) {
-        const response = await fetch('/api/user/profile', {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({
-            photos: photos.filter(photo => photo)
-          })
-        })
+      if (!token) {
+        throw new Error('未找到登录令牌')
+      }
 
-        if (!response.ok) {
-          console.error('更新照片信息失败')
+      // 将base64照片转换为文件对象
+      const photoFiles: File[] = []
+      for (let i = 0; i < validPhotos.length; i++) {
+        const photoData = validPhotos[i]
+        if (photoData.startsWith('data:image/')) {
+          // 从base64转换为文件
+          const response = await fetch(photoData)
+          const blob = await response.blob()
+          const file = new File([blob], `photo-${i + 1}.jpg`, { type: 'image/jpeg' })
+          photoFiles.push(file)
         }
       }
+
+      // 使用新的照片上传API
+      const formData = new FormData()
+      photoFiles.forEach(file => {
+        formData.append('photos', file)
+      })
+
+      const response = await fetch('/api/user/upload-photos-admin', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '照片上传失败')
+      }
+
+      const result = await response.json()
+      console.log('照片上传成功:', result)
 
       // 延迟跳转，让用户看到确认状态
       setTimeout(() => {
@@ -125,10 +148,8 @@ export default function Photos() {
       }, 1500)
     } catch (error) {
       console.error('处理照片上传时出错:', error)
-      // 即使出错也继续跳转
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1500)
+      alert(`照片上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      setIsConfirmed(false)
     } finally {
       setIsLoading(false)
     }

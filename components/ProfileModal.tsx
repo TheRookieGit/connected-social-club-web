@@ -395,6 +395,49 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
 
           {/* 完整资料信息 */}
           <div className="space-y-6">
+            {/* 照片展示区域 */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  <Camera className="h-4 w-4 mr-2" />
+                  我的照片
+                </label>
+                <button
+                  onClick={() => {
+                    onClose()
+                    window.open('/user-photos', '_blank')
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-800 underline"
+                >
+                  查看全部照片
+                </button>
+              </div>
+              <div className="bg-gray-50 p-3 rounded-lg">
+                {profile.photos && profile.photos.length > 0 ? (
+                  <div className="grid grid-cols-3 gap-2">
+                    {profile.photos.slice(0, 3).map((photo, index) => (
+                      <div key={index} className="aspect-square bg-gray-200 rounded overflow-hidden">
+                        <Image
+                          src={photo}
+                          alt={`照片 ${index + 1}`}
+                          width={100}
+                          height={100}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    ))}
+                    {profile.photos.length > 3 && (
+                      <div className="aspect-square bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
+                        +{profile.photos.length - 3}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-sm">暂无照片</p>
+                )}
+              </div>
+            </div>
+
             {/* 个人简介 */}
             <div>
               <label className="flex items-center text-sm font-medium text-gray-700 mb-2">

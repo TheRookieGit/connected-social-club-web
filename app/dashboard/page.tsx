@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock } from 'lucide-react'
+import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock, Camera } from 'lucide-react'
 import useSWR from 'swr'
 import UserCard from '@/components/UserCard'
 import ProfileModal from '@/components/ProfileModal'
@@ -736,6 +736,15 @@ export default function Dashboard() {
                   <Settings size={24} />
                 </button>
               )}
+
+              {/* 照片管理按钮 */}
+              <button
+                onClick={() => router.push('/user-photos')}
+                className="p-2 text-gray-600 hover:text-green-500 transition-colors"
+                title="我的照片"
+              >
+                <Camera size={24} />
+              </button>
 
               {/* 位置设置按钮 */}
               <button
