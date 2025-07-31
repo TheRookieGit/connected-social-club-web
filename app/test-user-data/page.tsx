@@ -15,6 +15,72 @@ interface UserProfile {
   [key: string]: any
 }
 
+interface PhotoAccessTestProps {
+  photoUrl: string
+  index: number
+}
+
+function PhotoAccessTest({ photoUrl, index }: PhotoAccessTestProps) {
+  const [testResult, setTestResult] = useState<any>(null)
+  const [isTesting, setIsTesting] = useState(false)
+
+  const testPhotoAccess = async () => {
+    setIsTesting(true)
+    try {
+      const response = await fetch(`/api/test-photo-access?url=${encodeURIComponent(photoUrl)}`)
+      const result = await response.json()
+      setTestResult(result)
+    } catch (error) {
+      setTestResult({
+        success: false,
+        error: '测试失败',
+        details: error instanceof Error ? error.message : String(error)
+      })
+    } finally {
+      setIsTesting(false)
+    }
+  }
+
+  return (
+    <div className="border border-gray-200 rounded-lg p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium text-gray-700">照片 {index + 1}</span>
+          <button
+            onClick={testPhotoAccess}
+            disabled={isTesting}
+            className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+          >
+            {isTesting ? '测试中...' : '测试访问'}
+          </button>
+        </div>
+        {testResult && (
+          <span className={`text-xs px-2 py-1 rounded ${
+            testResult.accessible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
+            {testResult.accessible ? '可访问' : '不可访问'}
+          </span>
+        )}
+      </div>
+      
+      <div className="text-xs text-gray-600 mb-2 break-all">
+        {photoUrl}
+      </div>
+      
+      {testResult && (
+        <details className="text-xs">
+          <summary className="cursor-pointer text-blue-600 hover:text-blue-800 mb-1">
+            查看测试详情
+          </summary>
+          <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-32">
+            {JSON.stringify(testResult, null, 2)}
+          </pre>
+        </details>
+      )}
+    </div>
+  )
+}
+
 export default function TestUserData() {
   const [userData, setUserData] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -164,26 +230,45 @@ export default function TestUserData() {
               </div>
               
               {userData.photos && userData.photos.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {userData.photos.map((photo, index) => (
-                    <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                      <Image
-                        src={photo}
-                        alt={`照片 ${index + 1}`}
-                        width={200}
-                        height={200}
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          console.log(`照片 ${index + 1} 加载失败:`, photo)
-                          const target = e.currentTarget as HTMLImageElement
-                          target.style.display = 'none'
-                        }}
-                      />
-                      <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                        {index + 1}
-                      </div>
+                <div className="space-y-4">
+                  {/* 照片访问测试 */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">照片访问测试</h3>
+                    <div className="space-y-2">
+                      {userData.photos.map((photo, index) => (
+                        <PhotoAccessTest key={index} photoUrl={photo} index={index} />
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                  
+                  {/* 照片显示 */}
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">照片显示</h3>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                      {userData.photos.map((photo, index) => (
+                        <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                          <Image
+                            src={photo}
+                            alt={`照片 ${index + 1}`}
+                            width={200}
+                            height={200}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              console.log(`照片 ${index + 1} 加载失败:`, photo)
+                              const target = e.currentTarget as HTMLImageElement
+                              target.style.display = 'none'
+                            }}
+                            onLoad={() => {
+                              console.log(`照片 ${index + 1} 加载成功:`, photo)
+                            }}
+                          />
+                          <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                            {index + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="text-center py-8">
