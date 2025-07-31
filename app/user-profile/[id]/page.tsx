@@ -125,8 +125,8 @@ export default function UserProfilePage() {
   }
 
   const handleMessage = () => {
-    // 跳转到聊天页面
-    router.push('/dashboard?showChat=true')
+    // 跳转到聊天页面并指定用户ID
+    router.push(`/dashboard?showChat=true&userId=${profile?.id}`)
   }
 
   if (loading) {

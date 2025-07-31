@@ -57,6 +57,7 @@ export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [showLocationPermission, setShowLocationPermission] = useState(false)
+  const [initialChatUserId, setInitialChatUserId] = useState<string | null>(null)
 
   // 获取已匹配的用户
   const fetchMatchedUsers = async () => {
@@ -143,13 +144,22 @@ export default function Dashboard() {
     }
   }
 
-  // 检查登录状态并获取最新用户数据
+      // 检查登录状态并获取最新用户数据
   useEffect(() => {
     // 检查URL参数中是否有showChat参数
     const showChatParam = searchParams.get('showChat')
+    const userIdParam = searchParams.get('userId')
+    
     if (showChatParam === 'true') {
       console.log('Dashboard: 检测到showChat参数，自动显示聊天界面')
       setShowChat(true)
+      
+      // 如果有指定用户ID，保存到状态中
+      if (userIdParam) {
+        console.log('Dashboard: 检测到userId参数，保存到状态:', userIdParam)
+        setInitialChatUserId(userIdParam)
+      }
+      
       // 清理URL参数
       router.replace('/dashboard')
     }
@@ -952,7 +962,11 @@ export default function Dashboard() {
       {showChat && (
         <StreamChatPanel
           matchedUsers={matchedUsers}
-          onClose={() => setShowChat(false)}
+          onClose={() => {
+            setShowChat(false)
+            setInitialChatUserId(null) // 清理初始用户ID
+          }}
+          initialUserId={initialChatUserId || undefined}
         />
       )}
 
