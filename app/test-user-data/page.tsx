@@ -244,29 +244,61 @@ export default function TestUserData() {
                   {/* 照片显示 */}
                   <div>
                     <h3 className="text-lg font-medium text-gray-900 mb-2">照片显示</h3>
-                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                      {userData.photos.map((photo, index) => (
-                        <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                          <Image
-                            src={photo}
-                            alt={`照片 ${index + 1}`}
-                            width={200}
-                            height={200}
-                            className="w-full h-full object-cover"
-                            onError={(e) => {
-                              console.log(`照片 ${index + 1} 加载失败:`, photo)
-                              const target = e.currentTarget as HTMLImageElement
-                              target.style.display = 'none'
-                            }}
-                            onLoad={() => {
-                              console.log(`照片 ${index + 1} 加载成功:`, photo)
-                            }}
-                          />
-                          <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
-                            {index + 1}
+                    
+                    {/* Next.js Image组件测试 */}
+                    <div className="mb-4">
+                      <h4 className="text-md font-medium text-gray-800 mb-2">Next.js Image组件测试</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {userData.photos.map((photo, index) => (
+                          <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                            <Image
+                              src={photo}
+                              alt={`照片 ${index + 1}`}
+                              width={200}
+                              height={200}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.log(`Next.js Image - 照片 ${index + 1} 加载失败:`, photo)
+                                const target = e.currentTarget as HTMLImageElement
+                                target.style.display = 'none'
+                              }}
+                              onLoad={() => {
+                                console.log(`Next.js Image - 照片 ${index + 1} 加载成功:`, photo)
+                              }}
+                            />
+                            <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* 普通img标签测试 */}
+                    <div>
+                      <h4 className="text-md font-medium text-gray-800 mb-2">普通img标签测试</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {userData.photos.map((photo, index) => (
+                          <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                            <img
+                              src={photo}
+                              alt={`照片 ${index + 1}`}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.log(`普通img - 照片 ${index + 1} 加载失败:`, photo)
+                                const target = e.currentTarget as HTMLImageElement
+                                target.style.display = 'none'
+                              }}
+                              onLoad={() => {
+                                console.log(`普通img - 照片 ${index + 1} 加载成功:`, photo)
+                              }}
+                            />
+                            <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 </div>
