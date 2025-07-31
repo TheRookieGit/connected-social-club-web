@@ -44,7 +44,7 @@ export default function JoinUs() {
              </p>
              <Link 
                href="#open-roles" 
-               className="inline-block text-blue-600 hover:text-blue-700 underline text-lg font-medium transition-colors"
+               className="inline-block text-red-500 hover:text-red-600 underline text-lg font-medium transition-colors"
              >
                查看我们的开放职位
              </Link>
@@ -64,82 +64,134 @@ export default function JoinUs() {
         </div>
       </section>
 
-      {/* Our perks & benefits 部分 */}
-      <section className="bg-gradient-to-br from-cyan-50 to-blue-50 py-20">
+             {/* Our perks & benefits 部分 */}
+       <section className="bg-gradient-to-br from-pink-50 to-rose-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <div className="flex items-center justify-center mb-6">
-              <Gift className="h-8 w-8 text-purple-500 mr-3" />
-                             <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
-                 我们的福利与待遇
-               </h2>
+                     <div className="text-center mb-16">
+             <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
+               我们的福利与待遇
+             </h2>
+           </div>
+
+                     {/* 福利列表 */}
+           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
+                          <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">🏠</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">完全远程工作</h3>
+                <p className="text-gray-600">灵活的时间安排，在家办公</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">💝</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">志愿服务津贴</h3>
+                <p className="text-gray-600">每月志愿服务津贴和交通补贴</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">⚡</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">灵活的工作时间</h3>
+                <p className="text-gray-600">根据个人时间安排灵活参与</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">📅</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">弹性参与制度</h3>
+                <p className="text-gray-600">可根据个人情况调整参与频率</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">🎓</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">定期学习机会</h3>
+                <p className="text-gray-600">免费参加网课、讲座和培训</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">🤝</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">社区建设</h3>
+                <p className="text-gray-600">参与有意义的社会公益活动</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">💎</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">技能发展</h3>
+                <p className="text-gray-600">获得专业培训和技能认证</p>
+              </div>
+
+              <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">🌟</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">成就感与认可</h3>
+                <p className="text-gray-600">获得志愿服务证书和表彰</p>
+              </div>
+           </div>
+
+                                          </div>
+        </section>
+
+       {/* 我们的价值观 部分 */}
+       <section className="bg-white py-20">
+         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+           <div className="text-center mb-16">
+             <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
+               我们的价值观
+             </h2>
+           </div>
+
+                       {/* 价值观列表 */}
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+                             <div className="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                 <div className="text-3xl mb-4">🛡️</div>
+                 <h3 className="text-lg font-semibold text-gray-900 mb-2">责任担当</h3>
+                 <p className="text-gray-600">我们努力践行承诺，不仅对彼此负责，也对我们的社区负责。</p>
+               </div>
+
+              <div className="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">👥</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">协作共赢</h3>
+                <p className="text-gray-600">我们不仅庆祝彼此的工作成果，更庆祝每个人的独特价值。</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">📚</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">持续学习</h3>
+                <p className="text-gray-600">我们勇于冒险、实验和反思，以便不断成长进步。</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">💬</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">坦诚沟通</h3>
+                <p className="text-gray-600">我们为诚实反馈和明确边界创造空间。</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">🎯</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">主动担当</h3>
+                <p className="text-gray-600">我们通过积极主动、资源丰富和坚持不懈来推动我们想要看到的改变。</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-3xl mb-4">❤️</div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">爱心奉献</h3>
+                <p className="text-gray-600">我们以爱心和奉献精神服务他人，让世界变得更加美好。</p>
+              </div>
+                        </div>
+          </div>
+        </section>
+
+        {/* 联系我们 部分 */}
+        <section className="bg-gradient-to-br from-pink-50 to-rose-50 py-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center">
+              <h3 className="text-2xl font-bold text-gray-900 mb-4">准备好加入我们的志愿者团队了吗？</h3>
+              <p className="text-gray-600 mb-8">发送你的申请到 volunteer@connected.com</p>
+              <Link 
+                href="/"
+                className="inline-block bg-red-500 text-white px-8 py-3 rounded-lg hover:bg-red-600 transition-colors font-medium"
+              >
+                返回首页
+              </Link>
             </div>
           </div>
-
-          {/* 福利列表 */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
-                         <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-               <div className="text-3xl mb-4">🏠</div>
-               <h3 className="text-lg font-semibold text-gray-900 mb-2">完全远程工作</h3>
-               <p className="text-gray-600">完全远程工作</p>
-             </div>
-
-             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-               <div className="text-3xl mb-4">💰</div>
-               <h3 className="text-lg font-semibold text-gray-900 mb-2">具有竞争力的薪酬和股权</h3>
-               <p className="text-gray-600">具有竞争力的薪酬和股权</p>
-             </div>
-
-             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-               <div className="text-3xl mb-4">⚡</div>
-               <h3 className="text-lg font-semibold text-gray-900 mb-2">灵活的工作环境</h3>
-               <p className="text-gray-600">灵活的工作环境</p>
-             </div>
-
-             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-               <div className="text-3xl mb-4">📅</div>
-               <h3 className="text-lg font-semibold text-gray-900 mb-2">灵活的带薪休假和病假</h3>
-               <p className="text-gray-600">灵活的带薪休假和病假</p>
-             </div>
-
-             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-               <div className="text-3xl mb-4">🏥</div>
-               <h3 className="text-lg font-semibold text-gray-900 mb-2">100%覆盖健康、牙科和视力保险</h3>
-               <p className="text-gray-600">100%覆盖健康、牙科和视力保险</p>
-             </div>
-
-             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-               <div className="text-3xl mb-4">🛡️</div>
-               <h3 className="text-lg font-semibold text-gray-900 mb-2">长期和短期残疾保险</h3>
-               <p className="text-gray-600">长期和短期残疾保险</p>
-             </div>
-
-             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-               <div className="text-3xl mb-4">💎</div>
-               <h3 className="text-lg font-semibold text-gray-900 mb-2">退休储蓄匹配</h3>
-               <p className="text-gray-600">退休储蓄匹配</p>
-             </div>
-
-             <div className="bg-white rounded-xl p-6 shadow-sm hover:shadow-md transition-shadow">
-               <div className="text-3xl mb-4">🎓</div>
-               <h3 className="text-lg font-semibold text-gray-900 mb-2">年度教育、季度健康检查和月度联合办公空间津贴</h3>
-               <p className="text-gray-600">年度教育、季度健康检查和月度联合办公空间津贴</p>
-             </div>
-          </div>
-
-          {/* 联系我们 */}
-          <div className="text-center mt-16">
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">准备好加入我们了吗？</h3>
-            <p className="text-gray-600 mb-8">发送你的简历到 careers@connected.com</p>
-            <Link 
-              href="/"
-              className="inline-block bg-red-500 text-white px-8 py-3 rounded-lg hover:bg-red-600 transition-colors font-medium"
-            >
-              返回首页
-            </Link>
-          </div>
-        </div>
-      </section>
-    </div>
-  )
-} 
+        </section>
+     </div>
+   )
+ } 

@@ -45,7 +45,7 @@ export default function Footer() {
                 <a href="#" className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
                   <Facebook className="w-6 h-6 text-white" />
                 </a>
-                <a href="#" className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
+                <a href="https://www.linkedin.com/company/connected-org/" target="_blank" rel="noopener noreferrer" className="w-12 h-12 bg-red-500 rounded-full flex items-center justify-center hover:bg-red-600 transition-colors">
                   <Linkedin className="w-6 h-6 text-white" />
                 </a>
               </div>
