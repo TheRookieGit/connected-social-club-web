@@ -168,7 +168,7 @@ export default function DraggablePhotoGrid({
         <ul className="space-y-1">
           <li>• 拖拽照片可以调整顺序</li>
           <li>• 悬停照片显示删除按钮</li>
-          <li>• 点击"添加照片"上传新照片</li>
+          <li>• 点击&quot;添加照片&quot;上传新照片</li>
         </ul>
       </div>
     </div>

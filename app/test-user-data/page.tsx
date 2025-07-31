@@ -280,9 +280,11 @@ export default function TestUserData() {
                       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {userData.photos.map((photo, index) => (
                           <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
-                            <img
+                            <Image
                               src={photo}
                               alt={`照片 ${index + 1}`}
+                              width={200}
+                              height={200}
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 console.log(`普通img - 照片 ${index + 1} 加载失败:`, photo)
