@@ -68,6 +68,26 @@ export async function GET(
         bio,
         location,
         occupation,
+        education,
+        relationship_status,
+        height,
+        weight,
+        ethnicity,
+        religion,
+        employer,
+        school,
+        degree,
+        values_preferences,
+        personality_type,
+        hometown,
+        languages,
+        family_plans,
+        has_kids,
+        marital_status,
+        exercise_frequency,
+        smoking_status,
+        drinking_status,
+        dating_style,
         is_online,
         last_seen,
         photos
@@ -108,6 +128,16 @@ export async function GET(
     const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000)
     const isActuallyOnline = lastSeen && lastSeen > fiveMinutesAgo
 
+    // 调试信息
+    console.log('API - 用户数据:', {
+      id: userData.id,
+      name: userData.name,
+      avatar_url: userData.avatar_url,
+      photos: userData.photos,
+      photosType: typeof userData.photos,
+      photosLength: userData.photos?.length
+    })
+
     // 格式化用户资料
     const profile = {
       id: userData.id.toString(),
@@ -117,12 +147,40 @@ export async function GET(
       location: userData.location || '未知',
       bio: userData.bio || '这个人很神秘...',
       occupation: userData.occupation,
+      education: userData.education,
+      relationship_status: userData.relationship_status,
+      height: userData.height,
+      weight: userData.weight,
+      ethnicity: userData.ethnicity,
+      religion: userData.religion,
+      employer: userData.employer,
+      school: userData.school,
+      degree: userData.degree,
+      values_preferences: userData.values_preferences || [],
+      personality_type: userData.personality_type,
+      hometown: userData.hometown,
+      languages: userData.languages || [],
+      family_plans: userData.family_plans,
+      has_kids: userData.has_kids,
+      marital_status: userData.marital_status,
+      exercise_frequency: userData.exercise_frequency,
+      smoking_status: userData.smoking_status,
+      drinking_status: userData.drinking_status,
+      dating_style: userData.dating_style,
       avatar_url: userData.avatar_url,
       photos: userData.photos || [],
       interests: interests,
       isOnline: isActuallyOnline,
       lastSeen: userData.last_seen
     }
+
+    console.log('API - 返回的profile:', {
+      id: profile.id,
+      name: profile.name,
+      avatar_url: profile.avatar_url,
+      photos: profile.photos,
+      photosLength: profile.photos.length
+    })
 
     return NextResponse.json({
       success: true,
