@@ -182,8 +182,28 @@ export default function UserPhotos() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || '照片上传失败')
+        // 尝试解析错误响应，如果失败则使用状态码
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          // 如果响应不是JSON，尝试获取文本内容
+          try {
+            const errorText = await response.text()
+            console.error('API返回非JSON响应:', errorText)
+            
+            // 检查是否是Vercel认证页面
+            if (errorText.includes('Authentication Required') || errorText.includes('vercel-auth-redirect')) {
+              errorMessage = '服务器访问保护已启用，请联系管理员禁用Vercel访问保护'
+            } else {
+              errorMessage = `服务器错误 (${response.status}): ${errorText.substring(0, 100)}`
+            }
+          } catch (textError) {
+            errorMessage = `服务器错误 (${response.status})`
+          }
+        }
+        throw new Error(errorMessage)
       }
 
       const result = await response.json()

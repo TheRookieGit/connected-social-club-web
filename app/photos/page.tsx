@@ -138,6 +138,8 @@ export default function Photos() {
         formData.append('photos', file)
       })
 
+      console.log('开始上传照片，文件数量:', photoFiles.length)
+
       const response = await fetch('/api/user/upload-photos-admin', {
         method: 'POST',
         headers: {
@@ -146,12 +148,38 @@ export default function Photos() {
         body: formData
       })
 
+      console.log('API响应状态:', response.status)
+      console.log('API响应头:', Object.fromEntries(response.headers.entries()))
+
+      // 获取响应文本以便调试
+      const responseText = await response.text()
+      console.log('API响应内容:', responseText)
+
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || '照片上传失败')
+        // 尝试解析JSON错误信息
+        let errorMessage = '照片上传失败'
+        try {
+          const errorData = JSON.parse(responseText)
+          errorMessage = errorData.error || errorData.message || '照片上传失败'
+        } catch (parseError) {
+          console.error('JSON解析失败:', parseError)
+          console.error('原始响应:', responseText)
+          // 如果JSON解析失败，使用原始响应文本
+          errorMessage = `服务器错误: ${responseText.substring(0, 100)}...`
+        }
+        throw new Error(errorMessage)
       }
 
-      const result = await response.json()
+      // 尝试解析成功响应
+      let result
+      try {
+        result = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error('成功响应JSON解析失败:', parseError)
+        console.error('原始响应:', responseText)
+        throw new Error('服务器返回了无效的响应格式')
+      }
+
       console.log('照片上传成功:', result)
 
       // 延迟跳转，让用户看到确认状态
@@ -160,7 +188,8 @@ export default function Photos() {
       }, 1500)
     } catch (error) {
       console.error('处理照片上传时出错:', error)
-      alert(`照片上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
+      const errorMessage = error instanceof Error ? error.message : '未知错误'
+      alert(`照片上传失败: ${errorMessage}`)
       setIsConfirmed(false)
     } finally {
       setIsLoading(false)

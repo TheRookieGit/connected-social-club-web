@@ -9,15 +9,33 @@ export const fetchCache = 'force-no-store'
 
 // 验证 JWT token
 function verifyToken(authHeader: string | null) {
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader) {
+    console.error('❌ Authorization header 不存在')
+    return null
+  }
+  
+  if (!authHeader.startsWith('Bearer ')) {
+    console.error('❌ Authorization header 格式错误，应该以 "Bearer " 开头')
     return null
   }
 
   const token = authHeader.substring(7)
+  console.log('🔍 Token 长度:', token.length)
+  console.log('🔍 Token 前缀:', token.substring(0, 20) + '...')
+  
   try {
-    return jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as any
+    const jwtSecret = process.env.JWT_SECRET || 'your-secret-key'
+    console.log('🔍 JWT_SECRET 长度:', jwtSecret.length)
+    
+    const decoded = jwt.verify(token, jwtSecret) as any
+    console.log('✅ Token 验证成功，解码结果:', { userId: decoded.userId, email: decoded.email })
+    return decoded
   } catch (error) {
-    console.error('Token验证失败:', error)
+    console.error('❌ Token验证失败:', error)
+    if (error instanceof jwt.JsonWebTokenError) {
+      console.error('❌ JWT错误类型:', error.name)
+      console.error('❌ JWT错误消息:', error.message)
+    }
     return null
   }
 }
@@ -47,42 +65,105 @@ function createNoCacheHeaders() {
 
 export async function POST(request: NextRequest) {
   try {
+    console.log('🔍 开始处理照片上传请求...')
+    
+    // 检查是否是测试请求
+    const url = new URL(request.url)
+    if (url.searchParams.get('test') === 'true') {
+      console.log('🧪 收到测试请求')
+      return new NextResponse(
+        JSON.stringify({ 
+          success: true, 
+          message: 'API正常工作',
+          timestamp: new Date().toISOString()
+        }),
+        { status: 200, headers: createNoCacheHeaders() }
+      )
+    }
+    
     // 使用 Service Role Key 创建管理员客户端
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     
+    console.log('🔍 环境变量检查:')
+    console.log('- NEXT_PUBLIC_SUPABASE_URL:', supabaseUrl ? '已设置' : '未设置')
+    console.log('- SUPABASE_SERVICE_ROLE_KEY:', supabaseServiceKey ? '已设置' : '未设置')
+    console.log('- JWT_SECRET:', process.env.JWT_SECRET ? '已设置' : '未设置')
+    
     if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('❌ 缺少必要的环境变量')
       return new NextResponse(
-        JSON.stringify({ success: false, error: '缺少必要的环境变量' }),
+        JSON.stringify({ 
+          success: false, 
+          error: '服务器配置错误',
+          details: '缺少必要的环境变量配置',
+          code: 'MISSING_ENV_VARS'
+        }),
         { status: 500, headers: createNoCacheHeaders() }
       )
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false
-      }
-    })
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
+    if (!supabase) {
+      console.error('❌ Supabase客户端创建失败')
+      return new NextResponse(
+        JSON.stringify({ 
+          success: false, 
+          error: '数据库连接失败',
+          details: '无法创建数据库客户端',
+          code: 'SUPABASE_CLIENT_ERROR'
+        }),
+        { status: 500, headers: createNoCacheHeaders() }
+      )
+    }
 
     const authHeader = request.headers.get('authorization')
     const decoded = verifyToken(authHeader)
     
     if (!decoded) {
+      console.error('❌ Token验证失败')
       return new NextResponse(
-        JSON.stringify({ success: false, error: '未授权访问' }),
+        JSON.stringify({ 
+          success: false, 
+          error: '未授权访问',
+          details: 'Token验证失败，请检查登录状态',
+          code: 'AUTH_FAILED'
+        }),
         { status: 401, headers: createNoCacheHeaders() }
       )
     }
 
+    console.log('✅ Token验证成功，用户ID:', decoded.userId)
     console.log('开始处理照片上传（管理员模式），用户ID:', decoded.userId)
 
-    const formData = await request.formData()
+    // 解析FormData
+    let formData
+    try {
+      formData = await request.formData()
+    } catch (formDataError) {
+      console.error('❌ FormData解析失败:', formDataError)
+      return new NextResponse(
+        JSON.stringify({ 
+          success: false, 
+          error: '请求格式错误',
+          details: '无法解析上传的文件数据',
+          code: 'FORM_DATA_ERROR'
+        }),
+        { status: 400, headers: createNoCacheHeaders() }
+      )
+    }
+
     const photos = formData.getAll('photos') as File[]
     
     if (!photos || photos.length === 0) {
+      console.error('❌ 没有接收到照片文件')
       return new NextResponse(
-        JSON.stringify({ success: false, error: '没有接收到照片文件' }),
+        JSON.stringify({ 
+          success: false, 
+          error: '没有接收到照片文件',
+          details: '请选择要上传的照片',
+          code: 'NO_PHOTOS'
+        }),
         { status: 400, headers: createNoCacheHeaders() }
       )
     }
@@ -90,16 +171,36 @@ export async function POST(request: NextRequest) {
     console.log('接收到照片数量:', photos.length)
 
     // 首先获取用户现有的照片
-    const { data: existingUser, error: fetchError } = await supabase
-      .from('users')
-      .select('photos')
-      .eq('id', decoded.userId)
-      .single()
+    let existingUser
+    try {
+      const { data, error: fetchError } = await supabase
+        .from('users')
+        .select('photos')
+        .eq('id', decoded.userId)
+        .single()
 
-    if (fetchError) {
-      console.error('获取用户现有照片失败:', fetchError)
+      if (fetchError) {
+        console.error('获取用户现有照片失败:', fetchError)
+        return new NextResponse(
+          JSON.stringify({ 
+            success: false, 
+            error: '获取用户照片失败',
+            details: fetchError.message,
+            code: 'FETCH_USER_ERROR'
+          }),
+          { status: 500, headers: createNoCacheHeaders() }
+        )
+      }
+      existingUser = data
+    } catch (fetchError) {
+      console.error('获取用户现有照片异常:', fetchError)
       return new NextResponse(
-        JSON.stringify({ success: false, error: '获取用户照片失败' }),
+        JSON.stringify({ 
+          success: false, 
+          error: '获取用户照片失败',
+          details: '数据库查询异常',
+          code: 'FETCH_USER_EXCEPTION'
+        }),
         { status: 500, headers: createNoCacheHeaders() }
       )
     }
@@ -110,12 +211,32 @@ export async function POST(request: NextRequest) {
 
     // 检查存储桶是否存在，如果不存在则创建
     console.log('检查用户照片存储桶...')
-    const { data: buckets, error: listError } = await supabase.storage.listBuckets()
-    
-    if (listError) {
-      console.error('获取存储桶列表失败:', listError)
+    let buckets
+    try {
+      const { data, error: listError } = await supabase.storage.listBuckets()
+      
+      if (listError) {
+        console.error('获取存储桶列表失败:', listError)
+        return new NextResponse(
+          JSON.stringify({ 
+            success: false, 
+            error: '无法访问存储服务', 
+            details: listError.message,
+            code: 'STORAGE_LIST_ERROR'
+          }),
+          { status: 500, headers: createNoCacheHeaders() }
+        )
+      }
+      buckets = data
+    } catch (listError) {
+      console.error('获取存储桶列表异常:', listError)
       return new NextResponse(
-        JSON.stringify({ success: false, error: '无法访问存储服务', details: listError.message }),
+        JSON.stringify({ 
+          success: false, 
+          error: '存储服务连接失败',
+          details: '无法连接到存储服务',
+          code: 'STORAGE_CONNECTION_ERROR'
+        }),
         { status: 500, headers: createNoCacheHeaders() }
       )
     }
@@ -124,25 +245,43 @@ export async function POST(request: NextRequest) {
     
     if (!userPhotosBucket) {
       console.log('创建用户照片存储桶...')
-      const { data: newBucket, error: bucketError } = await supabase.storage.createBucket('user-photos', {
-        public: true,
-        fileSizeLimit: 5242880, // 5MB
-        allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
-      })
-      
-      if (bucketError) {
-        console.error('创建存储桶失败:', bucketError)
+      try {
+        const { data: newBucket, error: bucketError } = await supabase.storage.createBucket('user-photos', {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB
+          allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+        })
+        
+        if (bucketError) {
+          console.error('创建存储桶失败:', bucketError)
+          return new NextResponse(
+            JSON.stringify({ 
+              success: false, 
+              error: '存储桶创建失败', 
+              details: bucketError.message,
+              code: 'BUCKET_CREATE_ERROR'
+            }),
+            { status: 500, headers: createNoCacheHeaders() }
+          )
+        }
+        
+        userPhotosBucket = newBucket
+        console.log('存储桶创建成功:', userPhotosBucket.name)
+      } catch (bucketError) {
+        console.error('创建存储桶异常:', bucketError)
         return new NextResponse(
-          JSON.stringify({ success: false, error: '存储桶创建失败', details: bucketError.message }),
+          JSON.stringify({ 
+            success: false, 
+            error: '存储桶创建失败',
+            details: '存储服务异常',
+            code: 'BUCKET_CREATE_EXCEPTION'
+          }),
           { status: 500, headers: createNoCacheHeaders() }
         )
       }
-      
-      userPhotosBucket = newBucket
-      console.log('存储桶创建成功:', newBucket)
-    } else {
-      console.log('存储桶已存在:', userPhotosBucket.name)
     }
+
+    console.log('存储桶检查通过:', userPhotosBucket.name)
 
     const uploadedPhotoUrls: string[] = []
 
