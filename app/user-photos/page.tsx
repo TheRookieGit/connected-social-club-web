@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
-import { ArrowLeft, Camera, User, Heart, MessageCircle, MapPin, Calendar, Briefcase, GraduationCap, X, Edit, Save } from 'lucide-react'
+import { ArrowLeft, Camera, User, Heart, MessageCircle, MapPin, Calendar, Briefcase, GraduationCap, X, Edit, Save, Plus, Upload } from 'lucide-react'
 
 interface UserProfile {
   id: string
@@ -44,6 +44,7 @@ export default function UserPhotos() {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number | null>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({})
+  const [isUploading, setIsUploading] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
@@ -142,6 +143,76 @@ export default function UserPhotos() {
   const handleNextPhoto = () => {
     if (selectedPhotoIndex !== null && profile?.photos) {
       setSelectedPhotoIndex(selectedPhotoIndex < profile.photos.length - 1 ? selectedPhotoIndex + 1 : 0)
+    }
+  }
+
+  const handleAddPhoto = () => {
+    // 创建文件输入元素
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.multiple = false
+
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0]
+      if (file) {
+        await uploadPhoto(file)
+      }
+    }
+
+    input.click()
+  }
+
+  const uploadPhoto = async (file: File) => {
+    setIsUploading(true)
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('未找到登录令牌')
+      }
+
+      const formData = new FormData()
+      formData.append('photos', file)
+
+      const response = await fetch('/api/user/upload-photos-admin', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || '照片上传失败')
+      }
+
+      const result = await response.json()
+      console.log('照片上传成功:', result)
+
+      // 重新获取用户资料以更新照片列表
+      const profileResponse = await fetch('/api/user/profile', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-store, no-cache, must-revalidate'
+        }
+      })
+
+      if (profileResponse.ok) {
+        const data = await profileResponse.json()
+        const userData = data.user || data
+        setProfile(userData)
+        setEditedProfile(userData)
+      }
+
+      // 显示成功提示
+      alert('照片上传成功！')
+    } catch (error) {
+      console.error('上传照片失败:', error)
+      alert(`照片上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    } finally {
+      setIsUploading(false)
     }
   }
 
@@ -276,21 +347,38 @@ export default function UserPhotos() {
               <span className="text-sm text-gray-500">({photoCount}张)</span>
             </h3>
             
-            {photoCount === 0 && (
-              <button
-                onClick={() => router.push('/photos')}
-                className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-              >
-                添加照片
-              </button>
-            )}
+            {/* 添加照片按钮 */}
+            <button
+              onClick={handleAddPhoto}
+              disabled={isUploading}
+              className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isUploading ? (
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+              <span>{isUploading ? '上传中...' : '添加照片'}</span>
+            </button>
           </div>
 
           {photoCount === 0 ? (
             <div className="text-center py-12">
               <Camera className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <p className="text-gray-500 mb-4">还没有上传任何照片</p>
-              <p className="text-sm text-gray-400">上传照片让其他用户更好地了解你</p>
+              <p className="text-sm text-gray-400 mb-6">上传照片让其他用户更好地了解你</p>
+              <button
+                onClick={handleAddPhoto}
+                disabled={isUploading}
+                className="flex items-center space-x-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg mx-auto disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isUploading ? (
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                ) : (
+                  <Plus className="h-5 w-5" />
+                )}
+                <span>{isUploading ? '上传中...' : '立即添加照片'}</span>
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -312,6 +400,17 @@ export default function UserPhotos() {
                   </div>
                 </div>
               ))}
+              
+              {/* 添加更多照片的卡片 */}
+              <div
+                className="relative aspect-square bg-gray-100 rounded-lg border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-gray-400 hover:bg-gray-50 transition-all"
+                onClick={handleAddPhoto}
+              >
+                <div className="text-center">
+                  <Plus className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                  <p className="text-sm text-gray-500">添加更多</p>
+                </div>
+              </div>
             </div>
           )}
         </div>

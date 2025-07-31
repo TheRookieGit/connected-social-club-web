@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronRight, Plus, AlertCircle, Camera } from 'lucide-react'
+import { ChevronRight, Plus, AlertCircle, Camera, Upload } from 'lucide-react'
 
 export default function Photos() {
   const [photos, setPhotos] = useState<string[]>([])
@@ -82,6 +82,17 @@ export default function Photos() {
     }
 
     input.click()
+  }
+
+  const handleAddPhoto = () => {
+    // 找到第一个空的照片位置
+    const emptyIndex = photos.findIndex(photo => !photo)
+    if (emptyIndex !== -1) {
+      handlePhotoUpload(emptyIndex)
+    } else {
+      // 如果所有位置都有照片，提示用户
+      alert('您已经添加了所有可用的照片位置')
+    }
   }
 
   const handlePhotoRemove = (index: number) => {
@@ -192,6 +203,20 @@ export default function Photos() {
                      <p className="text-sm text-gray-600 leading-relaxed">
              做你自己！至少添加3张照片，无论是你和宠物的合照、吃你最喜欢的食物，还是在你喜欢的地方。
            </p>
+        </div>
+
+        {/* 添加照片按钮 */}
+        <div className="mb-6">
+          <button
+            onClick={handleAddPhoto}
+            className="w-full py-4 px-6 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg flex items-center justify-center space-x-2 hover:from-purple-700 hover:to-pink-700 transition-all duration-200 shadow-lg"
+          >
+            <Upload className="w-5 h-5" />
+            <span className="font-semibold">添加照片</span>
+          </button>
+          <p className="text-xs text-gray-500 text-center mt-2">
+            点击上方按钮或直接点击下方照片位置来添加照片
+          </p>
         </div>
 
         {/* 照片网格 */}

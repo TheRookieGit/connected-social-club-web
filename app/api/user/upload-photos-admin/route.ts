@@ -89,6 +89,25 @@ export async function POST(request: NextRequest) {
 
     console.log('接收到照片数量:', photos.length)
 
+    // 首先获取用户现有的照片
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('users')
+      .select('photos')
+      .eq('id', decoded.userId)
+      .single()
+
+    if (fetchError) {
+      console.error('获取用户现有照片失败:', fetchError)
+      return new NextResponse(
+        JSON.stringify({ success: false, error: '获取用户照片失败' }),
+        { status: 500, headers: createNoCacheHeaders() }
+      )
+    }
+
+    // 获取现有照片数组，如果为空则初始化为空数组
+    const existingPhotos = existingUser?.photos || []
+    console.log('用户现有照片数量:', existingPhotos.length)
+
     // 检查存储桶是否存在，如果不存在则创建
     console.log('检查用户照片存储桶...')
     const { data: buckets, error: listError } = await supabase.storage.listBuckets()
@@ -191,11 +210,15 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // 更新用户资料中的照片URL
+    // 合并现有照片和新上传的照片
+    const allPhotos = [...existingPhotos, ...uploadedPhotoUrls]
+    console.log('合并后的照片总数:', allPhotos.length)
+
+    // 更新用户资料中的照片URL（追加而不是替换）
     const { data: updatedUser, error: updateError } = await supabase
       .from('users')
       .update({
-        photos: uploadedPhotoUrls,
+        photos: allPhotos,
         updated_at: new Date().toISOString()
       })
       .eq('id', decoded.userId)
@@ -219,11 +242,12 @@ export async function POST(request: NextRequest) {
         activity_data: { 
           photo_count: uploadedPhotoUrls.length,
           photo_urls: uploadedPhotoUrls,
+          total_photos: allPhotos.length,
           timestamp: new Date().toISOString()
         }
       })
 
-    console.log('照片上传完成，成功上传:', uploadedPhotoUrls.length, '张')
+    console.log('照片上传完成，成功上传:', uploadedPhotoUrls.length, '张，总照片数:', allPhotos.length)
 
     return new NextResponse(
       JSON.stringify({
@@ -231,6 +255,7 @@ export async function POST(request: NextRequest) {
         message: '照片上传成功（管理员模式）',
         photos: uploadedPhotoUrls,
         photo_count: uploadedPhotoUrls.length,
+        total_photos: allPhotos.length,
         timestamp: new Date().toISOString()
       }),
       {
