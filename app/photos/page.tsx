@@ -105,7 +105,7 @@ export default function Photos() {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas')
       const ctx = canvas.getContext('2d')
-      const img = new Image()
+      const img = new window.Image()
 
       img.onload = () => {
         // 计算新的尺寸，保持宽高比

@@ -1,18 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 禁用静态优化和缓存
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
-    serverComponentsExternalPackages: ['@supabase/supabase-js']
-  },
-  serverExternalPackages: [],
-  // 禁用图片优化缓存
-  images: {
-    unoptimized: true,
-  },
-  // 自定义头部
+  serverExternalPackages: ['@supabase/supabase-js'],
   async headers() {
     return [
       {
@@ -41,21 +29,7 @@ const nextConfig = {
         destination: '/api/:path*'
       }
     ]
-  },
-  // 禁用构建时的静态生成
-  output: 'standalone',
-  // 强制服务器端渲染
-  trailingSlash: false,
-  // 禁用自动静态优化
-  poweredByHeader: false,
-  // 自定义webpack配置以禁用缓存
-  webpack: (config, { dev, isServer }) => {
-    if (!dev) {
-      // 生产环境禁用缓存
-      config.cache = false
-    }
-    return config
-  },
+  }
 }
 
 module.exports = nextConfig 
