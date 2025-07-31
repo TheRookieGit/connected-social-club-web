@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Clock } from 'lucide-react'
 import useSWR from 'swr'
@@ -46,6 +46,7 @@ interface User {
 
 export default function Dashboard() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showChat, setShowChat] = useState(false)
@@ -144,6 +145,15 @@ export default function Dashboard() {
 
   // 检查登录状态并获取最新用户数据
   useEffect(() => {
+    // 检查URL参数中是否有showChat参数
+    const showChatParam = searchParams.get('showChat')
+    if (showChatParam === 'true') {
+      console.log('Dashboard: 检测到showChat参数，自动显示聊天界面')
+      setShowChat(true)
+      // 清理URL参数
+      router.replace('/dashboard')
+    }
+
     // 首先检查URL参数中是否有LinkedIn登录返回的token和用户数据
     const urlParams = new URLSearchParams(window.location.search)
     const urlToken = urlParams.get('token')
