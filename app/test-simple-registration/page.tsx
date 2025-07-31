@@ -190,7 +190,7 @@ export default function TestSimpleRegistration() {
               <h3 className="font-medium mb-3">完整注册流程：</h3>
               <div className="text-sm text-gray-600 space-y-1">
                 <p>1. 性别选择 → 2. 年龄选择 → 3. 使用目的 → 4. 约会偏好</p>
-                <p>5. 兴趣爱好 → 6. 价值观 → 7. 生活方式 → 8. 家庭规划 → 9. 照片上传</p>
+                <p>5. 兴趣爱好 → 6. 我希望你是... → 7. 生活方式 → 8. 家庭规划 → 9. 照片上传</p>
                 <p className="text-green-600 font-medium mt-2">完成后 → Dashboard</p>
               </div>
             </div>

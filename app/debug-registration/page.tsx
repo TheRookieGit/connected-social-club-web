@@ -112,7 +112,7 @@ export default function DebugRegistration() {
                   <p><strong>性别:</strong> {profileData.user.gender || '未设置'}</p>
                   <p><strong>生日:</strong> {profileData.user.birth_date || '未设置'}</p>
                   <p><strong>兴趣:</strong> {profileData.user.interests?.length || 0} 个</p>
-                  <p><strong>价值观:</strong> {profileData.user.values_preferences?.length || 0} 个</p>
+                  <p><strong>期望品质:</strong> {profileData.user.values_preferences?.length || 0} 个</p>
                 </>
               ) : (
                 <p className="text-red-500">{profileData.error}</p>

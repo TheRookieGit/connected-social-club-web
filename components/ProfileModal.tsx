@@ -7,7 +7,7 @@ import {
   Heart, User, Ruler, Weight, Camera, Upload, Globe, BookOpen, Home, 
   Baby, Activity, Coffee, Wine, MessageCircle, Settings, Star, 
   Award, Palette, Music, Gamepad2, Utensils, Plane, Mountain, 
-  BookOpenCheck, Users2, Sparkles, Target, Shield, Zap
+  BookOpenCheck, Users2, Sparkles, Target, Shield, Zap, MoreHorizontal, Check
 } from 'lucide-react'
 
 interface ProfileModalProps {
@@ -25,7 +25,29 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
   const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({})
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
   const [activeTab, setActiveTab] = useState('basic')
+  const [showValuesModal, setShowValuesModal] = useState(false)
+  const [selectedValues, setSelectedValues] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // 品质标签数据
+  const valueTags = [
+    { id: 'ambition', name: '有上进心' },
+    { id: 'confidence', name: '自信' },
+    { id: 'curiosity', name: '好奇心' },
+    { id: 'emotional_intelligence', name: '高情商' },
+    { id: 'empathy', name: '同理心' },
+    { id: 'generosity', name: '大方' },
+    { id: 'gratitude', name: '感恩' },
+    { id: 'humility', name: '谦逊' },
+    { id: 'humor', name: '幽默' },
+    { id: 'kindness', name: '善良' },
+    { id: 'leadership', name: '领导力' },
+    { id: 'loyalty', name: '忠诚' },
+    { id: 'openness', name: '开放' },
+    { id: 'optimism', name: '乐观' },
+    { id: 'playfulness', name: '有趣' },
+    { id: 'sassiness', name: '活泼' }
+  ]
 
   const fetchProfile = useCallback(async () => {
     try {
@@ -139,6 +161,37 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
     }))
   }
 
+  const handleValuesModalOpen = () => {
+    setSelectedValues(editedProfile.values_preferences || [])
+    setShowValuesModal(true)
+  }
+
+  const handleValuesModalClose = () => {
+    setShowValuesModal(false)
+  }
+
+  const handleValueSelect = (valueId: string) => {
+    setSelectedValues(prev => {
+      if (prev.includes(valueId)) {
+        return prev.filter(id => id !== valueId)
+      } else {
+        // 限制最多选择3个选项
+        if (prev.length >= 3) {
+          return prev
+        }
+        return [...prev, valueId]
+      }
+    })
+  }
+
+  const handleValuesConfirm = () => {
+    setEditedProfile(prev => ({
+      ...prev,
+      values_preferences: selectedValues
+    }))
+    setShowValuesModal(false)
+  }
+
   const handleAvatarUpload = async (file: File) => {
     try {
       setIsUploadingAvatar(true)
@@ -203,7 +256,7 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
     { id: 'photos', label: '照片', icon: Camera, color: 'text-purple-600' },
     { id: 'interests', label: '兴趣爱好', icon: Heart, color: 'text-pink-600' },
     { id: 'lifestyle', label: '生活方式', icon: Activity, color: 'text-green-600' },
-    { id: 'values', label: '价值观', icon: Star, color: 'text-yellow-600' }
+    { id: 'values', label: '我希望你是...', icon: Star, color: 'text-yellow-600' }
   ]
 
   if (!isOpen) return null
@@ -943,53 +996,138 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
           {activeTab === 'values' && (
             <div className="space-y-6 min-h-[450px]">
               <div className="bg-gradient-to-r from-yellow-50 to-amber-50 rounded-2xl p-6">
-                <div className="flex items-center mb-6">
-                  <Star className="h-6 w-6 text-yellow-600 mr-3" />
-                  <h3 className="text-lg font-semibold text-gray-900">个人价值观</h3>
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center">
+                    <Star className="h-6 w-6 text-yellow-600 mr-3" />
+                    <h3 className="text-lg font-semibold text-gray-900">我希望你是...</h3>
+                  </div>
+                  {isEditing && (
+                    <button
+                      onClick={handleValuesModalOpen}
+                      className="flex items-center space-x-1 px-3 py-2 bg-yellow-100 hover:bg-yellow-200 text-yellow-700 rounded-lg transition-colors"
+                    >
+                      <MoreHorizontal className="h-4 w-4" />
+                      <span className="text-sm font-medium">选择</span>
+                    </button>
+                  )}
                 </div>
                 
-                {profile.values_preferences && profile.values_preferences.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {profile.values_preferences.map((value, index) => {
-                      const valueMap: { [key: string]: { icon: any, label: string, color: string } } = {
-                        'ambition': { icon: Target, label: '有上进心', color: 'bg-blue-100 text-blue-600' },
-                        'confidence': { icon: Star, label: '自信', color: 'bg-yellow-100 text-yellow-600' },
-                        'curiosity': { icon: Sparkles, label: '好奇心', color: 'bg-purple-100 text-purple-600' },
-                        'emotional_intelligence': { icon: Heart, label: '高情商', color: 'bg-pink-100 text-pink-600' },
-                        'empathy': { icon: Users2, label: '同理心', color: 'bg-green-100 text-green-600' },
-                        'generosity': { icon: Heart, label: '大方', color: 'bg-red-100 text-red-600' },
-                        'gratitude': { icon: Star, label: '感恩', color: 'bg-amber-100 text-amber-600' },
-                        'humility': { icon: Shield, label: '谦逊', color: 'bg-gray-100 text-gray-600' },
-                        'humor': { icon: Sparkles, label: '幽默', color: 'bg-indigo-100 text-indigo-600' },
-                        'kindness': { icon: Heart, label: '善良', color: 'bg-rose-100 text-rose-600' },
-                        'leadership': { icon: Target, label: '领导力', color: 'bg-blue-100 text-blue-600' },
-                        'loyalty': { icon: Shield, label: '忠诚', color: 'bg-emerald-100 text-emerald-600' },
-                        'openness': { icon: Zap, label: '开放', color: 'bg-cyan-100 text-cyan-600' },
-                        'optimism': { icon: Star, label: '乐观', color: 'bg-yellow-100 text-yellow-600' },
-                        'playfulness': { icon: Sparkles, label: '有趣', color: 'bg-violet-100 text-violet-600' },
-                        'sassiness': { icon: Zap, label: '活泼', color: 'bg-orange-100 text-orange-600' }
-                      }
-                      
-                      const valueInfo = valueMap[value] || { icon: Star, label: value, color: 'bg-gray-100 text-gray-600' }
-                      const IconComponent = valueInfo.icon
-                      
-                      return (
-                        <div key={index} className={`${valueInfo.color} rounded-2xl p-4 flex items-center space-x-3`}>
-                          <IconComponent className="h-5 w-5" />
-                          <span className="font-medium">{valueInfo.label}</span>
-                        </div>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div className="text-center py-12">
-                    <Star className="h-16 w-16 text-yellow-300 mx-auto mb-4" />
-                    <p className="text-gray-500">还没有添加个人价值观</p>
-                  </div>
-                )}
+                {(() => {
+                  const currentValues = isEditing ? editedProfile.values_preferences : profile.values_preferences
+                  return currentValues && currentValues.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {currentValues.map((value, index) => {
+                        const valueMap: { [key: string]: { icon: any, label: string, color: string } } = {
+                          'ambition': { icon: Target, label: '有上进心', color: 'bg-blue-100 text-blue-600' },
+                          'confidence': { icon: Star, label: '自信', color: 'bg-yellow-100 text-yellow-600' },
+                          'curiosity': { icon: Sparkles, label: '好奇心', color: 'bg-purple-100 text-purple-600' },
+                          'emotional_intelligence': { icon: Heart, label: '高情商', color: 'bg-pink-100 text-pink-600' },
+                          'empathy': { icon: Users2, label: '同理心', color: 'bg-green-100 text-green-600' },
+                          'generosity': { icon: Heart, label: '大方', color: 'bg-red-100 text-red-600' },
+                          'gratitude': { icon: Star, label: '感恩', color: 'bg-amber-100 text-amber-600' },
+                          'humility': { icon: Shield, label: '谦逊', color: 'bg-gray-100 text-gray-600' },
+                          'humor': { icon: Sparkles, label: '幽默', color: 'bg-indigo-100 text-indigo-600' },
+                          'kindness': { icon: Heart, label: '善良', color: 'bg-rose-100 text-rose-600' },
+                          'leadership': { icon: Target, label: '领导力', color: 'bg-blue-100 text-blue-600' },
+                          'loyalty': { icon: Shield, label: '忠诚', color: 'bg-emerald-100 text-emerald-600' },
+                          'openness': { icon: Zap, label: '开放', color: 'bg-cyan-100 text-cyan-600' },
+                          'optimism': { icon: Star, label: '乐观', color: 'bg-yellow-100 text-yellow-600' },
+                          'playfulness': { icon: Sparkles, label: '有趣', color: 'bg-violet-100 text-violet-600' },
+                          'sassiness': { icon: Zap, label: '活泼', color: 'bg-orange-100 text-orange-600' }
+                        }
+                        
+                        const valueInfo = valueMap[value] || { icon: Star, label: value, color: 'bg-gray-100 text-gray-600' }
+                        const IconComponent = valueInfo.icon
+                        
+                        return (
+                          <div key={index} className={`${valueInfo.color} rounded-2xl p-4 flex items-center space-x-3`}>
+                            <IconComponent className="h-5 w-5" />
+                            <span className="font-medium">{valueInfo.label}</span>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12">
+                      <Star className="h-16 w-16 text-yellow-300 mx-auto mb-4" />
+                      <p className="text-gray-500">还没有添加期望的伴侣特质</p>
+                    </div>
+                  )
+                })()}
               </div>
             </div>
           )}
+
+      {/* 价值观选择弹窗 */}
+      {showValuesModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-2xl p-6 max-w-2xl w-full mx-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900">选择期望的伴侣特质</h3>
+              <button
+                onClick={handleValuesModalClose}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <X className="h-6 w-6" />
+              </button>
+            </div>
+            
+            <div className="mb-4">
+              <p className="text-sm text-gray-600 mb-4">
+                选择最多3个你希望伴侣拥有的品质
+              </p>
+              <div className="flex items-center space-x-2 text-sm text-gray-500">
+                <span>已选择: {selectedValues.length}/3</span>
+                {selectedValues.length >= 3 && (
+                  <span className="text-orange-600">已达到最大选择数量</span>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              {valueTags.map((tag) => {
+                const isSelected = selectedValues.includes(tag.id)
+                const isDisabled = !isSelected && selectedValues.length >= 3
+                
+                return (
+                  <button
+                    key={tag.id}
+                    onClick={() => handleValueSelect(tag.id)}
+                    disabled={isDisabled}
+                    className={`p-4 rounded-xl border-2 transition-all ${
+                      isSelected
+                        ? 'border-yellow-500 bg-yellow-50 text-yellow-700'
+                        : isDisabled
+                        ? 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
+                        : 'border-gray-200 bg-white text-gray-700 hover:border-yellow-300 hover:bg-yellow-50'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2">
+                      {isSelected && <Check className="h-4 w-4" />}
+                      <span className="font-medium">{tag.name}</span>
+                    </div>
+                  </button>
+                )
+              })}
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={handleValuesModalClose}
+                className="flex-1 px-4 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                取消
+              </button>
+              <button
+                onClick={handleValuesConfirm}
+                className="flex-1 px-4 py-3 bg-yellow-500 text-white rounded-xl hover:bg-yellow-600 transition-colors"
+              >
+                确认选择
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
         </div>
       </div>
     </div>

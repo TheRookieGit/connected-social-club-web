@@ -17,11 +17,13 @@ import 'stream-chat-react/dist/css/v2/index.css'
 interface StreamChatPanelProps {
   matchedUsers: any[]  // 改为接受匹配用户列表
   onClose: () => void
+  isEmbedded?: boolean  // 新增：是否为嵌入式模式
 }
 
 export default function StreamChatPanel({ 
   matchedUsers, 
-  onClose
+  onClose,
+  isEmbedded = false
 }: StreamChatPanelProps) {
   const [streamToken, setStreamToken] = useState<string | null>(null)
   const [chatClient, setChatClient] = useState<StreamChat | null>(null)
@@ -660,39 +662,42 @@ export default function StreamChatPanel({
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-pink-100">
-        {/* 头部 */}
-        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-pink-500 to-rose-500 text-white">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+    <div className={isEmbedded ? "w-full h-full" : "fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 flex items-center justify-center z-50 p-4"}>
+      <div className={isEmbedded ? "bg-white w-full h-full flex flex-col overflow-hidden" : "bg-white rounded-3xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-pink-100"}>
+        {/* 头部 - 嵌入式模式下隐藏 */}
+        {!isEmbedded && (
+          <div className="flex items-center justify-between p-6 bg-gradient-to-r from-pink-500 to-rose-500 text-white">
+            <div className="flex items-center space-x-4">
+              <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                </svg>
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">甜蜜聊天</h2>
+                <p className="text-pink-100 text-sm">
+                  {matchedUsers.length} 个匹配 • 专业聊天服务
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={onClose}
+              className="p-3 text-white hover:bg-white hover:bg-opacity-20 transition-all duration-200 rounded-full"
+            >
+              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold">甜蜜聊天</h2>
-              <p className="text-pink-100 text-sm">
-                {matchedUsers.length} 个匹配 • 专业聊天服务
-              </p>
-            </div>
+            </button>
           </div>
-          <button
-            onClick={onClose}
-            className="p-3 text-white hover:bg-white hover:bg-opacity-20 transition-all duration-200 rounded-full"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        )}
 
         {/* 聊天内容 */}
         <div className="flex-1 flex">
           <Chat client={chatClient}>
             <div className="flex w-full h-full">
-              {/* 频道列表 */}
-              <div className="w-1/3 border-r border-pink-200 bg-gradient-to-b from-pink-50 to-rose-50">
+              {/* 频道列表 - 嵌入式模式下隐藏 */}
+              {!isEmbedded && (
+                <div className="w-1/3 border-r border-pink-200 bg-gradient-to-b from-pink-50 to-rose-50">
                 <div className="p-6 border-b border-pink-200 bg-white">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1053,9 +1058,10 @@ export default function StreamChatPanel({
                   )}
                 </div>
               </div>
+            )}
 
               {/* 聊天窗口 */}
-              <div className="flex-1 flex flex-col bg-gradient-to-b from-pink-25 to-white">
+              <div className={isEmbedded ? "w-full flex flex-col bg-gradient-to-b from-pink-25 to-white" : "flex-1 flex flex-col bg-gradient-to-b from-pink-25 to-white"}>
                 {selectedChannel ? (
                   <Channel channel={selectedChannel}>
                     <Window>
@@ -1074,11 +1080,10 @@ export default function StreamChatPanel({
                         </svg>
                       </div>
                       <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                        选择聊天对象
+                        {isEmbedded ? "聊天" : "选择聊天对象"}
                       </h3>
                       <p className="text-gray-500 leading-relaxed text-lg">
-                        从左侧选择一个聊天频道<br/>
-                        开始你们的甜蜜对话 💕
+                        {isEmbedded ? "开始你们的甜蜜对话 💕" : "从左侧选择一个聊天频道<br/>开始你们的甜蜜对话 💕"}
                       </p>
                     </div>
                   </div>
