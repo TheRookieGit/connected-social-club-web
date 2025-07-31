@@ -110,7 +110,7 @@ export default function TestPhotoUpload() {
         const formData = new FormData()
         formData.append('photos', testFile)
 
-        addTestResult('照片上传测试', 'info', '开始上传测试图片...')
+        addTestResult('照片上传测试', 'info', `开始上传测试图片... (大小: ${(blob.size / 1024).toFixed(2)}KB)`)
 
         try {
           const token = localStorage.getItem('token')
@@ -139,10 +139,19 @@ export default function TestPhotoUpload() {
               addTestResult('照片上传测试', 'error', '照片上传失败', result)
             }
           } catch (parseError) {
-            addTestResult('照片上传测试', 'error', '响应解析失败', {
-              status: response.status,
-              responseText: responseText.substring(0, 200)
-            })
+            // 检查是否是文件大小错误
+            if (responseText.includes('Request Entity Too Large') || responseText.includes('FUNCTION_PAYLOAD_TOO_LARGE')) {
+              addTestResult('照片上传测试', 'error', '文件大小超过Vercel限制', {
+                status: response.status,
+                error: 'FUNCTION_PAYLOAD_TOO_LARGE',
+                suggestion: '请确保上传的文件小于4MB'
+              })
+            } else {
+              addTestResult('照片上传测试', 'error', '响应解析失败', {
+                status: response.status,
+                responseText: responseText.substring(0, 200)
+              })
+            }
           }
         } catch (error) {
           addTestResult('照片上传测试', 'error', '上传请求失败', error)
@@ -153,6 +162,88 @@ export default function TestPhotoUpload() {
 
     } catch (error) {
       addTestResult('照片上传测试', 'error', '测试准备失败', error)
+      setIsLoading(false)
+    }
+  }
+
+  const runFileSizeTest = async () => {
+    setIsLoading(true)
+    setTestResults([])
+
+    try {
+      // 创建不同大小的测试文件
+      const testSizes = [
+        { size: 1024 * 1024, name: '1MB测试' },      // 1MB
+        { size: 2 * 1024 * 1024, name: '2MB测试' },  // 2MB
+        { size: 3 * 1024 * 1024, name: '3MB测试' },  // 3MB
+        { size: 4 * 1024 * 1024, name: '4MB测试' },  // 4MB
+        { size: 5 * 1024 * 1024, name: '5MB测试' }   // 5MB (应该失败)
+      ]
+
+      for (const test of testSizes) {
+        addTestResult('文件大小测试', 'info', `测试${test.name}...`)
+
+        // 创建指定大小的测试文件
+        const testData = new Uint8Array(test.size)
+        for (let i = 0; i < test.size; i++) {
+          testData[i] = Math.floor(Math.random() * 256)
+        }
+
+        const testFile = new File([testData], `test-${test.name}.bin`, { type: 'application/octet-stream' })
+        const formData = new FormData()
+        formData.append('photos', testFile)
+
+        try {
+          const token = localStorage.getItem('token')
+          if (!token) {
+            addTestResult('文件大小测试', 'error', '未找到登录令牌')
+            break
+          }
+
+          const response = await fetch('/api/user/upload-photos-admin', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formData
+          })
+
+          const responseText = await response.text()
+
+          if (response.ok) {
+            addTestResult('文件大小测试', 'success', `${test.name}通过`, {
+              size: (test.size / 1024 / 1024).toFixed(2) + 'MB',
+              status: response.status
+            })
+          } else {
+            try {
+              const errorData = JSON.parse(responseText)
+              addTestResult('文件大小测试', 'error', `${test.name}失败`, {
+                size: (test.size / 1024 / 1024).toFixed(2) + 'MB',
+                error: errorData.error,
+                details: errorData.details
+              })
+            } catch (parseError) {
+              if (responseText.includes('Request Entity Too Large') || responseText.includes('FUNCTION_PAYLOAD_TOO_LARGE')) {
+                addTestResult('文件大小测试', 'error', `${test.name}失败 - Vercel限制`, {
+                  size: (test.size / 1024 / 1024).toFixed(2) + 'MB',
+                  error: 'FUNCTION_PAYLOAD_TOO_LARGE'
+                })
+              } else {
+                addTestResult('文件大小测试', 'error', `${test.name}失败`, {
+                  size: (test.size / 1024 / 1024).toFixed(2) + 'MB',
+                  responseText: responseText.substring(0, 100)
+                })
+              }
+            }
+          }
+        } catch (error) {
+          addTestResult('文件大小测试', 'error', `${test.name}请求失败`, error)
+        }
+      }
+    } catch (error) {
+      addTestResult('文件大小测试', 'error', '测试准备失败', error)
+    } finally {
       setIsLoading(false)
     }
   }
@@ -189,6 +280,15 @@ export default function TestPhotoUpload() {
             >
               <Upload className="w-4 h-4" />
               <span>测试照片上传</span>
+            </button>
+
+            <button
+              onClick={runFileSizeTest}
+              disabled={isLoading}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 flex items-center space-x-2"
+            >
+              <AlertCircle className="w-4 h-4" />
+              <span>测试文件大小限制</span>
             </button>
 
             <button

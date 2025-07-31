@@ -285,7 +285,7 @@ export async function POST(request: NextRequest) {
 
     const uploadedPhotoUrls: string[] = []
 
-    // 上传每张照片
+    // 验证每张照片
     for (let i = 0; i < photos.length; i++) {
       const photo = photos[i]
       
@@ -300,12 +300,28 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // 验证文件大小（5MB限制）
-      if (photo.size > 5 * 1024 * 1024) {
-        console.error(`文件过大: ${photo.size} bytes`)
-        continue
+      // 验证文件大小（4MB限制，留余量给Vercel）
+      const maxSize = 4 * 1024 * 1024 // 4MB
+      if (photo.size > maxSize) {
+        console.error(`文件过大: ${photo.size} bytes (${(photo.size / 1024 / 1024).toFixed(2)}MB)`)
+        return new NextResponse(
+          JSON.stringify({ 
+            success: false, 
+            error: '文件过大',
+            details: `照片 ${i + 1} 大小 ${(photo.size / 1024 / 1024).toFixed(2)}MB，超过4MB限制`,
+            code: 'FILE_TOO_LARGE'
+          }),
+          { status: 400, headers: createNoCacheHeaders() }
+        )
       }
 
+      console.log(`照片 ${i + 1} 验证通过: ${photo.name}, ${(photo.size / 1024 / 1024).toFixed(2)}MB`)
+    }
+
+    // 上传每张照片
+    for (let i = 0; i < photos.length; i++) {
+      const photo = photos[i]
+      
       // 生成唯一文件名
       const timestamp = Date.now()
       const randomId = Math.random().toString(36).substring(7)
