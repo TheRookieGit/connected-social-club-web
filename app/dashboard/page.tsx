@@ -564,6 +564,11 @@ export default function Dashboard() {
     console.log('✅ [前端] 数据刷新完成')
   }
 
+  // 处理用户头像点击，跳转到用户个人资料页面
+  const handleUserAvatarClick = (userId: string) => {
+    router.push(`/user-profile/${userId}`)
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100 flex items-center justify-center">
@@ -798,7 +803,7 @@ export default function Dashboard() {
                   <motion.div
                     key={user.id}
                     className="flex-shrink-0 w-20 text-center cursor-pointer"
-                    onClick={() => setShowChat(true)}
+                    onClick={() => handleUserAvatarClick(user.id)}
                     whileHover={{ scale: 1.05 }}
                   >
                     <div className="w-16 h-16 bg-red-200 rounded-full flex items-center justify-center mx-auto mb-2 relative">
