@@ -162,7 +162,7 @@ export default function DebugRegistration() {
             <li>新注册用户应该没有性别和生日信息</li>
             <li>如果用户资料显示已设置性别，会跳转到下一步</li>
             <li>如果用户资料显示未设置性别，应该继续注册流程</li>
-            <li>点击"模拟新注册用户"可以测试新用户的流程</li>
+            <li>点击&quot;模拟新注册用户&quot;可以测试新用户的流程</li>
           </ul>
         </div>
       </div>

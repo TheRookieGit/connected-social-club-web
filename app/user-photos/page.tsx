@@ -34,7 +34,6 @@ interface UserProfile {
   exercise_frequency?: string
   ethnicity?: string
   weight?: number
-  degree?: string
   relationship_goals?: string
 }
 

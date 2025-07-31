@@ -120,7 +120,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    let userPhotosBucket = buckets?.find(bucket => bucket.name === 'user-photos')
+    let userPhotosBucket: any = buckets?.find(bucket => bucket.name === 'user-photos')
     
     if (!userPhotosBucket) {
       console.log('创建用户照片存储桶...')

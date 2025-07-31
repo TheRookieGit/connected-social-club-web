@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { ChevronRight, Plus, AlertCircle, Camera, Upload } from 'lucide-react'
 
 export default function Photos() {
@@ -232,9 +233,11 @@ export default function Photos() {
               >
                 {photos[index] ? (
                   <>
-                    <img
+                    <Image
                       src={photos[index]}
                       alt={`照片 ${index + 1}`}
+                      width={300}
+                      height={300}
                       className="w-full h-full object-cover rounded-lg"
                     />
                     <button

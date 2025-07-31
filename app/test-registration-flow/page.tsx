@@ -97,8 +97,8 @@ export default function TestRegistrationFlow() {
         <h3 className="font-semibold mb-2">说明</h3>
         <ul className="list-disc list-inside space-y-1 text-sm">
           <li>这个页面用于测试注册成功后的跳转逻辑</li>
-          <li>点击"测试完整注册流程"会模拟注册成功并跳转</li>
-          <li>点击"直接跳转到性别选择"会直接导航到性别选择页面</li>
+          <li>点击&quot;测试完整注册流程&quot;会模拟注册成功并跳转</li>
+          <li>点击&quot;直接跳转到性别选择&quot;会直接导航到性别选择页面</li>
           <li>如果跳转失败，请检查浏览器控制台是否有错误</li>
         </ul>
       </div>

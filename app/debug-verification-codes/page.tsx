@@ -118,7 +118,7 @@ export default function DebugVerificationCodes() {
           <li>验证码存储在内存中，服务器重启会丢失</li>
           <li>开发环境热重载可能导致验证码丢失</li>
           <li>验证码有效期为10分钟</li>
-          <li>如果验证码显示"不存在或已过期"，请重新发送</li>
+          <li>如果验证码显示&quot;不存在或已过期&quot;，请重新发送</li>
         </ul>
       </div>
     </div>

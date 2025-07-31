@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    const results = {
+    const results: any = {
       timestamp: new Date().toISOString(),
       envCheck: {
         supabaseUrl: process.env.NEXT_PUBLIC_SUPABASE_URL ? '已设置' : '未设置',
@@ -122,11 +122,17 @@ export async function GET(request: NextRequest) {
         created: createData || null
       }
 
-      // 如果创建成功，尝试删除
+      // 如果创建成功，尝试删除（注意：Supabase可能不支持删除存储桶）
       if (!createError) {
-        const { error: deleteError } = await supabase.storage.removeBucket(testBucketName)
-        results.tests.createBucket.deleted = !deleteError
-        results.tests.createBucket.deleteError = deleteError?.message || null
+        try {
+          // 尝试删除存储桶，但可能不支持
+          const { error: deleteError } = await supabase.storage.deleteBucket(testBucketName)
+          results.tests.createBucket.deleted = !deleteError
+          results.tests.createBucket.deleteError = deleteError?.message || null
+        } catch (deleteError) {
+          results.tests.createBucket.deleted = false
+          results.tests.createBucket.deleteError = '删除存储桶功能可能不支持'
+        }
       }
     } catch (error) {
       results.tests.createBucket = {
