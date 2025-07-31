@@ -930,12 +930,31 @@ export default function StreamChatPanel({
                           <div className="flex items-center space-x-3">
                             {/* 头像 */}
                             <div className="relative">
-                              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${
+                              <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold overflow-hidden ${
                                 isSelected
                                   ? 'bg-white text-pink-500'
                                   : 'bg-gradient-to-br from-pink-200 to-rose-200 text-pink-600'
                               }`}>
-                                {otherUser?.name?.charAt(0) || '?'}
+                                {otherUser?.image ? (
+                                  <img 
+                                    src={otherUser.image} 
+                                    alt={otherUser.name}
+                                    className="w-full h-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.currentTarget as HTMLImageElement
+                                      target.style.display = 'none'
+                                      const fallback = target.nextElementSibling as HTMLElement
+                                      if (fallback) {
+                                        fallback.style.display = 'flex'
+                                      }
+                                    }}
+                                  />
+                                ) : null}
+                                <span 
+                                  style={{ display: otherUser?.image ? 'none' : 'flex' }}
+                                >
+                                  {otherUser?.name?.charAt(0) || '?'}
+                                </span>
                               </div>
                               {otherUser?.online && (
                                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>

@@ -146,6 +146,12 @@ export async function GET(request: NextRequest) {
     const matchedUsers = matchedUsersData?.map((user: any) => {
       const details = matchDetails.get(user.id)
       
+      // 判断用户是否真的在线（5分钟内活跃）
+      const lastSeen = user.last_seen ? new Date(user.last_seen) : null
+      const now = new Date()
+      const fiveMinutesAgo = new Date(now.getTime() - 5 * 60 * 1000)
+      const isActuallyOnline = lastSeen && lastSeen > fiveMinutesAgo
+      
       return {
         id: user.id,
         name: user.name,
@@ -155,7 +161,7 @@ export async function GET(request: NextRequest) {
         bio: user.bio || '这个人很神秘...',
         occupation: user.occupation,
         avatar_url: user.avatar_url,
-        isOnline: user.is_online || false,
+        isOnline: isActuallyOnline,
         lastSeen: user.last_seen,
         matchScore: Math.round((details?.match_score || 0) * 100),
         matchedAt: details?.created_at,

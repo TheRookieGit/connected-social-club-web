@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
-import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock } from 'lucide-react'
+import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Clock } from 'lucide-react'
 import useSWR from 'swr'
 import UserCard from '@/components/UserCard'
 import ProfileModal from '@/components/ProfileModal'
@@ -667,55 +667,7 @@ export default function Dashboard() {
                 />
               </button>
 
-              {/* 重新进行注册流程按钮 */}
-              <button
-                onClick={async () => {
-                  try {
-                    const token = localStorage.getItem('token')
-                    if (!token) {
-                      alert('请先登录')
-                      return
-                    }
 
-                    // 询问用户是否要重新开始整个流程
-                    const shouldRestart = confirm('您希望：\n\n1. 点击"确定" - 重新开始整个注册流程（从性别选择开始）\n2. 点击"取消" - 继续完善当前缺失的资料\n\n请选择：')
-                    
-                    if (shouldRestart) {
-                      // 重新开始整个流程
-                      router.push('/gender-selection?restart=true')
-                    } else {
-                      // 继续完善当前缺失的资料
-                      const response = await fetch('/api/user/registration-status', {
-                        headers: {
-                          'Authorization': `Bearer ${token}`
-                        }
-                      })
-
-                      if (response.ok) {
-                        const data = await response.json()
-                        if (data.success) {
-                          if (data.isComplete) {
-                            alert('您的资料已经完整了！')
-                          } else {
-                            router.push(data.nextStep)
-                          }
-                        } else {
-                          alert('检查状态失败: ' + data.error)
-                        }
-                      } else {
-                        alert('请求失败，请重试')
-                      }
-                    }
-                  } catch (error) {
-                    console.error('检查注册状态失败:', error)
-                    alert('网络错误，请重试')
-                  }
-                }}
-                className="p-2 text-gray-600 hover:text-blue-500 transition-colors"
-                title="重新进行注册流程的填写"
-              >
-                <Badge size={24} />
-              </button>
               
               {/* 管理员控制台入口 */}
               {(() => {
@@ -834,57 +786,8 @@ export default function Dashboard() {
                   </motion.button>
                 )}
 
-                {/* 重新进行注册流程按钮 */}
-                <motion.button
-                  onClick={async () => {
-                    try {
-                      const token = localStorage.getItem('token')
-                      if (!token) {
-                        alert('请先登录')
-                        return
-                      }
+  
 
-                      // 询问用户是否要重新开始整个流程
-                      const shouldRestart = confirm('您希望：\n\n1. 点击"确定" - 重新开始整个注册流程（从性别选择开始）\n2. 点击"取消" - 继续完善当前缺失的资料\n\n请选择：')
-                      
-                      if (shouldRestart) {
-                        // 重新开始整个流程
-                        router.push('/gender-selection')
-                      } else {
-                        // 继续完善当前缺失的资料
-                        const response = await fetch('/api/user/registration-status', {
-                          headers: {
-                            'Authorization': `Bearer ${token}`
-                          }
-                        })
-
-                        if (response.ok) {
-                          const data = await response.json()
-                          if (data.success) {
-                            if (data.isComplete) {
-                              alert('您的资料已经完整了！')
-                            } else {
-                              router.push(data.nextStep)
-                            }
-                          } else {
-                            alert('检查状态失败: ' + data.error)
-                          }
-                        } else {
-                          alert('请求失败，请重试')
-                        }
-                      }
-                    } catch (error) {
-                      console.error('检查注册状态失败:', error)
-                      alert('网络错误，请重试')
-                    }
-                  }}
-                  className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors font-medium text-sm flex items-center space-x-2"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <Badge size={16} />
-                  <span>完善资料</span>
-                </motion.button>
               </div>
             </div>
             
@@ -899,11 +802,31 @@ export default function Dashboard() {
                     whileHover={{ scale: 1.05 }}
                   >
                     <div className="w-16 h-16 bg-red-200 rounded-full flex items-center justify-center mx-auto mb-2 relative">
-                      <span className="text-red-600 font-medium text-lg">
-                        {user.name.charAt(0)}
-                      </span>
+                      <div className="w-full h-full rounded-full overflow-hidden">
+                        {user.photos && user.photos.length > 0 && user.photos[0] && user.photos[0] !== '/api/placeholder/400/600' ? (
+                          <img 
+                            src={user.photos[0]} 
+                            alt={user.name}
+                            className="w-full h-full object-cover"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement
+                              target.style.display = 'none'
+                              const fallback = target.nextElementSibling as HTMLElement
+                              if (fallback) {
+                                fallback.style.display = 'flex'
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <span 
+                          className="text-red-600 font-medium text-lg"
+                          style={{ display: (user.photos && user.photos.length > 0 && user.photos[0] && user.photos[0] !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
+                        >
+                          {user.name.charAt(0)}
+                        </span>
+                      </div>
                       {user.isOnline && (
-                        <div className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
+                        <div className="absolute -bottom-1 -right-0 w-4 h-4 bg-green-500 rounded-full border-2 border-white z-10"></div>
                       )}
                     </div>
                     <p className="text-xs text-gray-600 font-medium truncate">{user.name}</p>
