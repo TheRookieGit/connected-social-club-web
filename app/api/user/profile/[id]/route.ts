@@ -33,8 +33,9 @@ function calculateAge(birthDate: string) {
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params
   try {
     const supabase = createSupabaseClient()
     if (!supabase) {
@@ -54,7 +55,7 @@ export async function GET(
       )
     }
 
-    const targetUserId = params.id
+    const targetUserId = id
 
     // 获取目标用户的详细信息
     const { data: userData, error: userError } = await supabase

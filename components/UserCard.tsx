@@ -175,9 +175,46 @@ export default function UserCard({ user }: UserCardProps) {
             <div className="flex space-x-2">
               <button 
                 className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-                onClick={(e) => {
+                onClick={async (e) => {
                   e.stopPropagation()
-                  // 这里可以添加喜欢功能
+                  
+                  try {
+                    const token = localStorage.getItem('token')
+                    if (!token) {
+                      alert('请先登录')
+                      return
+                    }
+
+                    const response = await fetch('/api/user/matches', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                      },
+                      body: JSON.stringify({
+                        matchedUserId: parseInt(user.id),
+                        action: 'like'
+                      })
+                    })
+
+                    if (response.ok) {
+                      const data = await response.json()
+                      if (data.success) {
+                        if (data.isMatch) {
+                          alert(`🎉 恭喜！你和${user.name}匹配成功了！`)
+                        } else {
+                          alert(`💌 已向${user.name}发送喜欢请求`)
+                        }
+                      } else {
+                        alert('操作失败: ' + data.error)
+                      }
+                    } else {
+                      alert('请求失败，请重试')
+                    }
+                  } catch (error) {
+                    console.error('处理喜欢操作失败:', error)
+                    alert('网络错误，请重试')
+                  }
                 }}
               >
                 <Heart className="h-5 w-5" />

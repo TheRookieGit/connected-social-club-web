@@ -131,21 +131,21 @@ export default function UserProfilePage() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      console.log('检查喜欢状态 - 用户ID:', userId)
+      console.log('检查匹配状态 - 用户ID:', userId)
       
-      const response = await fetch(`/api/user/check-like/${userId}`, {
+      const response = await fetch(`/api/user/check-match-status/${userId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
       })
       
-      console.log('检查喜欢状态 - API响应状态:', response.status)
+      console.log('检查匹配状态 - API响应状态:', response.status)
       
       if (response.ok) {
         const data = await response.json()
-        console.log('检查喜欢状态 - API响应数据:', data)
-        setIsLiked(data.isLiked)
-        console.log('设置喜欢状态为:', data.isLiked)
+        console.log('检查匹配状态 - API响应数据:', data)
+        setIsLiked(data.hasLiked)
+        console.log('设置喜欢状态为:', data.hasLiked)
       } else {
         console.log('API失败，使用本地存储')
         // 如果API失败，暂时使用本地存储来模拟
@@ -156,7 +156,7 @@ export default function UserProfilePage() {
         setIsLiked(isUserLiked)
       }
     } catch (error) {
-      console.error('检查喜欢状态时出错:', error)
+      console.error('检查匹配状态时出错:', error)
       // 如果API失败，暂时使用本地存储来模拟
       const likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '[]')
       console.log('错误时使用本地存储，喜欢用户:', likedUsers)
@@ -299,55 +299,57 @@ export default function UserProfilePage() {
         return
       }
 
-      // 尝试使用API
+      if (isLiked) {
+        // 如果已经喜欢了，不允许取消（根据user_matches的逻辑）
+        console.log('用户已经喜欢，无法取消')
+        return
+      }
+
+      // 使用 user_matches API 发送喜欢请求
       try {
-        console.log('尝试API调用:', `${isLiked ? 'unlike' : 'like'}/${userId}`)
-        const response = await fetch(`/api/user/${isLiked ? 'unlike' : 'like'}/${userId}`, {
+        console.log('发送喜欢请求到 user_matches API')
+        const response = await fetch('/api/user/matches', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`,
             'Content-Type': 'application/json'
-          }
+          },
+          body: JSON.stringify({
+            matchedUserId: parseInt(userId),
+            action: 'like'
+          })
         })
 
-        console.log('API响应状态:', response.status)
+        console.log('user_matches API响应状态:', response.status)
         if (response.ok) {
           const data = await response.json()
-          console.log('API响应数据:', data)
+          console.log('user_matches API响应数据:', data)
           if (data.success) {
-            const newLikeStatus = !isLiked
-            console.log('API成功，设置新状态:', newLikeStatus)
-            setIsLiked(newLikeStatus)
-            console.log(isLiked ? '取消喜欢用户:' : '喜欢用户:', profile?.name)
+            setIsLiked(true)
+            console.log('成功喜欢用户:', profile?.name)
+            
+            if (data.isMatch) {
+              alert(`🎉 恭喜！你和${profile?.name}匹配成功了！`)
+            } else {
+              console.log('喜欢请求已发送，等待对方回应')
+            }
             return
+          } else {
+            console.error('user_matches API返回错误:', data.error)
+            alert(data.error || '操作失败')
           }
+        } else {
+          console.error('user_matches API请求失败，状态码:', response.status)
+          alert('请求失败，请重试')
         }
       } catch (apiError) {
-        console.error('API调用失败，使用本地存储:', apiError)
+        console.error('user_matches API调用失败:', apiError)
+        alert('网络错误，请重试')
       }
 
-      // 如果API失败，使用本地存储作为后备
-      console.log('使用本地存储作为后备')
-      const likedUsers = JSON.parse(localStorage.getItem('likedUsers') || '[]')
-      console.log('当前本地存储的喜欢用户:', likedUsers)
-      
-      if (isLiked) {
-        // 取消喜欢
-        const updatedLikedUsers = likedUsers.filter((id: string) => id !== userId)
-        localStorage.setItem('likedUsers', JSON.stringify(updatedLikedUsers))
-        console.log('取消喜欢，更新本地存储:', updatedLikedUsers)
-        setIsLiked(false)
-        console.log('取消喜欢用户:', profile?.name)
-      } else {
-        // 喜欢
-        likedUsers.push(userId)
-        localStorage.setItem('likedUsers', JSON.stringify(likedUsers))
-        console.log('喜欢，更新本地存储:', likedUsers)
-        setIsLiked(true)
-        console.log('喜欢用户:', profile?.name)
-      }
     } catch (error) {
       console.error('喜欢操作时出错:', error)
+      alert('操作失败，请重试')
     } finally {
       setLikeLoading(false)
     }

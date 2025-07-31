@@ -401,9 +401,9 @@ export default function Dashboard() {
         return
       }
 
-      const currentUserId = JSON.parse(localStorage.getItem('user') || '{}').id
-      console.log(`📤 [前端] 发送喜欢请求 - 当前用户ID: ${currentUserId}, 目标用户ID: ${currentUser.id}`)
+      console.log(`📤 [前端] 发送喜欢请求 - 目标用户ID: ${currentUser.id}`)
 
+      // 使用 user_matches API
       const response = await fetch('/api/user/matches', {
         method: 'POST',
         headers: {
@@ -416,11 +416,11 @@ export default function Dashboard() {
         })
       })
 
-      console.log(`📡 [前端] API响应状态:`, response.status)
+      console.log(`📡 [前端] user_matches API响应状态:`, response.status)
 
       if (response.ok) {
         const data = await response.json()
-        console.log(`📨 [前端] API响应数据:`, data)
+        console.log(`📨 [前端] user_matches API响应数据:`, data)
         
         if (data.success) {
           if (data.isMatch) {
@@ -430,9 +430,6 @@ export default function Dashboard() {
             alert(`🎉 恭喜！你和${currentUser.name}匹配成功了！`)
           } else {
             console.log(`💌 [前端] 喜欢请求已发送给${currentUser.name}，等待对方回应`)
-            if (data.pendingMatch) {
-              console.log(`📋 [前端] 创建的待匹配记录:`, data.pendingMatch)
-            }
             // 显示友好的提示信息
             const notification = document.createElement('div')
             notification.className = 'fixed top-20 right-4 bg-purple-500 text-white px-6 py-3 rounded-lg shadow-lg z-50'
@@ -443,11 +440,11 @@ export default function Dashboard() {
             }, 3000)
           }
         } else {
-          console.error('❌ [前端] API返回错误:', data.error)
+          console.error('❌ [前端] user_matches API返回错误:', data.error)
           alert('操作失败: ' + data.error)
         }
       } else {
-        console.error('❌ [前端] API请求失败，状态码:', response.status)
+        console.error('❌ [前端] user_matches API请求失败，状态码:', response.status)
         const errorText = await response.text()
         console.error('❌ [前端] 错误详情:', errorText)
         alert('请求失败，请重试')
@@ -508,9 +505,9 @@ export default function Dashboard() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const currentUserId = JSON.parse(localStorage.getItem('user') || '{}').id
-      console.log(`📤 [前端] 发送超级喜欢请求 - 当前用户ID: ${currentUserId}, 目标用户ID: ${currentUser.id}`)
+      console.log(`📤 [前端] 发送超级喜欢请求 - 目标用户ID: ${currentUser.id}`)
 
+      // 使用 user_matches API 发送超级喜欢
       const response = await fetch('/api/user/matches', {
         method: 'POST',
         headers: {
@@ -537,9 +534,6 @@ export default function Dashboard() {
             alert(`🎉 恭喜！你的超级喜欢生效了，你和${currentUser.name}匹配成功！`)
           } else {
             console.log(`⭐ [前端] 超级喜欢请求已发送给${currentUser.name}，等待对方回应`)
-            if (data.pendingMatch) {
-              console.log(`📋 [前端] 创建的超级喜欢待匹配记录:`, data.pendingMatch)
-            }
             // 显示友好的提示信息
             const notification = document.createElement('div')
             notification.className = 'fixed top-20 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50'
