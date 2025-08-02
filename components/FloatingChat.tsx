@@ -30,6 +30,7 @@ const customStyles = `
     width: 100% !important;
     max-width: 100% !important;
     height: 100% !important;
+    overflow-y: auto !important;
   }
   
   .str-chat__message-list-scroll {
@@ -66,6 +67,38 @@ const customStyles = `
   
   .str-chat__channel-messaging__main-panel-inner .str-chat__message-list {
     height: calc(100% - 120px) !important;
+  }
+  
+  .str-chat__message {
+    margin-bottom: 8px !important;
+  }
+  
+  .str-chat__message--received {
+    margin-left: 8px !important;
+  }
+  
+  .str-chat__message--sent {
+    margin-right: 8px !important;
+  }
+  
+  .str-chat__message-bubble--received {
+    background-color: #f3f4f6 !important;
+    color: #374151 !important;
+  }
+  
+  .str-chat__message-bubble--sent {
+    background-color: #ec4899 !important;
+    color: white !important;
+  }
+  
+  .str-chat__message-input {
+    border-top: 1px solid #e5e7eb !important;
+    padding: 12px !important;
+  }
+  
+  .str-chat__channel-header {
+    border-bottom: 1px solid #e5e7eb !important;
+    padding: 12px !important;
   }
 `
 
@@ -192,6 +225,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
     if (!chatClient || !currentUser) return
 
     try {
+      console.log('🔄 开始获取用户频道列表...')
       const userChannels = await chatClient.queryChannels(
         {
           type: 'messaging',
@@ -200,6 +234,14 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
         { last_message_at: -1 },
         { limit: 50 }
       )
+      
+      console.log(`✅ 获取到 ${userChannels.length} 个频道`)
+      console.log('📋 频道详情:', userChannels.map(ch => ({
+        id: ch.id,
+        memberCount: Object.keys(ch.state.members || {}).length,
+        lastMessage: ch.state.last_message?.text || '无消息',
+        unreadCount: ch.count_unread || 0
+      })))
       
       setChannels(userChannels)
       
@@ -215,6 +257,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
         })
         
         if (targetChannel) {
+          console.log('🎯 找到初始用户频道:', targetChannel.id)
           setSelectedChannel(targetChannel)
           setIsMinimized(false)
           return
@@ -223,10 +266,11 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
       
       // 否则选择第一个频道
       if (userChannels.length > 0 && !selectedChannel) {
+        console.log('📌 选择第一个频道:', userChannels[0].id)
         setSelectedChannel(userChannels[0])
       }
     } catch (error) {
-      console.error('获取频道列表失败:', error)
+      console.error('❌ 获取频道列表失败:', error)
     }
   }, [chatClient, currentUser, selectedChannel, initialUserId])
 
@@ -449,7 +493,9 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
                       <Channel channel={selectedChannel}>
                         <Window>
                           <ChannelHeader />
-                          <MessageList />
+                          <div className="flex-1 overflow-hidden">
+                            <MessageList />
+                          </div>
                           <MessageInput />
                         </Window>
                         <Thread />
