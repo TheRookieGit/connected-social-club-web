@@ -415,12 +415,31 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
                     <div className="flex items-center space-x-3">
                       {/* 头像 */}
                       <div className="relative">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold ${
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold overflow-hidden ${
                           selectedConversation?.user.id === conversation.user.id
                             ? 'bg-white text-pink-500'
                             : 'bg-gradient-to-br from-pink-200 to-rose-200 text-pink-600'
                         }`}>
-                          {conversation.user.name.charAt(0)}
+                          {conversation.user.photos && conversation.user.photos.length > 0 && conversation.user.photos[0] && conversation.user.photos[0] !== '/api/placeholder/400/600' ? (
+                            <img 
+                              src={conversation.user.photos[0]} 
+                              alt={conversation.user.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement
+                                target.style.display = 'none'
+                                const fallback = target.nextElementSibling as HTMLElement
+                                if (fallback) {
+                                  fallback.style.display = 'flex'
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <span 
+                            style={{ display: (conversation.user.photos && conversation.user.photos.length > 0 && conversation.user.photos[0] && conversation.user.photos[0] !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
+                          >
+                            {conversation.user.name.charAt(0)}
+                          </span>
                         </div>
                         {conversation.user.isOnline && (
                           <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
@@ -545,8 +564,27 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
                 {/* 聊天头部 */}
                 <div className="flex items-center justify-between p-4 border-b border-pink-100 bg-gradient-to-r from-pink-50 to-rose-50">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-pink-200 to-rose-200 rounded-full flex items-center justify-center text-pink-600 font-semibold">
-                      {selectedConversation.user.name.charAt(0)}
+                    <div className="w-10 h-10 bg-gradient-to-br from-pink-200 to-rose-200 rounded-full flex items-center justify-center text-pink-600 font-semibold overflow-hidden">
+                      {selectedConversation.user.photos && selectedConversation.user.photos.length > 0 && selectedConversation.user.photos[0] && selectedConversation.user.photos[0] !== '/api/placeholder/400/600' ? (
+                        <img 
+                          src={selectedConversation.user.photos[0]} 
+                          alt={selectedConversation.user.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement
+                            target.style.display = 'none'
+                            const fallback = target.nextElementSibling as HTMLElement
+                            if (fallback) {
+                              fallback.style.display = 'flex'
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <span 
+                        style={{ display: (selectedConversation.user.photos && selectedConversation.user.photos.length > 0 && selectedConversation.user.photos[0] && selectedConversation.user.photos[0] !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
+                      >
+                        {selectedConversation.user.name.charAt(0)}
+                      </span>
                     </div>
                     <div>
                       <div className="font-semibold text-gray-900">{selectedConversation.user.name}</div>

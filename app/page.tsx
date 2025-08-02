@@ -10,7 +10,8 @@ import RegisterForm from '@/components/RegisterForm'
 import Footer from '@/components/Footer'
 
 export default function Home() {
-  const [isLogin, setIsLogin] = useState<boolean | null>(null)
+  const [isLogin, setIsLogin] = useState<boolean>(true)
+  const [showAuthModal, setShowAuthModal] = useState<boolean>(false)
 
   useEffect(() => {
     // 检查URL参数来决定显示哪个表单
@@ -139,7 +140,10 @@ export default function Home() {
          >
            {/* 注册按钮 */}
            <button
-             onClick={() => setIsLogin(false)}
+             onClick={() => {
+               setIsLogin(false)
+               setShowAuthModal(true)
+             }}
              className="w-full bg-red-500 text-white py-4 px-6 rounded-xl font-medium text-lg hover:bg-red-600 transition-colors shadow-lg"
            >
              立即注册
@@ -147,7 +151,10 @@ export default function Home() {
            
            {/* 登录按钮 */}
            <button
-             onClick={() => setIsLogin(true)}
+             onClick={() => {
+               setIsLogin(true)
+               setShowAuthModal(true)
+             }}
              className="w-full bg-white text-red-500 py-4 px-6 rounded-xl font-medium text-lg border-2 border-red-500 hover:bg-red-50 transition-colors shadow-lg"
            >
              已有账号？立即登录
@@ -156,7 +163,7 @@ export default function Home() {
        </div>
 
        {/* 登录注册表单部分 - 条件渲染 */}
-       {isLogin !== null && (
+       {showAuthModal && (
          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
            <motion.div
              initial={{ opacity: 0, scale: 0.9 }}
@@ -166,7 +173,7 @@ export default function Home() {
            >
              {/* 关闭按钮 */}
              <button
-               onClick={() => setIsLogin(null)}
+               onClick={() => setShowAuthModal(false)}
                className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
              >
                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">

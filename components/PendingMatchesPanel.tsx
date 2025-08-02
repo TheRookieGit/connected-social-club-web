@@ -230,8 +230,26 @@ export default function PendingMatchesPanel({ onClose, onMatchAccepted }: Pendin
                     {/* 用户信息头部 */}
                     <div className="flex items-center space-x-4 mb-4">
                       <div className="relative">
-                        <div className="w-16 h-16 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full flex items-center justify-center">
-                          <span className="text-purple-600 font-bold text-xl">
+                        <div className="w-16 h-16 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full flex items-center justify-center overflow-hidden">
+                          {user.avatar_url && user.avatar_url !== '/api/placeholder/400/600' ? (
+                            <img 
+                              src={user.avatar_url} 
+                              alt={user.name}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                const target = e.currentTarget as HTMLImageElement
+                                target.style.display = 'none'
+                                const fallback = target.nextElementSibling as HTMLElement
+                                if (fallback) {
+                                  fallback.style.display = 'flex'
+                                }
+                              }}
+                            />
+                          ) : null}
+                          <span 
+                            className="text-purple-600 font-bold text-xl"
+                            style={{ display: (user.avatar_url && user.avatar_url !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
+                          >
                             {user.name.charAt(0)}
                           </span>
                         </div>

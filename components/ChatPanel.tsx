@@ -465,8 +465,26 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                     >
                       <div className="flex items-center space-x-3">
                         <div className="relative">
-                          <div className="w-12 h-12 bg-gradient-to-br from-red-200 to-pink-200 rounded-full flex items-center justify-center">
-                            <span className="text-red-600 font-semibold text-lg">
+                          <div className="w-12 h-12 bg-gradient-to-br from-red-200 to-pink-200 rounded-full flex items-center justify-center overflow-hidden">
+                            {user.photos && user.photos.length > 0 && user.photos[0] && user.photos[0] !== '/api/placeholder/400/600' ? (
+                              <img 
+                                src={user.photos[0]} 
+                                alt={user.name}
+                                className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  const target = e.currentTarget as HTMLImageElement
+                                  target.style.display = 'none'
+                                  const fallback = target.nextElementSibling as HTMLElement
+                                  if (fallback) {
+                                    fallback.style.display = 'flex'
+                                  }
+                                }}
+                              />
+                            ) : null}
+                            <span 
+                              className="text-red-600 font-semibold text-lg"
+                              style={{ display: (user.photos && user.photos.length > 0 && user.photos[0] && user.photos[0] !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
+                            >
                               {user.name.charAt(0)}
                             </span>
                           </div>
@@ -509,8 +527,27 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                 {/* 聊天头部 */}
                 <div className="flex items-center justify-between p-4 border-b bg-white">
                   <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-semibold">
-                      {selectedUser.name.charAt(0).toUpperCase()}
+                    <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden">
+                      {selectedUser.photos && selectedUser.photos.length > 0 && selectedUser.photos[0] && selectedUser.photos[0] !== '/api/placeholder/400/600' ? (
+                        <img 
+                          src={selectedUser.photos[0]} 
+                          alt={selectedUser.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement
+                            target.style.display = 'none'
+                            const fallback = target.nextElementSibling as HTMLElement
+                            if (fallback) {
+                              fallback.style.display = 'flex'
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <span 
+                        style={{ display: (selectedUser.photos && selectedUser.photos.length > 0 && selectedUser.photos[0] && selectedUser.photos[0] !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
+                      >
+                        {selectedUser.name.charAt(0).toUpperCase()}
+                      </span>
                     </div>
                     <div>
                       <div className="font-semibold">{selectedUser.name}</div>
