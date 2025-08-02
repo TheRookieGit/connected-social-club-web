@@ -36,7 +36,7 @@ function calculateAge(birthDate: string) {
   return age
 }
 
-// 获取男性用户like过的用户列表
+// 获取用户like过的用户列表（对所有用户开放）
 export async function GET(request: NextRequest) {
   try {
     const supabase = createSupabaseClient()
@@ -57,9 +57,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    console.log('🔍 [男性喜欢API] 用户ID:', decoded.userId)
+    console.log('🔍 [喜欢列表API] 用户ID:', decoded.userId)
     
-    // 首先验证当前用户是否为男性
+    // 获取当前用户信息（用于显示用户信息，不再限制性别）
     const { data: currentUser, error: userError } = await supabase
       .from('users')
       .select('id, name, gender')
@@ -67,7 +67,7 @@ export async function GET(request: NextRequest) {
       .single()
 
     if (userError) {
-      console.error('❌ [男性喜欢API] 获取用户信息失败:', userError)
+      console.error('❌ [喜欢列表API] 获取用户信息失败:', userError)
       return NextResponse.json(
         { success: false, error: '获取用户信息失败' },
         { status: 500 }
@@ -75,23 +75,14 @@ export async function GET(request: NextRequest) {
     }
 
     if (!currentUser) {
-      console.error('❌ [男性喜欢API] 用户不存在')
+      console.error('❌ [喜欢列表API] 用户不存在')
       return NextResponse.json(
         { success: false, error: '用户不存在' },
         { status: 404 }
       )
     }
 
-    // 检查用户性别
-    if (currentUser.gender !== '男' && currentUser.gender !== 'male') {
-      console.log(`❌ [男性喜欢API] 用户 ${currentUser.name} (${currentUser.gender}) 不是男性，拒绝访问`)
-      return NextResponse.json(
-        { success: false, error: '此功能仅对男性用户开放' },
-        { status: 403 }
-      )
-    }
-
-    console.log(`✅ [男性喜欢API] 用户 ${currentUser.name} 是男性，允许访问`)
+    console.log(`✅ [喜欢列表API] 用户 ${currentUser.name} (${currentUser.gender}) 访问喜欢列表`)
 
     // 获取当前用户like过的所有用户（包括pending和accepted状态）
     const { data: likedUsers, error: likedError } = await supabase
@@ -101,10 +92,10 @@ export async function GET(request: NextRequest) {
       .in('match_status', ['pending', 'accepted'])
       .order('created_at', { ascending: false })
 
-    console.log('🔍 [男性喜欢API] 喜欢查询结果:', { likedUsers, likedError })
+    console.log('🔍 [喜欢列表API] 喜欢查询结果:', { likedUsers, likedError })
 
     if (likedError) {
-      console.error('❌ [男性喜欢API] 获取喜欢记录错误:', likedError)
+      console.error('❌ [喜欢列表API] 获取喜欢记录错误:', likedError)
       return NextResponse.json(
         { success: false, error: '获取喜欢记录失败' },
         { status: 500 }
@@ -112,7 +103,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!likedUsers || likedUsers.length === 0) {
-      console.log('📭 [男性喜欢API] 没有找到喜欢过的用户')
+      console.log('📭 [喜欢列表API] 没有找到喜欢过的用户')
       return NextResponse.json({
         success: true,
         likedUsers: [],
@@ -128,14 +119,14 @@ export async function GET(request: NextRequest) {
       .in('id', likedUserIds)
 
     if (usersError) {
-      console.error('❌ [男性喜欢API] 获取用户信息错误:', usersError)
+      console.error('❌ [喜欢列表API] 获取用户信息错误:', usersError)
       return NextResponse.json(
         { success: false, error: '获取用户信息失败' },
         { status: 500 }
       )
     }
 
-    console.log('👥 [男性喜欢API] 获取到的用户数据:', likedUsersData)
+    console.log('👥 [喜欢列表API] 获取到的用户数据:', likedUsersData)
 
     // 格式化用户数据，包含匹配状态
     const formattedUsers = likedUsersData?.map(user => {
@@ -161,8 +152,8 @@ export async function GET(request: NextRequest) {
         matchScore: Math.round((matchInfo?.match_score || 0) * 100),
         likedAt: matchInfo?.created_at,
         matchStatus: matchInfo?.match_status || 'pending',
-        // 男性用户无法知道对方是否也喜欢自己，除非对方发消息
-        canStartChat: false, // 男性不能主动开始对话
+        // 根据用户性别决定是否可以开始对话
+        canStartChat: currentUser.gender === '女' || currentUser.gender === 'female',
         hasReceivedMessage: false // 这个状态需要通过消息查询来确定
       }
     }) || []
@@ -170,7 +161,7 @@ export async function GET(request: NextRequest) {
     // 按喜欢时间排序（最新的在前）
     formattedUsers.sort((a, b) => new Date(b.likedAt).getTime() - new Date(a.likedAt).getTime())
 
-    console.log('✅ [男性喜欢API] 格式化后的用户:', formattedUsers)
+    console.log('✅ [喜欢列表API] 格式化后的用户:', formattedUsers)
 
     // 记录活动日志
     await supabase
@@ -188,7 +179,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('❌ [男性喜欢API] 获取喜欢用户错误:', error)
+    console.error('❌ [喜欢列表API] 获取喜欢用户错误:', error)
     return NextResponse.json(
       { success: false, error: '服务器错误' },
       { status: 500 }

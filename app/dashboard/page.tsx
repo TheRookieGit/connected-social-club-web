@@ -853,17 +853,20 @@ export default function Dashboard() {
                 </motion.button>
               )}
 
-              {(currentUser?.gender === '男' || currentUser?.gender === 'male') && (
-                <motion.button
-                  onClick={() => router.push('/male-likes')}
-                  className="relative p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors shadow-lg"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  title="我的喜欢"
-                >
-                  <Heart size={20} />
-                </motion.button>
-              )}
+              {/* 喜欢列表按钮 - 所有用户都可以访问 */}
+              <motion.button
+                onClick={() => router.push('/liked-users')}
+                className={`relative p-3 rounded-full transition-colors shadow-lg ${
+                  (currentUser?.gender === '女' || currentUser?.gender === 'female')
+                    ? 'bg-purple-500 text-white hover:bg-purple-600'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="我的喜欢"
+              >
+                <Heart size={20} />
+              </motion.button>
 
 
               

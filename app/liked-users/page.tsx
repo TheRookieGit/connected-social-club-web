@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { Heart, MapPin, Clock, User, AlertCircle, Eye } from 'lucide-react'
+import { Heart, MapPin, Clock, User, AlertCircle, Eye, MessageCircle } from 'lucide-react'
 
 interface LikedUser {
   id: number
@@ -22,7 +22,7 @@ interface LikedUser {
   hasReceivedMessage: boolean
 }
 
-export default function MaleLikesPage() {
+export default function LikedUsersPage() {
   const [currentUser, setCurrentUser] = useState<any>(null)
   const [likedUsers, setLikedUsers] = useState<LikedUser[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,20 +42,13 @@ export default function MaleLikesPage() {
     const userData = JSON.parse(user)
     setCurrentUser(userData)
     
-    // 验证用户性别
-    if (userData.gender !== '男' && userData.gender !== 'male') {
-      setError('此功能仅对男性用户开放')
-      setLoading(false)
-      return
-    }
-    
     loadLikedUsers(token)
   }, [router])
 
   const loadLikedUsers = async (token: string) => {
     try {
       setLoading(true)
-      const response = await fetch('/api/user/liked-by-male', {
+      const response = await fetch('/api/user/liked-users', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -118,6 +111,8 @@ export default function MaleLikesPage() {
     }
   }
 
+  const isFemale = currentUser?.gender === '女' || currentUser?.gender === 'female'
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -179,14 +174,18 @@ export default function MaleLikesPage() {
 
       {/* 说明卡片 */}
       <div className="max-w-4xl mx-auto px-4 py-6">
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className={`border rounded-lg p-4 mb-6 ${isFemale ? 'bg-pink-50 border-pink-200' : 'bg-blue-50 border-blue-200'}`}>
           <div className="flex items-start space-x-3">
-            <Eye className="text-blue-500 mt-0.5" size={20} />
+            <Eye className={`mt-0.5 ${isFemale ? 'text-pink-500' : 'text-blue-500'}`} size={20} />
             <div>
-              <h3 className="font-medium text-blue-900 mb-1">男性用户须知</h3>
-              <p className="text-sm text-blue-700">
-                在这里你可以看到所有你喜欢的用户。如果对方也喜欢了你，你们就会匹配成功。
-                只有女性用户可以主动开始对话，你需要等待对方发消息给你。
+              <h3 className={`font-medium mb-1 ${isFemale ? 'text-pink-900' : 'text-blue-900'}`}>
+                {isFemale ? '女性用户须知' : '男性用户须知'}
+              </h3>
+              <p className={`text-sm ${isFemale ? 'text-pink-700' : 'text-blue-700'}`}>
+                {isFemale 
+                  ? '在这里你可以看到所有你喜欢的用户。如果对方也喜欢了你，你们就会匹配成功。作为女性用户，你可以主动开始对话。'
+                  : '在这里你可以看到所有你喜欢的用户。如果对方也喜欢了你，你们就会匹配成功。只有女性用户可以主动开始对话，你需要等待对方发消息给你。'
+                }
               </p>
             </div>
           </div>
@@ -284,9 +283,18 @@ export default function MaleLikesPage() {
                         <p className="text-sm text-green-700 font-medium mb-1">
                           🎉 匹配成功！
                         </p>
-                        <p className="text-xs text-gray-600">
-                          等待对方开始对话
-                        </p>
+                        {isFemale ? (
+                          <button
+                            onClick={() => router.push(`/female-matches`)}
+                            className="text-xs text-blue-600 hover:text-blue-800 underline"
+                          >
+                            去开始对话
+                          </button>
+                        ) : (
+                          <p className="text-xs text-gray-600">
+                            等待对方开始对话
+                          </p>
+                        )}
                       </div>
                     ) : (
                       <div className="text-center">
