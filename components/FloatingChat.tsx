@@ -239,7 +239,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
       console.log('📋 频道详情:', userChannels.map(ch => ({
         id: ch.id,
         memberCount: Object.keys(ch.state.members || {}).length,
-        lastMessage: ch.state.last_message?.text || '无消息',
+        lastMessage: (ch.state as any).last_message?.text || '无消息',
         unreadCount: ch.count_unread || 0
       })))
       
@@ -332,7 +332,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
     const otherUserId = memberIds.find(id => id !== currentUser.id.toString())
     
     if (otherUserId) {
-      const member = channel.state.members[otherUserId]
+      const member = (channel.state.members as any)[otherUserId]
       return {
         id: otherUserId,
         name: member.user?.name || `用户${otherUserId}`,
@@ -429,7 +429,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
                       {channels.length > 0 ? (
                         channels.map((channel) => {
                           const otherUser = getOtherUser(channel)
-                          const lastMessage = channel.state.last_message
+                          const lastMessage = (channel.state as any).last_message
                           const isSelected = selectedChannel?.id === channel.id
                           
                           return (
