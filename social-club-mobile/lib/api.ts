@@ -1,251 +1,407 @@
 import AsyncStorage from '@react-native-async-storage/async-storage'
 
-const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:3000'
+// 使用与web端相同的API基础URL
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_BASE_URL || 'https://your-domain.com/api'
 
-// Token管理
-export const TokenManager = {
-  async getToken(): Promise<string | null> {
+// 与web端相同的API类
+export class UserAPI {
+  // 登录
+  static async login(email: string, password: string) {
     try {
-      return await AsyncStorage.getItem('auth_token')
-    } catch (error) {
-      console.error('获取token失败:', error)
-      return null
-    }
-  },
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      })
 
-  async setToken(token: string): Promise<void> {
-    try {
-      await AsyncStorage.setItem('auth_token', token)
+      const data = await response.json()
+      return data
     } catch (error) {
-      console.error('保存token失败:', error)
-    }
-  },
-
-  async removeToken(): Promise<void> {
-    try {
-      await AsyncStorage.removeItem('auth_token')
-    } catch (error) {
-      console.error('删除token失败:', error)
+      console.error('登录失败:', error)
+      return { success: false, error: '网络错误' }
     }
   }
-}
 
-// HTTP请求封装
-class ApiService {
-  private async request<T>(
-    endpoint: string,
-    options: RequestInit = {}
-  ): Promise<T> {
-    const token = await TokenManager.getToken()
-    
-    const config: RequestInit = {
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-        ...options.headers,
-      },
-    }
-
+  // 注册
+  static async register(userData: any) {
     try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, config)
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `HTTP ${response.status}`)
+      const response = await fetch(`${API_BASE_URL}/auth/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(userData),
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('注册失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
+
+  // LinkedIn登录
+  static async linkedinLogin() {
+    try {
+      // 在移动端，我们需要使用WebView或深度链接来处理LinkedIn OAuth
+      // 这里返回LinkedIn OAuth URL
+      return { 
+        success: true, 
+        oauthUrl: `${API_BASE_URL}/auth/linkedin` 
       }
-
-      return await response.json()
     } catch (error) {
-      console.error(`API请求失败 ${endpoint}:`, error)
-      throw error
+      console.error('LinkedIn登录失败:', error)
+      return { success: false, error: 'LinkedIn登录失败' }
     }
   }
 
-  // GET请求
-  async get<T>(endpoint: string): Promise<T> {
-    return this.request<T>(endpoint, { method: 'GET' })
-  }
-
-  // POST请求
-  async post<T>(endpoint: string, data?: any): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
-    })
-  }
-
-  // PUT请求
-  async put<T>(endpoint: string, data?: any): Promise<T> {
-    return this.request<T>(endpoint, {
-      method: 'PUT',
-      body: data ? JSON.stringify(data) : undefined,
-    })
-  }
-
-  // FormData上传
-  async uploadFormData<T>(endpoint: string, formData: FormData): Promise<T> {
-    const token = await TokenManager.getToken()
-    
-    const config: RequestInit = {
-      method: 'POST',
-      headers: {
-        ...(token && { 'Authorization': `Bearer ${token}` }),
-      },
-      body: formData,
-    }
-
-    try {
-      const response = await fetch(`${API_BASE_URL}${endpoint}`, config)
-      
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
-        throw new Error(errorData.error || `HTTP ${response.status}`)
-      }
-
-      return await response.json()
-    } catch (error) {
-      console.error(`上传请求失败 ${endpoint}:`, error)
-      throw error
-    }
-  }
-}
-
-export const api = new ApiService()
-
-// 认证API
-export const AuthAPI = {
-  async login(email: string, password: string) {
-    return api.post('/api/auth/login', { email, password })
-  },
-
-  async register(userData: {
-    name: string
-    email: string
-    password: string
-    phone?: string
-    age?: string
-    gender?: string
-  }) {
-    return api.post('/api/auth/register', userData)
-  },
-
-  async sendEmailCode(email: string) {
-    return api.post('/api/auth/send-email-code', { email })
-  },
-
-  async verifyEmailCode(email: string, code: string) {
-    return api.put('/api/auth/send-email-code', { email, code })
-  }
-}
-
-// 用户API
-export const UserAPI = {
   // 获取推荐用户
-  async getRecommendedUsers(limit = 10, offset = 0) {
-    return api.get(`/api/user/matches?limit=${limit}&offset=${offset}`)
-  },
+  static async getRecommendedUsers(limit = 10, offset = 0) {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
 
-  // 获取用户资料
-  async getProfile() {
-    return api.get('/api/user/profile')
-  },
+      const response = await fetch(`${API_BASE_URL}/user/search?limit=${limit}&offset=${offset}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
 
-  // 获取其他用户资料
-  async getUserProfile(userId: string) {
-    return api.get(`/api/user/profile/${userId}`)
-  },
-
-  // 更新用户资料
-  async updateProfile(profileData: any) {
-    return api.put('/api/user/profile', profileData)
-  },
-
-  // 搜索用户
-  async searchUsers(query: string, limit = 10) {
-    return api.get(`/api/user/search?q=${encodeURIComponent(query)}&limit=${limit}`)
-  },
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('获取推荐用户失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
 
   // 获取已匹配用户
-  async getMatchedUsers() {
-    return api.get('/api/user/matched-users')
-  },
+  static async getMatchedUsers() {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
 
-  // 获取已点赞用户
-  async getLikedUsers() {
-    return api.get('/api/user/liked-users')
-  },
+      const response = await fetch(`${API_BASE_URL}/user/matched-users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
 
-  // 点赞用户
-  async likeUser(userId: string, action: 'like' | 'pass' | 'super_like') {
-    return api.post('/api/user/matches', { matchedUserId: userId, action })
-  },
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('获取匹配用户失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
 
-  // 检查匹配状态
-  async checkMatchStatus(userId: string) {
-    return api.get(`/api/user/check-match-status/${userId}`)
-  },
+  // 喜欢用户
+  static async likeUser(userId: string) {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
 
-  // 更新位置
-  async updateLocation(latitude: number, longitude: number, address?: string) {
-    return api.post('/api/user/location', { latitude, longitude, address })
-  },
+      const response = await fetch(`${API_BASE_URL}/user/like/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('喜欢用户失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
+
+  // 取消喜欢
+  static async unlikeUser(userId: string) {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
+
+      const response = await fetch(`${API_BASE_URL}/user/unlike/${userId}`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('取消喜欢失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
+
+  // 获取用户资料
+  static async getUserProfile() {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
+
+      const response = await fetch(`${API_BASE_URL}/user/profile`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('获取用户资料失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
+
+  // 更新用户资料
+  static async updateUserProfile(profileData: any) {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
+
+      const response = await fetch(`${API_BASE_URL}/user/profile`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(profileData)
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('更新用户资料失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
 
   // 上传头像
-  async uploadAvatar(imageUri: string) {
-    const formData = new FormData()
-    formData.append('avatar', {
-      uri: imageUri,
-      type: 'image/jpeg',
-      name: 'avatar.jpg',
-    } as any)
+  static async uploadAvatar(imageUri: string) {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
 
-    return api.uploadFormData('/api/user/upload-avatar', formData)
-  },
+      const formData = new FormData()
+      formData.append('avatar', {
+        uri: imageUri,
+        type: 'image/jpeg',
+        name: 'avatar.jpg'
+      } as any)
+
+      const response = await fetch(`${API_BASE_URL}/user/upload-avatar`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        },
+        body: formData
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('上传头像失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
 
   // 上传照片
-  async uploadPhotos(imageUris: string[]) {
-    const formData = new FormData()
-    
-    imageUris.forEach((uri, index) => {
-      formData.append('photos', {
-        uri: uri,
-        type: 'image/jpeg',
-        name: `photo_${index}.jpg`,
-      } as any)
-    })
+  static async uploadPhotos(imageUris: string[]) {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
 
-    return api.uploadFormData('/api/user/upload-photos', formData)
+      const formData = new FormData()
+      imageUris.forEach((uri, index) => {
+        formData.append('photos', {
+          uri: uri,
+          type: 'image/jpeg',
+          name: `photo_${index}.jpg`
+        } as any)
+      })
+
+      const response = await fetch(`${API_BASE_URL}/user/upload-photos`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'multipart/form-data'
+        },
+        body: formData
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('上传照片失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
+
+  // 更新位置
+  static async updateLocation(locationData: any) {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
+
+      const response = await fetch(`${API_BASE_URL}/user/location`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(locationData)
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('更新位置失败:', error)
+      return { success: false, error: '网络错误' }
+    }
   }
 }
 
-// 消息API
-export const MessageAPI = {
+// 聊天API类
+export class ChatAPI {
+  // 获取Stream Chat令牌
+  static async getStreamToken() {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
+
+      const response = await fetch(`${API_BASE_URL}/stream/token`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('获取Stream token失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
+
+  // 获取对话列表
+  static async getConversations() {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
+
+      const response = await fetch(`${API_BASE_URL}/messages/conversation`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('获取对话列表失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
+
   // 发送消息
-  async sendMessage(receiverId: string, message: string, messageType = 'text') {
-    return api.post('/api/messages/send', { receiverId, message, messageType })
-  },
+  static async sendMessage(recipientId: string, message: string) {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
 
-  // 获取聊天记录
-  async getConversation(userId: string, limit = 100, offset = 0) {
-    return api.get(`/api/messages/conversation?userId=${userId}&limit=${limit}&offset=${offset}`)
-  },
+      const response = await fetch(`${API_BASE_URL}/messages/send`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recipient_id: recipientId,
+          message: message
+        })
+      })
 
-  // 检查新消息
-  async checkNewMessages() {
-    return api.get('/api/messages/check-new')
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('发送消息失败:', error)
+      return { success: false, error: '网络错误' }
+    }
+  }
+
+  // 开始对话
+  static async startConversation(recipientId: string) {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) {
+        return { success: false, error: '未登录' }
+      }
+
+      const response = await fetch(`${API_BASE_URL}/user/start-conversation`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          recipient_id: recipientId
+        })
+      })
+
+      const data = await response.json()
+      return data
+    } catch (error) {
+      console.error('开始对话失败:', error)
+      return { success: false, error: '网络错误' }
+    }
   }
 }
 
-// 通用错误处理
-export const handleApiError = (error: any): string => {
-  if (error?.message) {
-    return error.message
+// 通用错误处理函数
+export function handleApiError(error: any) {
+  console.error('API错误:', error)
+  if (error.response) {
+    return error.response.data?.error || '服务器错误'
   }
-  
-  if (typeof error === 'string') {
-    return error
-  }
-  
-  return '网络错误，请稍后重试'
+  return '网络错误，请检查网络连接'
 }

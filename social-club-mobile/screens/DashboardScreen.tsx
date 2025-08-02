@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import {
   View,
   Text,
@@ -9,11 +9,13 @@ import {
   Alert,
   Dimensions,
   StatusBar,
+  Animated,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Ionicons } from '@expo/vector-icons'
+import { UserAPI, ChatAPI } from '../lib/api'
 import { UserProfile, RecommendedUser } from '../types/user'
-import { UserAPI, handleApiError } from '../lib/api'
 
 const { width, height } = Dimensions.get('window')
 
@@ -23,13 +25,23 @@ export default function DashboardScreen() {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
-  const [showChat, setShowChat] = useState(false)
   const [matchedUsers, setMatchedUsers] = useState<RecommendedUser[]>([])
+  const [pendingMatchesCount, setPendingMatchesCount] = useState(0)
+  const [showChat, setShowChat] = useState(false)
+  const [showProfile, setShowProfile] = useState(false)
+  const [showPendingMatches, setShowPendingMatches] = useState(false)
+
+  // 动画相关
+  const translateX = useRef(new Animated.Value(0)).current
+  const translateY = useRef(new Animated.Value(0)).current
+  const scale = useRef(new Animated.Value(1)).current
+  const rotate = useRef(new Animated.Value(0)).current
 
   useEffect(() => {
     fetchUsers()
     fetchCurrentUser()
     fetchMatchedUsers()
+    fetchPendingMatchesCount()
   }, [])
 
   const fetchCurrentUser = async () => {
@@ -54,6 +66,27 @@ export default function DashboardScreen() {
     }
   }
 
+  const fetchPendingMatchesCount = async () => {
+    try {
+      const token = await AsyncStorage.getItem('token')
+      if (!token) return
+
+      const response = await fetch(`${UserAPI.API_BASE_URL}/user/pending-matches`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setPendingMatchesCount(data.count || 0)
+      }
+    } catch (error) {
+      console.error('获取待处理匹配数量失败:', error)
+    }
+  }
+
   const fetchUsers = async () => {
     try {
       setIsLoading(true)
@@ -70,6 +103,26 @@ export default function DashboardScreen() {
           interests: user.interests || [],
           photos: user.photos || ['https://picsum.photos/400/600?random=' + user.id],
           isOnline: user.is_online || false,
+          // 扩展的个人资料字段
+          occupation: user.occupation,
+          education: user.education,
+          relationship_status: user.relationship_status,
+          height: user.height,
+          weight: user.weight,
+          ethnicity: user.ethnicity,
+          religion: user.religion,
+          employer: user.employer,
+          school: user.school,
+          degree: user.degree,
+          values_preferences: user.values_preferences,
+          personality_type: user.personality_type,
+          languages: user.languages,
+          family_plans: user.family_plans,
+          has_kids: user.has_kids,
+          smoking_status: user.smoking_status,
+          drinking_status: user.drinking_status,
+          dating_style: user.dating_style,
+          relationship_goals: user.relationship_goals,
         }))
         
         setUsers(formattedUsers)
@@ -100,8 +153,8 @@ export default function DashboardScreen() {
         setUsers(mockUsers)
       }
     } catch (error) {
-      console.error('获取用户失败:', error)
-      // 网络错误时显示备用数据
+      console.error('获取推荐用户失败:', error)
+      // 使用备用数据
       const mockUsers: RecommendedUser[] = [
         {
           id: '1',
@@ -112,16 +165,24 @@ export default function DashboardScreen() {
           interests: ['摄影', '旅游', '美食', '电影'],
           photos: ['https://picsum.photos/400/600?random=1'],
           isOnline: true,
+        },
+        {
+          id: '2',
+          name: '李四',
+          age: 28,
+          location: '上海',
+          bio: '热爱运动和音乐，性格开朗外向。',
+          interests: ['运动', '音乐', '电影', '咖啡'],
+          photos: ['https://picsum.photos/400/600?random=2'],
+          isOnline: false,
         }
       ]
       setUsers(mockUsers)
-      Alert.alert('提示', '网络连接异常，显示离线数据')
     } finally {
       setIsLoading(false)
     }
   }
 
-  // 计算年龄的辅助函数
   const calculateAge = (birthDate: string): number => {
     const today = new Date()
     const birth = new Date(birthDate)
@@ -137,103 +198,121 @@ export default function DashboardScreen() {
 
   const handleLike = async (userId: string) => {
     try {
-      console.log('点赞用户:', userId)
-      const response = await UserAPI.likeUser(userId, 'like')
+      const response = await UserAPI.likeUser(userId)
       
       if (response.success) {
+        // 检查是否匹配
         if (response.isMatch) {
-          Alert.alert('恭喜！', '你们互相喜欢，成功匹配！🎉', [
-            { text: '查看匹配', onPress: openChat },
-            { text: '继续浏览', onPress: nextUser }
-          ])
+          Alert.alert(
+            '🎉 匹配成功！',
+            `你和 ${users[currentIndex]?.name} 互相喜欢对方！`,
+            [
+              { text: '开始聊天', onPress: () => openChat(userId) },
+              { text: '继续浏览', onPress: () => nextUser() }
+            ]
+          )
         } else {
-          Alert.alert('成功', '已点赞！')
-          nextUser()
+          Alert.alert('已喜欢', `你已喜欢了 ${users[currentIndex]?.name}`)
         }
-      } else {
-        Alert.alert('提示', response.error || '操作失败')
+        
         nextUser()
+      } else {
+        Alert.alert('错误', response.error || '操作失败')
       }
     } catch (error) {
-      console.error('点赞失败:', error)
-      Alert.alert('错误', handleApiError(error))
-      nextUser()
+      console.error('喜欢用户失败:', error)
+      Alert.alert('错误', '网络错误，请重试')
     }
   }
 
   const handlePass = async () => {
     try {
-      if (users.length > 0) {
-        const userId = users[currentIndex]?.id
-        if (userId) {
-          await UserAPI.likeUser(userId, 'pass')
-        }
+      const response = await UserAPI.unlikeUser(users[currentIndex]?.id || '')
+      
+      if (response.success) {
+        Alert.alert('已跳过', `你已跳过了 ${users[currentIndex]?.name}`)
+        nextUser()
+      } else {
+        Alert.alert('错误', response.error || '操作失败')
       }
-      nextUser()
     } catch (error) {
-      console.error('跳过失败:', error)
-      nextUser()
+      console.error('跳过用户失败:', error)
+      Alert.alert('错误', '网络错误，请重试')
     }
   }
 
   const handleSuperLike = async (userId: string) => {
     try {
-      console.log('超级点赞用户:', userId)
-      const response = await UserAPI.likeUser(userId, 'super_like')
-      
-      if (response.success) {
-        if (response.isMatch) {
-          Alert.alert('恭喜！', '超级匹配成功！你们互相喜欢！🌟🎉', [
-            { text: '查看匹配', onPress: openChat },
-            { text: '继续浏览', onPress: nextUser }
-          ])
-        } else {
-          Alert.alert('成功', '已超级点赞！⭐')
-          nextUser()
-        }
-      } else {
-        Alert.alert('提示', response.error || '操作失败')
-        nextUser()
-      }
-    } catch (error) {
-      console.error('超级点赞失败:', error)
-      Alert.alert('错误', handleApiError(error))
+      // 这里需要实现超级喜欢逻辑
+      Alert.alert('超级喜欢', `你超级喜欢了 ${users[currentIndex]?.name}！`)
       nextUser()
+    } catch (error) {
+      console.error('超级喜欢失败:', error)
+      Alert.alert('错误', '网络错误，请重试')
     }
   }
 
   const nextUser = () => {
     if (currentIndex < users.length - 1) {
       setCurrentIndex(currentIndex + 1)
+      // 重置动画
+      translateX.setValue(0)
+      translateY.setValue(0)
+      scale.setValue(1)
+      rotate.setValue(0)
     } else {
-      // 加载更多用户
-      fetchUsers()
+      // 重新加载用户
       setCurrentIndex(0)
+      fetchUsers()
     }
   }
 
-  const openChat = () => {
-    navigation.navigate('Matches')
+  const openChat = (userId?: string) => {
+    setShowChat(true)
+    // 这里可以传递特定的用户ID来打开聊天
   }
 
   const openProfile = () => {
-    navigation.navigate('Profile')
+    setShowProfile(true)
   }
+
+  const openPendingMatches = () => {
+    setShowPendingMatches(true)
+  }
+
+  const handleLogout = async () => {
+    Alert.alert(
+      '确认退出',
+      '确定要退出登录吗？',
+      [
+        { text: '取消', style: 'cancel' },
+        {
+          text: '确定',
+          style: 'destructive',
+          onPress: async () => {
+            await AsyncStorage.removeItem('token')
+            await AsyncStorage.removeItem('user_info')
+            navigation.navigate('Login' as never)
+          }
+        }
+      ]
+    )
+  }
+
+  const currentUserData = users[currentIndex]
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#FF69B4" />
-        <Text style={styles.loadingText}>加载中...</Text>
+        <Text style={styles.loadingText}>正在加载推荐用户...</Text>
       </View>
     )
   }
 
-  if (users.length === 0) {
+  if (!currentUserData) {
     return (
       <View style={styles.emptyContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#FF69B4" />
-        <Text style={styles.emptyText}>暂无推荐用户</Text>
+        <Text style={styles.emptyText}>暂时没有更多推荐用户</Text>
         <TouchableOpacity style={styles.refreshButton} onPress={fetchUsers}>
           <Text style={styles.refreshButtonText}>刷新</Text>
         </TouchableOpacity>
@@ -241,77 +320,135 @@ export default function DashboardScreen() {
     )
   }
 
-  const currentUserData = users[currentIndex]
-
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#FF69B4" />
+      <StatusBar barStyle="light-content" backgroundColor="#EF4444" />
       
       {/* 顶部导航栏 */}
       <View style={styles.header}>
         <TouchableOpacity style={styles.headerButton} onPress={openProfile}>
-          <Text style={styles.headerButtonText}>👤</Text>
+          <Ionicons name="person" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         
-        <Text style={styles.headerTitle}>Social Club</Text>
+        <View style={styles.headerTitle}>
+          <Ionicons name="heart" size={24} color="#FFFFFF" />
+          <Text style={styles.headerTitleText}>ConnectEd</Text>
+        </View>
         
         <TouchableOpacity style={styles.headerButton} onPress={openChat}>
-          <Text style={styles.headerButtonText}>💬</Text>
+          <Ionicons name="chatbubbles" size={24} color="#FFFFFF" />
+          {matchedUsers.length > 0 && (
+            <View style={styles.badge}>
+              <Text style={styles.badgeText}>{matchedUsers.length}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
       {/* 主要内容区域 */}
-      <View style={styles.content}>
-        <View style={styles.userCard}>
-          <Image
-            source={{ uri: currentUserData.photos[0] }}
-            style={styles.userImage}
-            resizeMode="cover"
-          />
-          
-          <View style={styles.userInfo}>
-            <View style={styles.userHeader}>
-              <Text style={styles.userName}>
-                {currentUserData.name}, {currentUserData.age}
-              </Text>
-              <View style={[styles.onlineIndicator, { backgroundColor: currentUserData.isOnline ? '#4CAF50' : '#ccc' }]} />
-            </View>
+      <View style={styles.mainContent}>
+        {/* 用户卡片 */}
+        <Animated.View
+          style={[
+            styles.userCard,
+            {
+              transform: [
+                { translateX },
+                { translateY },
+                { scale }
+              ]
+            }
+          ]}
+        >
+            <Image
+              source={{ uri: currentUserData.photos[0] }}
+              style={styles.userImage}
+              resizeMode="cover"
+            />
             
-            <Text style={styles.userLocation}>📍 {currentUserData.location}</Text>
-            <Text style={styles.userBio}>{currentUserData.bio}</Text>
-            
-            <View style={styles.interestsContainer}>
-              {currentUserData.interests.map((interest, index) => (
-                <View key={index} style={styles.interestTag}>
-                  <Text style={styles.interestText}>{interest}</Text>
+            {/* 用户信息覆盖层 */}
+            <View style={styles.userInfo}>
+              <View style={styles.userBasicInfo}>
+                <Text style={styles.userName}>
+                  {currentUserData.name}, {currentUserData.age}
+                </Text>
+                <View style={styles.userLocation}>
+                  <Ionicons name="location" size={16} color="#FFFFFF" />
+                  <Text style={styles.locationText}>{currentUserData.location}</Text>
                 </View>
-              ))}
+              </View>
+              
+              <Text style={styles.userBio}>{currentUserData.bio}</Text>
+              
+              {/* 兴趣标签 */}
+              <View style={styles.interestsContainer}>
+                {currentUserData.interests.slice(0, 3).map((interest, index) => (
+                  <View key={index} style={styles.interestTag}>
+                    <Text style={styles.interestText}>{interest}</Text>
+                  </View>
+                ))}
+              </View>
             </View>
-          </View>
+
+            {/* 在线状态指示器 */}
+            {currentUserData.isOnline && (
+              <View style={styles.onlineIndicator}>
+                <View style={styles.onlineDot} />
+                <Text style={styles.onlineText}>在线</Text>
+              </View>
+            )}
+          </Animated.View>
+
+        {/* 操作按钮 */}
+        <View style={styles.actionButtons}>
+          <TouchableOpacity
+            style={[styles.actionButton, styles.passButton]}
+            onPress={handlePass}
+          >
+            <Ionicons name="close" size={30} color="#FF6B6B" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.actionButton, styles.superLikeButton]}
+            onPress={() => handleSuperLike(currentUserData.id)}
+          >
+            <Ionicons name="star" size={30} color="#FFD93D" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity
+            style={[styles.actionButton, styles.likeButton]}
+            onPress={() => handleLike(currentUserData.id)}
+          >
+            <Ionicons name="heart" size={30} color="#4ECDC4" />
+          </TouchableOpacity>
         </View>
+
+        {/* 待处理匹配提示 */}
+        {pendingMatchesCount > 0 && (
+          <TouchableOpacity style={styles.pendingMatchesButton} onPress={openPendingMatches}>
+            <Text style={styles.pendingMatchesText}>
+              {pendingMatchesCount} 个待处理匹配
+            </Text>
+            <Ionicons name="chevron-forward" size={16} color="#FFFFFF" />
+          </TouchableOpacity>
+        )}
       </View>
 
-      {/* 底部操作按钮 */}
-      <View style={styles.actionButtons}>
-        <TouchableOpacity
-          style={[styles.actionButton, styles.passButton]}
-          onPress={handlePass}
-        >
-          <Text style={styles.passButtonText}>✕</Text>
+      {/* 底部导航栏 */}
+      <View style={styles.bottomNav}>
+        <TouchableOpacity style={styles.navButton} onPress={() => setCurrentIndex(0)}>
+          <Ionicons name="home" size={24} color="#EF4444" />
+          <Text style={styles.navButtonText}>首页</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={[styles.actionButton, styles.superLikeButton]}
-          onPress={() => handleSuperLike(currentUserData.id)}
-        >
-          <Text style={styles.superLikeButtonText}>⭐</Text>
+        <TouchableOpacity style={styles.navButton} onPress={openChat}>
+          <Ionicons name="chatbubbles" size={24} color="#6B7280" />
+          <Text style={styles.navButtonText}>聊天</Text>
         </TouchableOpacity>
         
-        <TouchableOpacity
-          style={[styles.actionButton, styles.likeButton]}
-          onPress={() => handleLike(currentUserData.id)}
-        >
-          <Text style={styles.likeButtonText}>♥</Text>
+        <TouchableOpacity style={styles.navButton} onPress={openProfile}>
+          <Ionicons name="person" size={24} color="#6B7280" />
+          <Text style={styles.navButtonText}>我的</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -321,182 +458,228 @@ export default function DashboardScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 20,
-    backgroundColor: '#FF69B4',
-  },
-  headerButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  headerButtonText: {
-    fontSize: 20,
-    color: '#fff',
-  },
-  headerTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  content: {
-    flex: 1,
-    padding: 20,
-    justifyContent: 'center',
-  },
-  userCard: {
-    backgroundColor: '#fff',
-    borderRadius: 25,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 4,
-    },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 8,
-    overflow: 'hidden',
-    marginBottom: 20,
-  },
-  userImage: {
-    width: '100%',
-    height: height * 0.5,
-  },
-  userInfo: {
-    padding: 25,
-  },
-  userHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  userName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#333',
-  },
-  onlineIndicator: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-  },
-  userLocation: {
-    fontSize: 16,
-    color: '#666',
-    marginBottom: 15,
-  },
-  userBio: {
-    fontSize: 16,
-    color: '#555',
-    marginBottom: 20,
-    lineHeight: 24,
-  },
-  interestsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  interestTag: {
-    backgroundColor: '#FFE6F0',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    marginRight: 10,
-    marginBottom: 10,
-  },
-  interestText: {
-    fontSize: 14,
-    color: '#FF69B4',
-    fontWeight: '500',
-  },
-  actionButtons: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    paddingHorizontal: 40,
-    paddingBottom: 40,
-    paddingTop: 20,
-  },
-  actionButton: {
-    width: 65,
-    height: 65,
-    borderRadius: 32.5,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 3,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 5,
-    elevation: 6,
-  },
-  passButton: {
-    backgroundColor: '#fff',
-    borderWidth: 2,
-    borderColor: '#ddd',
-  },
-  passButtonText: {
-    fontSize: 32,
-    color: '#666',
-    fontWeight: 'bold',
-  },
-  superLikeButton: {
-    backgroundColor: '#FFD700',
-  },
-  superLikeButtonText: {
-    fontSize: 28,
-    color: '#fff',
-  },
-  likeButton: {
-    backgroundColor: '#FF69B4',
-  },
-  likeButtonText: {
-    fontSize: 32,
-    color: '#fff',
+    backgroundColor: '#F8F9FA',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FF69B4',
+    backgroundColor: '#F8F9FA',
   },
   loadingText: {
-    fontSize: 18,
-    color: '#fff',
+    fontSize: 16,
+    color: '#6B7280',
   },
   emptyContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#FF69B4',
+    backgroundColor: '#F8F9FA',
   },
   emptyText: {
-    fontSize: 18,
-    color: '#fff',
+    fontSize: 16,
+    color: '#6B7280',
     marginBottom: 20,
-    textAlign: 'center',
   },
   refreshButton: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 25,
-    paddingVertical: 12,
-    borderRadius: 25,
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    borderRadius: 8,
   },
   refreshButtonText: {
-    color: '#FF69B4',
-    fontSize: 16,
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 15,
+  },
+  headerButton: {
+    padding: 8,
+    position: 'relative',
+  },
+  headerTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  headerTitleText: {
+    color: '#FFFFFF',
+    fontSize: 18,
     fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  badge: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    backgroundColor: '#FFD93D',
+    borderRadius: 10,
+    minWidth: 20,
+    height: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  badgeText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  mainContent: {
+    flex: 1,
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 20,
+  },
+  userCard: {
+    width: width - 40,
+    height: height * 0.6,
+    backgroundColor: '#FFFFFF',
+    borderRadius: 20,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 8,
+  },
+  userImage: {
+    width: '100%',
+    height: '100%',
+  },
+  userInfo: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    padding: 20,
+  },
+  userBasicInfo: {
+    marginBottom: 8,
+  },
+  userName: {
+    color: '#FFFFFF',
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  userLocation: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  locationText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginLeft: 4,
+  },
+  userBio: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    marginBottom: 12,
+    lineHeight: 22,
+  },
+  interestsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+  },
+  interestTag: {
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+  },
+  interestText: {
+    color: '#FFFFFF',
+    fontSize: 14,
+  },
+  onlineIndicator: {
+    position: 'absolute',
+    top: 20,
+    right: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  onlineDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#4ECDC4',
+    marginRight: 4,
+  },
+  onlineText: {
+    color: '#FFFFFF',
+    fontSize: 12,
+  },
+  actionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-evenly',
+    alignItems: 'center',
+    marginTop: 20,
+    paddingHorizontal: 20,
+  },
+  actionButton: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    justifyContent: 'center',
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+  },
+  passButton: {
+    backgroundColor: '#FFFFFF',
+  },
+  superLikeButton: {
+    backgroundColor: '#FFFFFF',
+  },
+  likeButton: {
+    backgroundColor: '#FFFFFF',
+  },
+  pendingMatchesButton: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+  pendingMatchesText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  bottomNav: {
+    flexDirection: 'row',
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    borderTopWidth: 1,
+    borderTopColor: '#E5E7EB',
+  },
+  navButton: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  navButtonText: {
+    fontSize: 12,
+    color: '#6B7280',
+    marginTop: 4,
   },
 })

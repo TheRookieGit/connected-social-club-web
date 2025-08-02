@@ -5,314 +5,188 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
-  TextInput,
   Image,
   Alert,
   StatusBar,
-  Switch,
+  ActivityIndicator,
   Modal,
+  TextInput,
+  Switch,
 } from 'react-native'
 import { useNavigation } from '@react-navigation/native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
+import { Ionicons } from '@expo/vector-icons'
 import * as ImagePicker from 'expo-image-picker'
-import * as Location from 'expo-location'
-import { UserAPI, TokenManager, handleApiError } from '../lib/api'
-
-interface UserProfile {
-  id: string
-  name: string
-  email: string
-  bio: string
-  location: string
-  occupation: string
-  age: number
-  gender: string
-  avatar_url?: string
-  photos: string[]
-  interests: string[]
-}
-
-const INTEREST_OPTIONS = [
-  '摄影', '旅游', '美食', '电影', '音乐', '运动', '阅读', '游戏',
-  '艺术', '舞蹈', '瑜伽', '健身', '咖啡', '宠物', '编程', '绘画'
-]
+import { UserAPI } from '../lib/api'
+import { UserProfile } from '../types/user'
 
 export default function ProfileScreen() {
   const navigation = useNavigation()
-  const [profile, setProfile] = useState<UserProfile | null>(null)
+  const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
   const [isEditing, setIsEditing] = useState(false)
-  const [showInterestsModal, setShowInterestsModal] = useState(false)
-  const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({})
+  const [showPhotoPicker, setShowPhotoPicker] = useState(false)
+  const [showSettings, setShowSettings] = useState(false)
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  
+  // 编辑状态的数据
+  const [editData, setEditData] = useState({
+    name: '',
+    bio: '',
+    age: '',
+    location: '',
+    occupation: '',
+    education: '',
+    interests: [] as string[],
+    relationship_goals: [] as string[],
+    dating_style: '',
+    family_plans: '',
+    has_kids: '',
+    smoking_status: '',
+    drinking_status: '',
+    height: '',
+    weight: '',
+    ethnicity: '',
+    religion: '',
+    languages: [] as string[],
+    personality_type: '',
+    values_preferences: [] as string[],
+  })
 
   useEffect(() => {
-    loadProfile()
-    requestPermissions()
+    fetchUserProfile()
   }, [])
 
-  const requestPermissions = async () => {
-    // 请求相机和相册权限
-    const { status: cameraStatus } = await ImagePicker.requestCameraPermissionsAsync()
-    const { status: libraryStatus } = await ImagePicker.requestMediaLibraryPermissionsAsync()
-    
-    if (cameraStatus !== 'granted' || libraryStatus !== 'granted') {
-      Alert.alert('权限提示', '需要相机和相册权限来上传照片')
-    }
-
-    // 请求位置权限
-    const { status: locationStatus } = await Location.requestForegroundPermissionsAsync()
-    if (locationStatus !== 'granted') {
-      Alert.alert('权限提示', '需要位置权限来更新您的位置信息')
-    }
-  }
-
-  const loadProfile = async () => {
+  const fetchUserProfile = async () => {
     try {
       setIsLoading(true)
-      const response = await UserAPI.getProfile()
+      const response = await UserAPI.getUserProfile()
       
-      if (response.success && response.user) {
-        const userProfile: UserProfile = {
-          id: response.user.id.toString(),
-          name: response.user.name || '',
-          email: response.user.email || '',
-          bio: response.user.bio || '',
-          location: response.user.location || '',
-          occupation: response.user.occupation || '',
-          age: response.user.birth_date ? calculateAge(response.user.birth_date) : 0,
-          gender: response.user.gender || '',
-          avatar_url: response.user.avatar_url || '',
-          photos: response.user.photos || [],
-          interests: response.user.interests || []
-        }
-        setProfile(userProfile)
-        setEditedProfile(userProfile)
+      if (response.success) {
+        const userData = response.user || response
+        setCurrentUser(userData)
+        
+        // 初始化编辑数据
+        setEditData({
+          name: userData.name || '',
+          bio: userData.bio || '',
+          age: userData.age?.toString() || '',
+          location: userData.location || '',
+          occupation: userData.occupation || '',
+          education: userData.education || '',
+          interests: userData.interests || [],
+          relationship_goals: userData.relationship_goals || [],
+          dating_style: userData.dating_style || '',
+          family_plans: userData.family_plans || '',
+          has_kids: userData.has_kids?.toString() || '',
+          smoking_status: userData.smoking_status || '',
+          drinking_status: userData.drinking_status || '',
+          height: userData.height?.toString() || '',
+          weight: userData.weight?.toString() || '',
+          ethnicity: userData.ethnicity || '',
+          religion: userData.religion || '',
+          languages: userData.languages || [],
+          personality_type: userData.personality_type || '',
+          values_preferences: userData.values_preferences || [],
+        })
       } else {
-        // 从本地存储获取基本信息
-        const userInfo = await AsyncStorage.getItem('user_info')
-        if (userInfo) {
-          const user = JSON.parse(userInfo)
-          const basicProfile: UserProfile = {
-            id: user.id.toString(),
-            name: user.name || '',
-            email: user.email || '',
-            bio: '',
-            location: '',
-            occupation: '',
-            age: 0,
-            gender: user.gender || '',
-            avatar_url: '',
-            photos: [],
-            interests: []
-          }
-          setProfile(basicProfile)
-          setEditedProfile(basicProfile)
-        }
+        Alert.alert('错误', response.error || '获取用户资料失败')
       }
     } catch (error) {
       console.error('获取用户资料失败:', error)
-      Alert.alert('错误', handleApiError(error))
+      Alert.alert('错误', '网络错误，请重试')
     } finally {
       setIsLoading(false)
     }
   }
 
-  const calculateAge = (birthDate: string): number => {
-    const today = new Date()
-    const birth = new Date(birthDate)
-    let age = today.getFullYear() - birth.getFullYear()
-    const monthDiff = today.getMonth() - birth.getMonth()
-    
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birth.getDate())) {
-      age--
-    }
-    
-    return age
-  }
-
-  const updateLocation = async () => {
+  const handleSaveProfile = async () => {
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync()
-      if (status !== 'granted') {
-        Alert.alert('权限被拒绝', '无法获取位置信息')
-        return
-      }
-
-      Alert.alert('获取位置', '正在获取您的位置信息...')
+      setIsLoading(true)
       
-      const location = await Location.getCurrentPositionAsync({})
-      const { latitude, longitude } = location.coords
-      
-      // 获取地址信息
-      const addresses = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude,
-      })
-      
-      if (addresses.length > 0) {
-        const address = addresses[0]
-        const locationString = `${address.city || ''} ${address.district || ''}`
-        
-        setEditedProfile(prev => ({ ...prev, location: locationString }))
-        
-        // 同时更新到服务器
-        await UserAPI.updateLocation(latitude, longitude, locationString)
-        
-        Alert.alert('成功', '位置信息已更新')
-      }
-    } catch (error) {
-      console.error('获取位置失败:', error)
-      Alert.alert('错误', '获取位置信息失败')
-    }
-  }
-
-  const pickImage = async (type: 'avatar' | 'photos') => {
-    Alert.alert(
-      '选择图片',
-      '请选择图片来源',
-      [
-        { text: '相机', onPress: () => openCamera(type) },
-        { text: '相册', onPress: () => openLibrary(type) },
-        { text: '取消', style: 'cancel' }
-      ]
-    )
-  }
-
-  const openCamera = async (type: 'avatar' | 'photos') => {
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: type === 'avatar' ? [1, 1] : [4, 5],
-      quality: 0.8,
-    })
-
-    if (!result.canceled) {
-      uploadImage(result.assets[0].uri, type)
-    }
-  }
-
-  const openLibrary = async (type: 'avatar' | 'photos') => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: type === 'avatar' ? [1, 1] : [4, 5],
-      quality: 0.8,
-      allowsMultipleSelection: type === 'photos',
-      selectionLimit: type === 'photos' ? 5 : 1,
-    })
-
-    if (!result.canceled) {
-      if (type === 'avatar') {
-        uploadImage(result.assets[0].uri, type)
-      } else {
-        const imageUris = result.assets.map(asset => asset.uri)
-        uploadImages(imageUris)
-      }
-    }
-  }
-
-  const uploadImage = async (imageUri: string, type: 'avatar' | 'photos') => {
-    try {
-      Alert.alert('上传中', '正在上传图片...')
-      
-      if (type === 'avatar') {
-        const response = await UserAPI.uploadAvatar(imageUri)
-        if (response.success) {
-          setEditedProfile(prev => ({ ...prev, avatar_url: response.avatar_url }))
-          Alert.alert('成功', '头像上传成功')
-        }
-      }
-    } catch (error) {
-      console.error('上传图片失败:', error)
-      Alert.alert('错误', handleApiError(error))
-    }
-  }
-
-  const uploadImages = async (imageUris: string[]) => {
-    try {
-      Alert.alert('上传中', '正在上传照片...')
-      
-      const response = await UserAPI.uploadPhotos(imageUris)
-      if (response.success) {
-        setEditedProfile(prev => ({ 
-          ...prev, 
-          photos: [...(prev.photos || []), ...response.photo_urls]
-        }))
-        Alert.alert('成功', '照片上传成功')
-      }
-    } catch (error) {
-      console.error('上传照片失败:', error)
-      Alert.alert('错误', handleApiError(error))
-    }
-  }
-
-  const saveProfile = async () => {
-    try {
-      setIsSaving(true)
-      const response = await UserAPI.updateProfile(editedProfile)
+      const response = await UserAPI.updateUserProfile(editData)
       
       if (response.success) {
-        setProfile({ ...profile, ...editedProfile } as UserProfile)
+        setCurrentUser(response.user)
         setIsEditing(false)
         Alert.alert('成功', '个人资料已更新')
       } else {
         Alert.alert('错误', response.error || '更新失败')
       }
     } catch (error) {
-      console.error('保存资料失败:', error)
-      Alert.alert('错误', handleApiError(error))
+      console.error('更新用户资料失败:', error)
+      Alert.alert('错误', '网络错误，请重试')
     } finally {
-      setIsSaving(false)
+      setIsLoading(false)
     }
   }
 
-  const toggleInterest = (interest: string) => {
-    const currentInterests = editedProfile.interests || []
-    const newInterests = currentInterests.includes(interest)
-      ? currentInterests.filter(i => i !== interest)
-      : [...currentInterests, interest]
-    
-    setEditedProfile(prev => ({ ...prev, interests: newInterests }))
-  }
+  const handlePhotoUpload = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync()
+      
+      if (permissionResult.granted === false) {
+        Alert.alert('权限错误', '需要相册权限来上传照片')
+        return
+      }
 
-  const logout = async () => {
-    Alert.alert(
-      '确认退出',
-      '是否确定要退出登录？',
-      [
-        { text: '取消', style: 'cancel' },
-        {
-          text: '确定',
-          onPress: async () => {
-            await TokenManager.removeToken()
-            await AsyncStorage.removeItem('user_info')
-            navigation.navigate('Login')
-          }
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      })
+
+      if (!result.canceled && result.assets[0]) {
+        setIsLoading(true)
+        
+        const response = await UserAPI.uploadAvatar(result.assets[0].uri)
+        
+        if (response.success) {
+          setCurrentUser(prev => prev ? { ...prev, avatar_url: response.avatar_url } : null)
+          Alert.alert('成功', '头像已更新')
+        } else {
+          Alert.alert('错误', response.error || '上传失败')
         }
-      ]
-    )
+      }
+    } catch (error) {
+      console.error('上传头像失败:', error)
+      Alert.alert('错误', '网络错误，请重试')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
-  const goBack = () => {
-    navigation.goBack()
+  const handleLogout = async () => {
+    try {
+      await AsyncStorage.removeItem('token')
+      await AsyncStorage.removeItem('user_info')
+      navigation.navigate('Login' as never)
+    } catch (error) {
+      console.error('退出登录失败:', error)
+    }
+  }
+
+  const updateEditField = (field: string, value: any) => {
+    setEditData(prev => ({ ...prev, [field]: value }))
   }
 
   if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#FF69B4" />
-        <Text style={styles.loadingText}>加载个人资料...</Text>
+        <StatusBar barStyle="light-content" backgroundColor="#EF4444" />
+        <ActivityIndicator size="large" color="#EF4444" />
+        <Text style={styles.loadingText}>加载中...</Text>
       </View>
     )
   }
 
-  if (!profile) {
+  if (!currentUser) {
     return (
       <View style={styles.errorContainer}>
-        <StatusBar barStyle="light-content" backgroundColor="#FF69B4" />
-        <Text style={styles.errorText}>无法加载个人资料</Text>
-        <TouchableOpacity style={styles.retryButton} onPress={loadProfile}>
+        <StatusBar barStyle="light-content" backgroundColor="#EF4444" />
+        <Text style={styles.errorText}>无法加载用户资料</Text>
+        <TouchableOpacity style={styles.retryButton} onPress={fetchUserProfile}>
           <Text style={styles.retryButtonText}>重试</Text>
         </TouchableOpacity>
       </View>
@@ -321,244 +195,342 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#FF69B4" />
+      <StatusBar barStyle="light-content" backgroundColor="#EF4444" />
       
-      {/* 顶部导航栏 */}
+      {/* 头部 */}
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={goBack}>
-          <Text style={styles.backButtonText}>←</Text>
+        <TouchableOpacity 
+          style={styles.headerButton}
+          onPress={() => navigation.goBack()}
+        >
+          <Ionicons name="arrow-back" size={24} color="#FFFFFF" />
         </TouchableOpacity>
         
         <Text style={styles.headerTitle}>个人资料</Text>
         
-        <TouchableOpacity
-          style={styles.editButton}
+        <TouchableOpacity 
+          style={styles.headerButton}
           onPress={() => setIsEditing(!isEditing)}
         >
-          <Text style={styles.editButtonText}>
+          <Text style={styles.headerButtonText}>
             {isEditing ? '取消' : '编辑'}
           </Text>
         </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
-        {/* 头像部分 */}
-        <View style={styles.avatarSection}>
-          <TouchableOpacity
+        {/* 头像和基本信息 */}
+        <View style={styles.profileSection}>
+          <TouchableOpacity 
             style={styles.avatarContainer}
-            onPress={() => isEditing && pickImage('avatar')}
+            onPress={() => isEditing && setShowPhotoPicker(true)}
             disabled={!isEditing}
           >
             <Image
-              source={{
-                uri: editedProfile.avatar_url || profile.avatar_url || 'https://picsum.photos/200/200?random=avatar'
+              source={{ 
+                uri: currentUser.avatar_url || 'https://picsum.photos/200/200?random=1' 
               }}
               style={styles.avatar}
               resizeMode="cover"
             />
             {isEditing && (
               <View style={styles.avatarOverlay}>
-                <Text style={styles.avatarOverlayText}>📷</Text>
+                <Ionicons name="camera" size={24} color="#FFFFFF" />
               </View>
             )}
           </TouchableOpacity>
           
-          <Text style={styles.profileName}>
-            {editedProfile.name || profile.name}
-          </Text>
-          <Text style={styles.profileLocation}>
-            {editedProfile.location || profile.location || '未设置位置'}
-          </Text>
-        </View>
-
-        {/* 基本信息 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>基本信息</Text>
-          
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>姓名</Text>
-            {isEditing ? (
-              <TextInput
-                style={styles.fieldInput}
-                value={editedProfile.name || ''}
-                onChangeText={(text) => setEditedProfile(prev => ({ ...prev, name: text }))}
-                placeholder="请输入姓名"
-              />
-            ) : (
-              <Text style={styles.fieldValue}>{profile.name}</Text>
-            )}
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>个人简介</Text>
-            {isEditing ? (
-              <TextInput
-                style={[styles.fieldInput, styles.multilineInput]}
-                value={editedProfile.bio || ''}
-                onChangeText={(text) => setEditedProfile(prev => ({ ...prev, bio: text }))}
-                placeholder="介绍一下自己..."
-                multiline
-                numberOfLines={3}
-              />
-            ) : (
-              <Text style={styles.fieldValue}>
-                {profile.bio || '暂无个人简介'}
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.fieldLabel}>职业</Text>
-            {isEditing ? (
-              <TextInput
-                style={styles.fieldInput}
-                value={editedProfile.occupation || ''}
-                onChangeText={(text) => setEditedProfile(prev => ({ ...prev, occupation: text }))}
-                placeholder="请输入职业"
-              />
-            ) : (
-              <Text style={styles.fieldValue}>
-                {profile.occupation || '未设置'}
-              </Text>
-            )}
-          </View>
-
-          <View style={styles.field}>
-            <View style={styles.fieldRow}>
-              <Text style={styles.fieldLabel}>位置</Text>
-              {isEditing && (
-                <TouchableOpacity
-                  style={styles.locationButton}
-                  onPress={updateLocation}
-                >
-                  <Text style={styles.locationButtonText}>📍 获取位置</Text>
-                </TouchableOpacity>
-              )}
-            </View>
-            <Text style={styles.fieldValue}>
-              {editedProfile.location || profile.location || '未设置位置'}
+          <View style={styles.basicInfo}>
+            <Text style={styles.userName}>{currentUser.name}</Text>
+            <Text style={styles.userAge}>{currentUser.age}岁</Text>
+            <Text style={styles.userLocation}>
+              <Ionicons name="location" size={16} color="#6B7280" />
+              {' '}{currentUser.location || '未设置'}
             </Text>
           </View>
         </View>
 
-        {/* 兴趣爱好 */}
-        <View style={styles.section}>
-          <View style={styles.fieldRow}>
-            <Text style={styles.sectionTitle}>兴趣爱好</Text>
-            {isEditing && (
-              <TouchableOpacity
-                style={styles.editInterestsButton}
-                onPress={() => setShowInterestsModal(true)}
-              >
-                <Text style={styles.editInterestsButtonText}>编辑</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          
-          <View style={styles.interestsContainer}>
-            {(editedProfile.interests || profile.interests || []).map((interest, index) => (
-              <View key={index} style={styles.interestTag}>
-                <Text style={styles.interestText}>{interest}</Text>
+        {/* 编辑表单 */}
+        {isEditing ? (
+          <View style={styles.editForm}>
+            <View style={styles.formSection}>
+              <Text style={styles.sectionTitle}>基本信息</Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>姓名</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={editData.name}
+                  onChangeText={(value) => updateEditField('name', value)}
+                  placeholder="请输入姓名"
+                />
               </View>
-            ))}
-            {(!editedProfile.interests || editedProfile.interests.length === 0) && (
-              <Text style={styles.noInterests}>暂未设置兴趣爱好</Text>
-            )}
-          </View>
-        </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>个人简介</Text>
+                <TextInput
+                  style={[styles.textInput, styles.textArea]}
+                  value={editData.bio}
+                  onChangeText={(value) => updateEditField('bio', value)}
+                  placeholder="介绍一下自己..."
+                  multiline
+                  numberOfLines={4}
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>年龄</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={editData.age}
+                  onChangeText={(value) => updateEditField('age', value)}
+                  placeholder="请输入年龄"
+                  keyboardType="numeric"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>位置</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={editData.location}
+                  onChangeText={(value) => updateEditField('location', value)}
+                  placeholder="请输入位置"
+                />
+              </View>
+            </View>
 
-        {/* 照片 */}
-        <View style={styles.section}>
-          <View style={styles.fieldRow}>
-            <Text style={styles.sectionTitle}>我的照片</Text>
-            {isEditing && (
-              <TouchableOpacity
-                style={styles.addPhotosButton}
-                onPress={() => pickImage('photos')}
-              >
-                <Text style={styles.addPhotosButtonText}>+ 添加照片</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-          
-          <View style={styles.photosGrid}>
-            {(editedProfile.photos || profile.photos || []).map((photo, index) => (
-              <Image
-                key={index}
-                source={{ uri: photo }}
-                style={styles.photoItem}
-                resizeMode="cover"
-              />
-            ))}
-            {(!editedProfile.photos || editedProfile.photos.length === 0) && (
-              <Text style={styles.noPhotos}>暂无照片</Text>
-            )}
-          </View>
-        </View>
+            <View style={styles.formSection}>
+              <Text style={styles.sectionTitle}>职业和教育</Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>职业</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={editData.occupation}
+                  onChangeText={(value) => updateEditField('occupation', value)}
+                  placeholder="请输入职业"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>教育背景</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={editData.education}
+                  onChangeText={(value) => updateEditField('education', value)}
+                  placeholder="请输入教育背景"
+                />
+              </View>
+            </View>
 
-        {/* 操作按钮 */}
-        <View style={styles.actionSection}>
-          {isEditing ? (
+            <View style={styles.formSection}>
+              <Text style={styles.sectionTitle}>个人特征</Text>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>身高 (cm)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={editData.height}
+                  onChangeText={(value) => updateEditField('height', value)}
+                  placeholder="请输入身高"
+                  keyboardType="numeric"
+                />
+              </View>
+              
+              <View style={styles.inputGroup}>
+                <Text style={styles.inputLabel}>体重 (kg)</Text>
+                <TextInput
+                  style={styles.textInput}
+                  value={editData.weight}
+                  onChangeText={(value) => updateEditField('weight', value)}
+                  placeholder="请输入体重"
+                  keyboardType="numeric"
+                />
+              </View>
+            </View>
+
+            {/* 保存按钮 */}
             <TouchableOpacity
-              style={[styles.saveButton, isSaving && styles.saveButtonDisabled]}
-              onPress={saveProfile}
-              disabled={isSaving}
+              style={styles.saveButton}
+              onPress={handleSaveProfile}
+              disabled={isLoading}
             >
-              <Text style={styles.saveButtonText}>
-                {isSaving ? '保存中...' : '保存更改'}
+              {isLoading ? (
+                <ActivityIndicator color="#FFFFFF" />
+              ) : (
+                <Text style={styles.saveButtonText}>保存更改</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+        ) : (
+          /* 只读信息 */
+          <View style={styles.readOnlyInfo}>
+            <View style={styles.infoSection}>
+              <Text style={styles.sectionTitle}>个人简介</Text>
+              <Text style={styles.infoText}>
+                {currentUser.bio || '暂无个人简介'}
               </Text>
-            </TouchableOpacity>
-          ) : (
-            <TouchableOpacity style={styles.logoutButton} onPress={logout}>
-              <Text style={styles.logoutButtonText}>退出登录</Text>
-            </TouchableOpacity>
-          )}
+            </View>
+
+            <View style={styles.infoSection}>
+              <Text style={styles.sectionTitle}>职业信息</Text>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>职业：</Text>
+                <Text style={styles.infoValue}>
+                  {currentUser.occupation || '未设置'}
+                </Text>
+              </View>
+              <View style={styles.infoRow}>
+                <Text style={styles.infoLabel}>教育：</Text>
+                <Text style={styles.infoValue}>
+                  {currentUser.education || '未设置'}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.infoSection}>
+              <Text style={styles.sectionTitle}>兴趣爱好</Text>
+              <View style={styles.interestsContainer}>
+                {currentUser.interests && currentUser.interests.length > 0 ? (
+                  currentUser.interests.map((interest, index) => (
+                    <View key={index} style={styles.interestTag}>
+                      <Text style={styles.interestText}>{interest}</Text>
+                    </View>
+                  ))
+                ) : (
+                  <Text style={styles.emptyText}>暂无兴趣爱好</Text>
+                )}
+              </View>
+            </View>
+          </View>
+        )}
+
+        {/* 设置选项 */}
+        <View style={styles.settingsSection}>
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => setShowSettings(true)}
+          >
+            <Ionicons name="settings" size={20} color="#6B7280" />
+            <Text style={styles.settingText}>设置</Text>
+            <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
+          </TouchableOpacity>
+          
+          <TouchableOpacity 
+            style={styles.settingItem}
+            onPress={() => setShowLogoutConfirm(true)}
+          >
+            <Ionicons name="log-out" size={20} color="#EF4444" />
+            <Text style={[styles.settingText, styles.logoutText]}>退出登录</Text>
+            <Ionicons name="chevron-forward" size={20} color="#D1D5DB" />
+          </TouchableOpacity>
         </View>
       </ScrollView>
 
-      {/* 兴趣编辑模态框 */}
+      {/* 照片选择器 */}
       <Modal
-        visible={showInterestsModal}
-        transparent
+        visible={showPhotoPicker}
         animationType="slide"
-        onRequestClose={() => setShowInterestsModal(false)}
+        presentationStyle="pageSheet"
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>选择兴趣爱好</Text>
-              <TouchableOpacity
-                style={styles.modalCloseButton}
-                onPress={() => setShowInterestsModal(false)}
-              >
-                <Text style={styles.modalCloseText}>完成</Text>
-              </TouchableOpacity>
+        <View style={styles.photoPickerModal}>
+          <View style={styles.photoPickerHeader}>
+            <Text style={styles.photoPickerTitle}>选择照片</Text>
+            <TouchableOpacity onPress={() => setShowPhotoPicker(false)}>
+              <Ionicons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+          
+          <View style={styles.photoPickerContent}>
+            <TouchableOpacity 
+              style={styles.photoOption}
+              onPress={() => {
+                setShowPhotoPicker(false)
+                handlePhotoUpload()
+              }}
+            >
+              <Ionicons name="images" size={32} color="#EF4444" />
+              <Text style={styles.photoOptionText}>从相册选择</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* 设置模态框 */}
+      <Modal
+        visible={showSettings}
+        animationType="slide"
+        presentationStyle="pageSheet"
+      >
+        <View style={styles.settingsModal}>
+          <View style={styles.settingsHeader}>
+            <Text style={styles.settingsTitle}>设置</Text>
+            <TouchableOpacity onPress={() => setShowSettings(false)}>
+              <Ionicons name="close" size={24} color="#333" />
+            </TouchableOpacity>
+          </View>
+          
+          <ScrollView style={styles.settingsContent}>
+            <View style={styles.settingGroup}>
+              <Text style={styles.settingGroupTitle}>隐私设置</Text>
+              
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>显示在线状态</Text>
+                <Switch value={true} onValueChange={() => {}} />
+              </View>
+              
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>允许陌生人查看资料</Text>
+                <Switch value={false} onValueChange={() => {}} />
+              </View>
             </View>
             
-            <ScrollView style={styles.modalBody}>
-              <View style={styles.interestOptions}>
-                {INTEREST_OPTIONS.map((interest, index) => {
-                  const isSelected = (editedProfile.interests || []).includes(interest)
-                  return (
-                    <TouchableOpacity
-                      key={index}
-                      style={[
-                        styles.interestOption,
-                        isSelected && styles.interestOptionSelected
-                      ]}
-                      onPress={() => toggleInterest(interest)}
-                    >
-                      <Text style={[
-                        styles.interestOptionText,
-                        isSelected && styles.interestOptionTextSelected
-                      ]}>
-                        {interest}
-                      </Text>
-                    </TouchableOpacity>
-                  )
-                })}
+            <View style={styles.settingGroup}>
+              <Text style={styles.settingGroupTitle}>通知设置</Text>
+              
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>新匹配通知</Text>
+                <Switch value={true} onValueChange={() => {}} />
               </View>
-            </ScrollView>
+              
+              <View style={styles.settingRow}>
+                <Text style={styles.settingLabel}>新消息通知</Text>
+                <Switch value={true} onValueChange={() => {}} />
+              </View>
+            </View>
+          </ScrollView>
+        </View>
+      </Modal>
+
+      {/* 退出确认 */}
+      <Modal
+        visible={showLogoutConfirm}
+        transparent
+        animationType="fade"
+      >
+        <View style={styles.confirmOverlay}>
+          <View style={styles.confirmModal}>
+            <Text style={styles.confirmTitle}>确认退出</Text>
+            <Text style={styles.confirmText}>确定要退出登录吗？</Text>
+            
+            <View style={styles.confirmButtons}>
+              <TouchableOpacity 
+                style={styles.confirmButton}
+                onPress={() => setShowLogoutConfirm(false)}
+              >
+                <Text style={styles.confirmButtonText}>取消</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={[styles.confirmButton, styles.confirmButtonDanger]}
+                onPress={handleLogout}
+              >
+                <Text style={[styles.confirmButtonText, styles.confirmButtonTextDanger]}>
+                  确定
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -569,97 +541,82 @@ export default function ProfileScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: '#F8F9FA',
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FF69B4',
+    backgroundColor: '#F8F9FA',
   },
   loadingText: {
-    fontSize: 18,
-    color: '#fff',
+    fontSize: 16,
+    color: '#6B7280',
+    marginTop: 16,
   },
   errorContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#FF69B4',
+    backgroundColor: '#F8F9FA',
     padding: 20,
   },
   errorText: {
-    fontSize: 18,
-    color: '#fff',
-    marginBottom: 20,
+    fontSize: 16,
+    color: '#6B7280',
     textAlign: 'center',
+    marginBottom: 16,
   },
   retryButton: {
-    backgroundColor: '#fff',
+    backgroundColor: '#EF4444',
     paddingHorizontal: 20,
     paddingVertical: 10,
-    borderRadius: 20,
+    borderRadius: 8,
   },
   retryButtonText: {
-    fontSize: 16,
-    color: '#FF69B4',
-    fontWeight: 'bold',
+    color: '#FFFFFF',
+    fontSize: 14,
+    fontWeight: '600',
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    paddingTop: 60,
-    paddingBottom: 20,
-    paddingHorizontal: 15,
-    backgroundColor: '#FF69B4',
-  },
-  backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#EF4444',
+    paddingHorizontal: 20,
+    paddingTop: 50,
+    paddingBottom: 15,
   },
-  backButtonText: {
-    fontSize: 24,
-    color: '#fff',
-    fontWeight: 'bold',
+  headerButton: {
+    padding: 8,
   },
   headerTitle: {
-    fontSize: 20,
+    color: '#FFFFFF',
+    fontSize: 18,
     fontWeight: 'bold',
-    color: '#fff',
   },
-  editButton: {
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-  },
-  editButtonText: {
-    fontSize: 14,
-    color: '#fff',
-    fontWeight: 'bold',
+  headerButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   content: {
     flex: 1,
   },
-  avatarSection: {
+  profileSection: {
     alignItems: 'center',
-    padding: 30,
-    backgroundColor: '#fff',
-    marginBottom: 20,
+    padding: 20,
+    backgroundColor: '#FFFFFF',
+    marginBottom: 12,
   },
   avatarContainer: {
     position: 'relative',
-    marginBottom: 15,
+    marginBottom: 16,
   },
   avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
   },
   avatarOverlay: {
     position: 'absolute',
@@ -667,228 +624,276 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 60,
-    backgroundColor: 'rgba(0,0,0,0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  avatarOverlayText: {
-    fontSize: 30,
-    color: '#fff',
+  basicInfo: {
+    alignItems: 'center',
   },
-  profileName: {
+  userName: {
     fontSize: 24,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
+    color: '#1F2937',
+    marginBottom: 4,
   },
-  profileLocation: {
+  userAge: {
     fontSize: 16,
-    color: '#666',
+    color: '#6B7280',
+    marginBottom: 8,
   },
-  section: {
-    backgroundColor: '#fff',
-    marginBottom: 20,
-    paddingHorizontal: 20,
-    paddingVertical: 15,
+  userLocation: {
+    fontSize: 14,
+    color: '#6B7280',
+  },
+  editForm: {
+    backgroundColor: '#FFFFFF',
+    marginBottom: 12,
+  },
+  formSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 15,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginBottom: 16,
   },
-  field: {
-    marginBottom: 15,
+  inputGroup: {
+    marginBottom: 16,
   },
-  fieldRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  fieldLabel: {
+  inputLabel: {
     fontSize: 14,
-    color: '#666',
-    marginBottom: 5,
+    fontWeight: '500',
+    color: '#374151',
+    marginBottom: 8,
   },
-  fieldValue: {
-    fontSize: 16,
-    color: '#333',
-  },
-  fieldInput: {
+  textInput: {
     borderWidth: 1,
-    borderColor: '#ddd',
+    borderColor: '#D1D5DB',
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: 10,
     fontSize: 16,
+    color: '#1F2937',
   },
-  multilineInput: {
+  textArea: {
     height: 80,
     textAlignVertical: 'top',
   },
-  locationButton: {
-    backgroundColor: '#FF69B4',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
+  saveButton: {
+    backgroundColor: '#EF4444',
+    margin: 20,
+    paddingVertical: 16,
     borderRadius: 12,
+    alignItems: 'center',
   },
-  locationButtonText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
+  saveButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  readOnlyInfo: {
+    backgroundColor: '#FFFFFF',
+    marginBottom: 12,
+  },
+  infoSection: {
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  infoText: {
+    fontSize: 16,
+    color: '#374151',
+    lineHeight: 24,
+  },
+  infoRow: {
+    flexDirection: 'row',
+    marginBottom: 8,
+  },
+  infoLabel: {
+    fontSize: 16,
+    color: '#6B7280',
+    width: 60,
+  },
+  infoValue: {
+    fontSize: 16,
+    color: '#374151',
+    flex: 1,
   },
   interestsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 8,
   },
   interestTag: {
-    backgroundColor: '#FFE6F0',
-    borderRadius: 15,
+    backgroundColor: '#F3F4F6',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    marginRight: 8,
-    marginBottom: 8,
+    borderRadius: 16,
   },
   interestText: {
+    color: '#374151',
     fontSize: 14,
-    color: '#FF69B4',
-    fontWeight: '500',
   },
-  noInterests: {
-    fontSize: 14,
-    color: '#999',
+  emptyText: {
+    fontSize: 16,
+    color: '#9CA3AF',
     fontStyle: 'italic',
   },
-  editInterestsButton: {
-    backgroundColor: '#FF69B4',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
+  settingsSection: {
+    backgroundColor: '#FFFFFF',
+    marginBottom: 20,
   },
-  editInterestsButtonText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  photosGrid: {
+  settingItem: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  photoItem: {
-    width: 80,
-    height: 100,
-    borderRadius: 8,
-    marginRight: 10,
-    marginBottom: 10,
-  },
-  noPhotos: {
-    fontSize: 14,
-    color: '#999',
-    fontStyle: 'italic',
-  },
-  addPhotosButton: {
-    backgroundColor: '#FF69B4',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 12,
-  },
-  addPhotosButtonText: {
-    fontSize: 12,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  actionSection: {
-    padding: 20,
-    paddingBottom: 40,
-  },
-  saveButton: {
-    backgroundColor: '#FF69B4',
-    borderRadius: 25,
-    paddingVertical: 15,
     alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
   },
-  saveButtonDisabled: {
-    opacity: 0.6,
-  },
-  saveButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  logoutButton: {
-    backgroundColor: '#ff4444',
-    borderRadius: 25,
-    paddingVertical: 15,
-    alignItems: 'center',
-  },
-  logoutButtonText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  modalOverlay: {
+  settingText: {
+    fontSize: 16,
+    color: '#374151',
+    marginLeft: 12,
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
   },
-  modalContent: {
-    backgroundColor: '#fff',
-    borderTopLeftRadius: 20,
-    borderTopRightRadius: 20,
-    maxHeight: '70%',
+  logoutText: {
+    color: '#EF4444',
   },
-  modalHeader: {
+  photoPickerModal: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  photoPickerHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
     borderBottomWidth: 1,
-    borderBottomColor: '#eee',
+    borderBottomColor: '#E5E7EB',
   },
-  modalTitle: {
+  photoPickerTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '600',
     color: '#333',
   },
-  modalCloseButton: {
-    backgroundColor: '#FF69B4',
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    borderRadius: 15,
-  },
-  modalCloseText: {
-    fontSize: 14,
-    color: '#fff',
-    fontWeight: 'bold',
-  },
-  modalBody: {
+  photoPickerContent: {
     flex: 1,
-  },
-  interestOptions: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: 20,
   },
-  interestOption: {
+  photoOption: {
+    alignItems: 'center',
+    padding: 20,
+  },
+  photoOptionText: {
+    fontSize: 16,
+    color: '#374151',
+    marginTop: 8,
+  },
+  settingsModal: {
+    flex: 1,
+    backgroundColor: '#F8F9FA',
+  },
+  settingsHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    backgroundColor: '#FFFFFF',
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+  },
+  settingsTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#333',
+  },
+  settingsContent: {
+    flex: 1,
+  },
+  settingGroup: {
+    backgroundColor: '#FFFFFF',
+    marginBottom: 12,
+  },
+  settingGroupTitle: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#1F2937',
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    backgroundColor: '#F9FAFB',
+  },
+  settingRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+  },
+  settingLabel: {
+    fontSize: 16,
+    color: '#374151',
+  },
+  confirmOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  confirmModal: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 12,
+    padding: 24,
+    margin: 20,
+    minWidth: 280,
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+    color: '#1F2937',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  confirmText: {
+    fontSize: 16,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginBottom: 24,
+  },
+  confirmButtons: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  confirmButton: {
+    flex: 1,
+    paddingVertical: 12,
+    borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 8,
-    marginRight: 10,
-    marginBottom: 10,
+    borderColor: '#D1D5DB',
+    alignItems: 'center',
   },
-  interestOptionSelected: {
-    backgroundColor: '#FF69B4',
-    borderColor: '#FF69B4',
+  confirmButtonDanger: {
+    backgroundColor: '#EF4444',
+    borderColor: '#EF4444',
   },
-  interestOptionText: {
-    fontSize: 14,
-    color: '#666',
+  confirmButtonText: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#374151',
   },
-  interestOptionTextSelected: {
-    color: '#fff',
-    fontWeight: 'bold',
+  confirmButtonTextDanger: {
+    color: '#FFFFFF',
   },
 })
