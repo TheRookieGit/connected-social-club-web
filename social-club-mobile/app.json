@@ -1,0 +1,50 @@
+{
+  "expo": {
+    "name": "social-club-mobile",
+    "slug": "social-club-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "supportsTablet": true
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#ffffff"
+      },
+      "edgeToEdgeEnabled": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationAlwaysAndWhenInUsePermission": "此应用需要位置权限来为您推荐附近的用户。"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "此应用需要访问您的相册来设置个人头像。"
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "此应用需要相机权限来拍摄个人头像。"
+        }
+      ]
+    ]
+  }
+}
