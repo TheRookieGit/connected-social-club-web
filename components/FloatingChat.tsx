@@ -240,13 +240,13 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
         id: ch.id,
         memberCount: Object.keys(ch.state.members || {}).length,
         lastMessage: (ch.state as any).last_message?.text || '无消息',
-        unreadCount: ch.count_unread || 0
+        unreadCount: (ch as any).count_unread || 0
       })))
       
       setChannels(userChannels)
       
       // 计算未读消息总数
-      const totalUnread = userChannels.reduce((sum, channel) => sum + (channel.count_unread || 0), 0)
+      const totalUnread = userChannels.reduce((sum, channel) => sum + ((channel as any).count_unread || 0), 0)
       setUnreadCount(totalUnread)
       
       // 如果有初始用户ID，尝试找到对应的频道
@@ -462,9 +462,9 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
                                     <p className="text-sm font-medium text-gray-900 truncate">
                                       {otherUser?.name || '未知用户'}
                                     </p>
-                                    {channel.count_unread > 0 && (
+                                    {(channel as any).count_unread > 0 && (
                                       <span className="bg-pink-500 text-white text-xs px-1.5 py-0.5 rounded-full">
-                                        {channel.count_unread}
+                                        {(channel as any).count_unread}
                                       </span>
                                     )}
                                   </div>

@@ -1074,9 +1074,9 @@ export default function StreamChatPanel({
                             {/* 操作按钮 */}
                             <div className="flex flex-col items-end space-y-2">
                               {/* 未读消息数 */}
-                              {channel.count_unread > 0 && (
+                              {(channel as any).count_unread > 0 && (
                                 <div className="bg-pink-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
-                                  {channel.count_unread}
+                                  {(channel as any).count_unread}
                                 </div>
                               )}
                               
