@@ -831,6 +831,40 @@ export default function Dashboard() {
                 )}
               </motion.button>
 
+              {/* 性别相关功能按钮 */}
+              {currentUser?.gender === '女' && (
+                <motion.button
+                  onClick={() => router.push('/female-matches')}
+                  className="relative p-3 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors shadow-lg"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="我的匹配 - 开始对话"
+                >
+                  <Heart size={20} />
+                  {matchedUsers.length > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-1 -right-1 bg-white text-pink-500 text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold"
+                    >
+                      {matchedUsers.length}
+                    </motion.span>
+                  )}
+                </motion.button>
+              )}
+
+              {currentUser?.gender === '男' && (
+                <motion.button
+                  onClick={() => router.push('/male-likes')}
+                  className="relative p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors shadow-lg"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="我的喜欢"
+                >
+                  <Heart size={20} />
+                </motion.button>
+              )}
+
 
               
               <button
