@@ -272,7 +272,26 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
     } catch (error) {
       console.error('❌ 获取频道列表失败:', error)
     }
-  }, [chatClient, currentUser, selectedChannel, initialUserId, getOtherUser])
+  }, [chatClient, currentUser, selectedChannel, initialUserId])
+
+  // 获取频道中的其他用户
+  const getOtherUser = (channel: any) => {
+    if (!currentUser || !channel.state.members) return null
+    
+    const memberIds = Object.keys(channel.state.members)
+    const otherUserId = memberIds.find(id => id !== currentUser.id.toString())
+    
+    if (otherUserId) {
+      const member = (channel.state.members as any)[otherUserId]
+      return {
+        id: otherUserId,
+        name: member.user?.name || `用户${otherUserId}`,
+        image: member.user?.image,
+        online: member.user?.online || false
+      }
+    }
+    return null
+  }
 
   // 为匹配的用户创建频道
   const createChannelsForMatchedUsers = useCallback(async () => {
@@ -323,25 +342,6 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
       fetchUserChannels()
     }
   }, [chatClient, currentUser, fetchUserChannels])
-
-  // 获取频道中的其他用户
-  const getOtherUser = (channel: any) => {
-    if (!currentUser || !channel.state.members) return null
-    
-    const memberIds = Object.keys(channel.state.members)
-    const otherUserId = memberIds.find(id => id !== currentUser.id.toString())
-    
-    if (otherUserId) {
-      const member = (channel.state.members as any)[otherUserId]
-      return {
-        id: otherUserId,
-        name: member.user?.name || `用户${otherUserId}`,
-        image: member.user?.image,
-        online: member.user?.online || false
-      }
-    }
-    return null
-  }
 
   // 服务器端渲染时返回null
   if (!isClient) {
