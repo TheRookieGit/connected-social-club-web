@@ -800,7 +800,7 @@ export default function UserProfilePage() {
             {/* 操作按钮 */}
             <div className="flex space-x-4 mt-8 pt-6 border-t border-gray-200">
               {/* 调试信息 */}
-              {console.log('渲染按钮 - 当前状态:', { isLiked, likeLoading, userId })}
+              {(() => { console.log('渲染按钮 - 当前状态:', { isLiked, likeLoading, userId }); return null; })()}
               <motion.button
                 whileHover={{ scale: isLiked ? 1 : 1.05 }}
                 whileTap={{ scale: isLiked ? 1 : 0.95 }}
