@@ -121,6 +121,7 @@ export default function UserProfilePage() {
       fetchUserProfile()
       checkLikeStatus()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId, router])
 
   // 检查是否已经喜欢该用户

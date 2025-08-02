@@ -345,7 +345,7 @@ export default function StreamChatPanel({
           setShowRetryButton(true)
         }
     }
-      }, [chatClient, currentUser, selectedChannel])
+      }, [chatClient, currentUser, selectedChannel, getOtherUser, initialUserId])
 
   // 重试获取频道列表
   const retryFetchChannels = useCallback(() => {

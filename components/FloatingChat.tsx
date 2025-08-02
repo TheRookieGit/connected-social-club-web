@@ -218,7 +218,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
         chatClient.disconnectUser()
       }
     }
-  }, [currentUser, isClient])
+  }, [currentUser, isClient, chatClient])
 
   // 获取用户频道列表
   const fetchUserChannels = useCallback(async () => {
@@ -272,7 +272,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
     } catch (error) {
       console.error('❌ 获取频道列表失败:', error)
     }
-  }, [chatClient, currentUser, selectedChannel, initialUserId])
+  }, [chatClient, currentUser, selectedChannel, initialUserId, getOtherUser])
 
   // 为匹配的用户创建频道
   const createChannelsForMatchedUsers = useCallback(async () => {

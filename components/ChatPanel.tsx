@@ -181,7 +181,7 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
       // 加载新用户的消息
       loadMessages(selectedUser.id, true)
     }
-  }, [selectedUser?.id, currentUserId, loadMessages])
+  }, [selectedUser, currentUserId, loadMessages])
 
   // 改进的实时消息检查 - 更频繁且智能
   useEffect(() => {

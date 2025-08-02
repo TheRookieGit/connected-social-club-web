@@ -355,7 +355,7 @@ export default function Dashboard() {
       clearInterval(dataRefreshInterval)
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [router])
+  }, [router, searchParams])
 
   // 计算年龄的辅助函数
   const calculateAge = (birthDate: string) => {
