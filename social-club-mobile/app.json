@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "social-club-mobile",
+    "name": "Social Club",
     "slug": "social-club-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -13,7 +13,15 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.socialclub.mobile",
+      "buildNumber": "1",
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "此应用需要位置权限来为您推荐附近的用户。",
+        "NSPhotoLibraryUsageDescription": "此应用需要访问您的相册来设置个人头像。",
+        "NSCameraUsageDescription": "此应用需要相机权限来拍摄个人头像。",
+        "CFBundleDisplayName": "Social Club"
+      }
     },
     "android": {
       "adaptiveIcon": {
