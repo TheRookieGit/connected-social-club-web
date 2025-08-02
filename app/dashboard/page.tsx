@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-<<<<<<< HEAD
 import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock, Flower } from 'lucide-react'
 import useSWR from 'swr'
 import UserCard from '@/components/UserCard'
@@ -48,6 +47,7 @@ interface User {
 
 export default function Dashboard() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
   const [showChat, setShowChat] = useState(true)
@@ -58,6 +58,7 @@ export default function Dashboard() {
   const [currentUser, setCurrentUser] = useState<UserProfile | null>(null)
   const [users, setUsers] = useState<User[]>([])
   const [showLocationPermission, setShowLocationPermission] = useState(false)
+  const [initialChatUserId, setInitialChatUserId] = useState<string | null>(null)
 
   // 获取已匹配的用户
   const fetchMatchedUsers = async () => {
@@ -144,8 +145,26 @@ export default function Dashboard() {
     }
   }
 
-  // 检查登录状态并获取最新用户数据
+      // 检查登录状态并获取最新用户数据
   useEffect(() => {
+    // 检查URL参数中是否有showChat参数
+    const showChatParam = searchParams.get('showChat')
+    const userIdParam = searchParams.get('userId')
+    
+    if (showChatParam === 'true') {
+      console.log('Dashboard: 检测到showChat参数，自动显示聊天界面')
+      setShowChat(true)
+      
+      // 如果有指定用户ID，保存到状态中
+      if (userIdParam) {
+        console.log('Dashboard: 检测到userId参数，保存到状态:', userIdParam)
+        setInitialChatUserId(userIdParam)
+      }
+      
+      // 清理URL参数
+      router.replace('/dashboard')
+    }
+
     // 首先检查URL参数中是否有LinkedIn登录返回的token和用户数据
     const urlParams = new URLSearchParams(window.location.search)
     const urlToken = urlParams.get('token')
@@ -383,9 +402,9 @@ export default function Dashboard() {
         return
       }
 
-      const currentUserId = JSON.parse(localStorage.getItem('user') || '{}').id
-      console.log(`📤 [前端] 发送喜欢请求 - 当前用户ID: ${currentUserId}, 目标用户ID: ${currentUser.id}`)
+      console.log(`📤 [前端] 发送喜欢请求 - 目标用户ID: ${currentUser.id}`)
 
+      // 使用 user_matches API
       const response = await fetch('/api/user/matches', {
         method: 'POST',
         headers: {
@@ -398,11 +417,11 @@ export default function Dashboard() {
         })
       })
 
-      console.log(`📡 [前端] API响应状态:`, response.status)
+      console.log(`📡 [前端] user_matches API响应状态:`, response.status)
 
       if (response.ok) {
         const data = await response.json()
-        console.log(`📨 [前端] API响应数据:`, data)
+        console.log(`📨 [前端] user_matches API响应数据:`, data)
         
         if (data.success) {
           if (data.isMatch) {
@@ -412,9 +431,6 @@ export default function Dashboard() {
             alert(`🎉 恭喜！你和${currentUser.name}匹配成功了！`)
           } else {
             console.log(`💌 [前端] 喜欢请求已发送给${currentUser.name}，等待对方回应`)
-            if (data.pendingMatch) {
-              console.log(`📋 [前端] 创建的待匹配记录:`, data.pendingMatch)
-            }
             // 显示友好的提示信息
             const notification = document.createElement('div')
             notification.className = 'fixed top-20 right-4 bg-purple-500 text-white px-6 py-3 rounded-lg shadow-lg z-50'
@@ -425,11 +441,11 @@ export default function Dashboard() {
             }, 3000)
           }
         } else {
-          console.error('❌ [前端] API返回错误:', data.error)
+          console.error('❌ [前端] user_matches API返回错误:', data.error)
           alert('操作失败: ' + data.error)
         }
       } else {
-        console.error('❌ [前端] API请求失败，状态码:', response.status)
+        console.error('❌ [前端] user_matches API请求失败，状态码:', response.status)
         const errorText = await response.text()
         console.error('❌ [前端] 错误详情:', errorText)
         alert('请求失败，请重试')
@@ -490,9 +506,9 @@ export default function Dashboard() {
       const token = localStorage.getItem('token')
       if (!token) return
 
-      const currentUserId = JSON.parse(localStorage.getItem('user') || '{}').id
-      console.log(`📤 [前端] 发送超级喜欢请求 - 当前用户ID: ${currentUserId}, 目标用户ID: ${currentUser.id}`)
+      console.log(`📤 [前端] 发送超级喜欢请求 - 目标用户ID: ${currentUser.id}`)
 
+      // 使用 user_matches API 发送超级喜欢
       const response = await fetch('/api/user/matches', {
         method: 'POST',
         headers: {
@@ -519,9 +535,6 @@ export default function Dashboard() {
             alert(`🎉 恭喜！你的超级喜欢生效了，你和${currentUser.name}匹配成功！`)
           } else {
             console.log(`⭐ [前端] 超级喜欢请求已发送给${currentUser.name}，等待对方回应`)
-            if (data.pendingMatch) {
-              console.log(`📋 [前端] 创建的超级喜欢待匹配记录:`, data.pendingMatch)
-            }
             // 显示友好的提示信息
             const notification = document.createElement('div')
             notification.className = 'fixed top-20 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50'
@@ -564,6 +577,11 @@ export default function Dashboard() {
     await fetchPendingMatchesCount()
     
     console.log('✅ [前端] 数据刷新完成')
+  }
+
+  // 处理用户头像点击，跳转到用户个人资料页面
+  const handleUserAvatarClick = (userId: string) => {
+    router.push(`/user-profile/${userId}`)
   }
 
   if (isLoading) {
@@ -671,7 +689,6 @@ export default function Dashboard() {
                 />
               </button>
 
-<<<<<<< HEAD
               {/* 桃花币入口 */}
               <motion.button
                 onClick={() => router.push('/currency')}
@@ -692,7 +709,6 @@ export default function Dashboard() {
                       alert('请先登录')
                       return
                     }
->>>>>>> test-signup-no-email-no-phone-verify
 
               
               {/* 管理员控制台入口 */}
@@ -824,7 +840,7 @@ export default function Dashboard() {
                   <motion.div
                     key={user.id}
                     className="flex-shrink-0 w-20 text-center cursor-pointer"
-                    onClick={() => setShowChat(true)}
+                    onClick={() => handleUserAvatarClick(user.id)}
                     whileHover={{ scale: 1.05 }}
                   >
                     <div className="w-16 h-16 bg-red-200 rounded-full flex items-center justify-center mx-auto mb-2 relative">
@@ -959,37 +975,20 @@ export default function Dashboard() {
          />
        )}
 
+<<<<<<< HEAD
        {/* LinkedIn风格的右下角聊天面板 */}
-       {showChat && (
-         <div className="fixed bottom-4 right-4 z-50">
-           <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-80 h-96 flex flex-col">
-             {/* 聊天头部 */}
-             <div className="bg-red-500 text-white p-4 rounded-t-lg flex items-center justify-between">
-               <div className="flex items-center space-x-2">
-                 <Users size={20} />
-                 <span className="font-semibold">聊天 ({matchedUsers.length})</span>
-               </div>
-               <button
-                 onClick={() => setShowChat(false)}
-                 className="text-white hover:text-gray-200 transition-colors"
-               >
-                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                 </svg>
-               </button>
-             </div>
-             
-             {/* 聊天内容区域 */}
-             <div className="flex-1 overflow-hidden">
-               <StreamChatPanel
-                 matchedUsers={matchedUsers}
-                 onClose={() => setShowChat(false)}
-                 isEmbedded={true}
-               />
-             </div>
-           </div>
-         </div>
-       )}
+      {/* 专业聊天面板（已替代原来的ChatPanel） */}
+      {showChat && (
+        <StreamChatPanel
+          matchedUsers={matchedUsers}
+          onClose={() => {
+            setShowChat(false)
+            setInitialChatUserId(null) // 清理初始用户ID
+          }}
+          initialUserId={initialChatUserId || undefined}
+          isEmbedded={true}
+        />
+      )}
 
       {/* 个人资料模态框 */}
       {showProfile && (

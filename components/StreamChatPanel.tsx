@@ -14,17 +14,53 @@ import {
 import { Pin, Trash2, MoreVertical, MapPin, Clock } from 'lucide-react'
 import 'stream-chat-react/dist/css/v2/index.css'
 
+// 自定义样式覆盖
+const customStyles = `
+  .str-chat__message-bubble {
+    max-width: 100% !important;
+    word-wrap: break-word !important;
+  }
+  
+  .str-chat__message-text {
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+  }
+  
+  .str-chat__message-list {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .str-chat__message-list-scroll {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .str-chat__input-flat {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+  
+  .str-chat__input-flat--textarea {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+`
+
 interface StreamChatPanelProps {
   matchedUsers: any[]  // 改为接受匹配用户列表
   onClose: () => void
   isEmbedded?: boolean  // 新增：是否为嵌入式模式
+  initialUserId?: string  // 初始选中的用户ID
 }
 
 export default function StreamChatPanel({ 
   matchedUsers, 
   onClose,
-  isEmbedded = false
+  isEmbedded = false,
+  initialUserId
 }: StreamChatPanelProps) {
+  console.log('StreamChatPanel: 组件初始化，initialUserId:', initialUserId)
   const [streamToken, setStreamToken] = useState<string | null>(null)
   const [chatClient, setChatClient] = useState<StreamChat | null>(null)
   const [currentUser, setCurrentUser] = useState<any>(null)
@@ -209,8 +245,28 @@ export default function StreamChatPanel({
       console.log(`✅ 获取到 ${userChannels.length} 个频道`)
       setChannels(userChannels)
       
-      // 如果有频道且没有选中的频道，选择第一个
+      // 如果有频道且没有选中的频道，选择频道
       if (userChannels.length > 0 && !selectedChannel) {
+        // 如果有初始用户ID，尝试找到对应的频道
+        if (initialUserId) {
+          console.log('StreamChatPanel: 开始查找初始用户频道，目标用户ID:', initialUserId)
+          console.log('StreamChatPanel: 可用频道数量:', userChannels.length)
+          
+          const targetChannel = userChannels.find(channel => {
+            const otherUser = getOtherUser(channel)
+            console.log('StreamChatPanel: 检查频道', channel.id, '其他用户:', otherUser)
+            return otherUser?.id === initialUserId
+          })
+          
+          if (targetChannel) {
+            console.log('StreamChatPanel: 找到初始用户频道，自动选择:', targetChannel)
+            setSelectedChannel(targetChannel)
+            return
+          } else {
+            console.log('StreamChatPanel: 未找到初始用户频道，将选择第一个频道')
+          }
+        }
+        // 否则选择第一个频道
         setSelectedChannel(userChannels[0])
       }
     } catch (error) {
@@ -241,6 +297,19 @@ export default function StreamChatPanel({
           setChannels(fallbackChannels)
           
           if (fallbackChannels.length > 0 && !selectedChannel) {
+            // 如果有初始用户ID，尝试找到对应的频道
+            if (initialUserId) {
+              const targetChannel = fallbackChannels.find(channel => {
+                const otherUser = getOtherUser(channel)
+                return otherUser?.id === initialUserId
+              })
+              if (targetChannel) {
+                console.log('StreamChatPanel: 备用策略找到初始用户频道，自动选择:', targetChannel)
+                setSelectedChannel(targetChannel)
+                return
+              }
+            }
+            // 否则选择第一个频道
             setSelectedChannel(fallbackChannels[0])
           }
           
@@ -663,6 +732,7 @@ export default function StreamChatPanel({
 
   return (
     <div className={isEmbedded ? "w-full h-full" : "fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 flex items-center justify-center z-50 p-4"}>
+      <style dangerouslySetInnerHTML={{ __html: customStyles }} />
       <div className={isEmbedded ? "bg-white w-full h-full flex flex-col overflow-hidden" : "bg-white rounded-3xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-pink-100"}>
         {/* 头部 - 嵌入式模式下隐藏 */}
         {!isEmbedded && (
@@ -695,9 +765,10 @@ export default function StreamChatPanel({
         <div className="flex-1 flex">
           <Chat client={chatClient}>
             <div className="flex w-full h-full">
+<<<<<<< HEAD
               {/* 频道列表 - 嵌入式模式下隐藏 */}
               {!isEmbedded && (
-                <div className="w-1/3 border-r border-pink-200 bg-gradient-to-b from-pink-50 to-rose-50">
+                <div className="w-80 border-r border-pink-200 bg-gradient-to-b from-pink-50 to-rose-50 flex-shrink-0">
                 <div className="p-6 border-b border-pink-200 bg-white">
                   <div className="flex items-center justify-between">
                     <div>
@@ -1080,7 +1151,7 @@ export default function StreamChatPanel({
             )}
 
               {/* 聊天窗口 */}
-              <div className={isEmbedded ? "w-full flex flex-col bg-gradient-to-b from-pink-25 to-white" : "flex-1 flex flex-col bg-gradient-to-b from-pink-25 to-white"}>
+              <div className={isEmbedded ? "w-full flex flex-col bg-gradient-to-b from-pink-25 to-white" : "flex-1 flex flex-col bg-gradient-to-b from-pink-25 to-white min-w-0"}>
                 {selectedChannel ? (
                   <Channel channel={selectedChannel}>
                     <Window>
