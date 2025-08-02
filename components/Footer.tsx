@@ -31,9 +31,9 @@ export default function Footer() {
                   阅读人们的评价，联系我们，或搜索我们ConnectEd公众号。
                 </p>
                 <div className="mt-auto">
-                  <button className="bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-medium">
+                  <Link href="/news" className="inline-block bg-red-500 text-white px-6 py-2 rounded-lg hover:bg-red-600 transition-colors text-sm font-medium">
                     查看新闻页面
-                  </button>
+                  </Link>
                 </div>
               </div>
             </div>

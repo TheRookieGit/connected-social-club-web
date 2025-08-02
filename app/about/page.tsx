@@ -54,13 +54,13 @@ export default function About() {
 
             {/* 右侧图片 */}
             <div className="relative w-full h-80 md:h-96 rounded-2xl overflow-hidden shadow-lg">
-              <Image
-                src="/images/8bf7c6d78cf93c54e069a76ba993f9b0.jpg"
-                alt="ConnectEd Foundation - 教育平等与学术发展"
-                fill
-                className="object-cover rounded-2xl"
-                priority
-              />
+                             <Image
+                 src="/images/35890351d159b989fbf3166589a31837.png"
+                 alt="ConnectEd Foundation - 教育平等与学术发展"
+                 fill
+                 className="object-cover rounded-2xl"
+                 priority
+               />
             </div>
           </div>
         </div>

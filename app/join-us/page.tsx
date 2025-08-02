@@ -11,9 +11,11 @@ export default function JoinUs() {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <Heart className="h-8 w-8 text-red-500" />
-              <span className="text-xl font-bold text-gray-900">ConnectEd Elite Social Club</span>
+            <Link href="/" className="hover:opacity-80 transition-opacity">
+              <h1 className="text-xl font-bold text-red-500 flex items-center">
+                <Heart className="mr-2 text-red-500" size={24} />
+                ConnectEd Elite Social Club
+              </h1>
             </Link>
             <div className="hidden md:flex items-center space-x-8">
               <Link href="/" className="text-gray-600 hover:text-red-500 transition-colors">

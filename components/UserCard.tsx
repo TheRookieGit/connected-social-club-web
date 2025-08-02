@@ -84,7 +84,7 @@ export default function UserCard({ user, onClick }: UserCardProps) {
 
   return (
     <div 
-      className="relative bg-white rounded-2xl shadow-lg overflow-hidden card-hover cursor-pointer transform transition-transform hover:scale-105"
+      className="relative bg-white rounded-2xl shadow-lg overflow-hidden card-hover cursor-pointer transform transition-transform hover:scale-105 w-80 mx-auto"
       onClick={handleCardClick}
     >
       {/* 照片区域 */}
