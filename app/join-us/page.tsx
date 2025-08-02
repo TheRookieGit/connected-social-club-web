@@ -3,6 +3,7 @@
 import { Heart, Gift } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import SimpleFooter from '@/components/SimpleFooter'
 
 export default function JoinUs() {
   return (
@@ -21,11 +22,14 @@ export default function JoinUs() {
               <Link href="/" className="text-gray-600 hover:text-red-500 transition-colors">
                 首页
               </Link>
-              <Link href="#about" className="text-gray-600 hover:text-red-500 transition-colors">
+              <Link href="/about" className="text-gray-600 hover:text-red-500 transition-colors">
                 关于我们
               </Link>
-              <Link href="#contact" className="text-gray-600 hover:text-red-500 transition-colors">
-                联系我们
+              <Link href="/join-us" className="text-red-500 font-medium">
+                加入我们
+              </Link>
+              <Link href="/news" className="text-gray-600 hover:text-red-500 transition-colors">
+                媒体合作
               </Link>
             </div>
           </div>
@@ -194,6 +198,9 @@ export default function JoinUs() {
             </div>
           </div>
         </section>
+
+      {/* Footer */}
+      <SimpleFooter />
      </div>
    )
  } 

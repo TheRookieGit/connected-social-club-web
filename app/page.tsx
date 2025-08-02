@@ -39,15 +39,18 @@ export default function Home() {
               </h1>
             </Link>
             <div className="hidden md:flex items-center space-x-8">
-              <a href="#features" className="text-gray-600 hover:text-red-500 transition-colors">
-                功能特色
-              </a>
+              <Link href="/" className="text-red-500 font-medium">
+                首页
+              </Link>
               <Link href="/about" className="text-gray-600 hover:text-red-500 transition-colors">
                 关于我们
               </Link>
-              <a href="#contact" className="text-gray-600 hover:text-red-500 transition-colors">
-                联系我们
-              </a>
+              <Link href="/join-us" className="text-gray-600 hover:text-red-500 transition-colors">
+                加入我们
+              </Link>
+              <Link href="/news" className="text-gray-600 hover:text-red-500 transition-colors">
+                媒体合作
+              </Link>
             </div>
           </div>
         </div>

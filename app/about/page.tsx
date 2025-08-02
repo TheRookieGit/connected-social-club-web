@@ -3,6 +3,7 @@
 import { Heart, BookOpen, Users, Target } from 'lucide-react'
 import Link from 'next/link'
 import Image from 'next/image'
+import SimpleFooter from '@/components/SimpleFooter'
 
 export default function About() {
   return (
@@ -26,6 +27,9 @@ export default function About() {
               </Link>
               <Link href="/join-us" className="text-gray-600 hover:text-red-500 transition-colors">
                 加入我们
+              </Link>
+              <Link href="/news" className="text-gray-600 hover:text-red-500 transition-colors">
+                媒体合作
               </Link>
             </div>
           </div>
@@ -146,23 +150,20 @@ export default function About() {
           <div className="text-center">
             <h3 className="text-2xl font-bold text-gray-900 mb-4">想要了解更多关于我们的工作吗？</h3>
             <p className="text-gray-600 mb-8">联系我们：admin@connect-edu.org</p>
-            <div className="flex justify-center space-x-4">
+            <div className="flex justify-center">
               <Link 
                 href="/join-us"
                 className="inline-block bg-red-500 text-white px-8 py-3 rounded-lg hover:bg-red-600 transition-colors font-medium"
               >
                 加入我们
               </Link>
-              <Link 
-                href="/"
-                className="inline-block bg-gray-500 text-white px-8 py-3 rounded-lg hover:bg-gray-600 transition-colors font-medium"
-              >
-                返回首页
-              </Link>
             </div>
           </div>
         </div>
-      </section>
+              </section>
+
+      {/* Footer */}
+      <SimpleFooter />
     </div>
   )
 } 

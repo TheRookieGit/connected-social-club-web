@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Heart, Link as LinkIcon, Sparkles, Download, ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import SimpleFooter from '@/components/SimpleFooter'
 
 export default function News() {
   const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0)
@@ -138,6 +139,9 @@ export default function News() {
               <Link href="/join-us" className="text-gray-600 hover:text-red-500 transition-colors">
                 加入我们
               </Link>
+              <Link href="/news" className="text-red-500 font-medium">
+                媒体合作
+              </Link>
             </div>
           </div>
         </div>
@@ -202,21 +206,18 @@ export default function News() {
               <ChevronRight size={24} />
             </button>
             
-            {/* 计数器 */}
-            <div className="absolute top-6 right-4 sm:right-6 lg:right-8 bg-black/60 backdrop-blur-sm text-white text-sm px-3 py-1 rounded-full z-10 shadow-lg">
-              {currentTestimonialIndex + 1} / {testimonials.length}
-            </div>
+
             
 
           </div>
           
           {/* 指示器 */}
-          <div className="flex justify-center mt-6 space-x-3">
+          <div className="flex justify-center mt-6 space-x-2">
             {testimonials.map((_, index) => (
               <button
                 key={index}
                 onClick={() => goToTestimonial(index)}
-                className={`w-4 h-4 rounded-full transition-all duration-300 hover:scale-110 cursor-pointer ${
+                className={`w-3 h-3 rounded-full transition-all duration-300 hover:scale-110 cursor-pointer ${
                   index === currentTestimonialIndex 
                     ? 'bg-red-500 scale-125 shadow-md' 
                     : 'bg-gray-300 hover:bg-gray-400'
@@ -295,18 +296,13 @@ export default function News() {
               </div>
             </div>
 
-            {/* 返回按钮 */}
-            <div className="text-center mt-16">
-              <Link 
-                href="/"
-                className="inline-block bg-gray-500 text-white px-8 py-3 rounded-lg hover:bg-gray-600 transition-colors font-medium"
-              >
-                返回首页
-              </Link>
-            </div>
+
           </div>
         </div>
       </section>
+
+      {/* Footer */}
+      <SimpleFooter />
     </div>
   )
 }
