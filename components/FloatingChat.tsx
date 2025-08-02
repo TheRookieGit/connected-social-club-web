@@ -317,7 +317,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
       {!isMinimized && (
         <div className="fixed bottom-6 right-6 z-50">
           <div className={`bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 ${
-            isExpanded ? 'w-96 h-[600px]' : 'w-80 h-[500px]'
+            isExpanded ? 'w-[500px] h-[600px]' : 'w-[420px] h-[500px]'
           }`}>
             {/* 聊天头部 */}
             <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-4">
@@ -355,7 +355,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
               <Chat client={chatClient}>
                 <div className="flex w-full h-full">
                   {/* 频道列表 */}
-                  <div className="w-1/3 border-r border-gray-200 bg-gray-50">
+                  <div className="w-2/5 border-r border-gray-200 bg-gray-50">
                     <div className="p-3 border-b border-gray-200 bg-white">
                       <h4 className="text-sm font-semibold text-gray-900">对话</h4>
                     </div>
