@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
     }
 
     // 检查用户性别
-    if (currentUser.gender !== '男') {
+    if (currentUser.gender !== '男' && currentUser.gender !== 'male') {
       console.log(`❌ [男性喜欢API] 用户 ${currentUser.name} (${currentUser.gender}) 不是男性，拒绝访问`)
       return NextResponse.json(
         { success: false, error: '此功能仅对男性用户开放' },

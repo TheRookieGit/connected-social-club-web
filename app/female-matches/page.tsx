@@ -192,7 +192,7 @@ export default function FemaleMatchesPage() {
     setCurrentUser(userData)
     
     // 验证用户性别
-    if (userData.gender !== '女') {
+    if (userData.gender !== '女' && userData.gender !== 'female') {
       setError('此功能仅对女性用户开放')
       setLoading(false)
       return

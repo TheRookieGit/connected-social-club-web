@@ -69,7 +69,7 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    if (currentUser.gender !== '女') {
+    if (currentUser.gender !== '女' && currentUser.gender !== 'female') {
       console.log(`❌ [开始对话API] 用户 ${currentUser.name} (${currentUser.gender}) 不是女性，拒绝访问`)
       return NextResponse.json(
         { success: false, error: '此功能仅对女性用户开放' },

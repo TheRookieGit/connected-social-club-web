@@ -832,7 +832,7 @@ export default function Dashboard() {
               </motion.button>
 
               {/* 性别相关功能按钮 */}
-              {currentUser?.gender === '女' && (
+              {(currentUser?.gender === '女' || currentUser?.gender === 'female') && (
                 <motion.button
                   onClick={() => router.push('/female-matches')}
                   className="relative p-3 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors shadow-lg"
@@ -853,7 +853,7 @@ export default function Dashboard() {
                 </motion.button>
               )}
 
-              {currentUser?.gender === '男' && (
+              {(currentUser?.gender === '男' || currentUser?.gender === 'male') && (
                 <motion.button
                   onClick={() => router.push('/male-likes')}
                   className="relative p-3 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors shadow-lg"

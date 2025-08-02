@@ -43,7 +43,7 @@ export default function MaleLikesPage() {
     setCurrentUser(userData)
     
     // 验证用户性别
-    if (userData.gender !== '男') {
+    if (userData.gender !== '男' && userData.gender !== 'male') {
       setError('此功能仅对男性用户开放')
       setLoading(false)
       return
