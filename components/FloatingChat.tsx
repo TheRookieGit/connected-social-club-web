@@ -29,11 +29,13 @@ const customStyles = `
   .str-chat__message-list {
     width: 100% !important;
     max-width: 100% !important;
+    height: 100% !important;
   }
   
   .str-chat__message-list-scroll {
     width: 100% !important;
     max-width: 100% !important;
+    height: 100% !important;
   }
   
   .str-chat__input-flat {
@@ -44,6 +46,26 @@ const customStyles = `
   .str-chat__input-flat--textarea {
     width: 100% !important;
     max-width: 100% !important;
+  }
+  
+  .str-chat__channel {
+    height: 100% !important;
+  }
+  
+  .str-chat__channel-messaging {
+    height: 100% !important;
+  }
+  
+  .str-chat__channel-messaging__main-panel {
+    height: 100% !important;
+  }
+  
+  .str-chat__channel-messaging__main-panel-inner {
+    height: 100% !important;
+  }
+  
+  .str-chat__channel-messaging__main-panel-inner .str-chat__message-list {
+    height: calc(100% - 120px) !important;
   }
 `
 
@@ -351,12 +373,12 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
             </div>
 
             {/* 聊天内容 */}
-            <div className="flex-1 flex flex-col h-full">
+            <div className="flex-1 flex flex-col" style={{ height: 'calc(100% - 80px)' }}>
               <Chat client={chatClient}>
                 <div className="flex w-full h-full">
                   {/* 频道列表 */}
-                  <div className="w-2/5 border-r border-gray-200 bg-gray-50">
-                    <div className="p-3 border-b border-gray-200 bg-white">
+                  <div className="w-2/5 border-r border-gray-200 bg-gray-50 flex flex-col">
+                    <div className="p-3 border-b border-gray-200 bg-white flex-shrink-0">
                       <h4 className="text-sm font-semibold text-gray-900">对话</h4>
                     </div>
                     <div className="flex-1 overflow-y-auto">
@@ -422,7 +444,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
                   </div>
 
                   {/* 聊天窗口 */}
-                  <div className="flex-1 flex flex-col">
+                  <div className="flex-1 flex flex-col min-h-0">
                     {selectedChannel ? (
                       <Channel channel={selectedChannel}>
                         <Window>
