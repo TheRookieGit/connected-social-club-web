@@ -59,6 +59,7 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
     }
     
     console.log(`📥 [聊天面板] 开始加载与用户 ${userId} 的聊天记录${forceRefresh ? ' (强制刷新)' : ''}`)
+    console.log(`🔍 [聊天面板] 当前用户ID: ${currentUserId}, 目标用户ID: ${userId}`)
     
     // 只在初始加载或强制刷新时显示loading
     if (forceRefresh || isInitialLoad) {
@@ -89,8 +90,8 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
         if (data.success) {
           const serverMessages: Message[] = data.messages.map((msg: any) => ({
             id: msg.id.toString(),
-            senderId: msg.senderId,
-            receiverId: msg.receiverId,
+            senderId: msg.senderId.toString(), // 确保是字符串
+            receiverId: msg.receiverId.toString(), // 确保是字符串
             content: msg.content,
             timestamp: new Date(msg.timestamp),
             type: msg.messageType || 'text',
@@ -98,6 +99,8 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
           }))
           
           console.log(`✅ [聊天面板] 成功加载 ${serverMessages.length} 条聊天记录`)
+          console.log(`🔍 [聊天面板] 消息发送者ID列表:`, serverMessages.map(m => m.senderId))
+          console.log(`🔍 [聊天面板] 消息接收者ID列表:`, serverMessages.map(m => m.receiverId))
           
           if (forceRefresh || isInitialLoad) {
             // 初始加载或强制刷新：直接设置服务器数据
@@ -164,6 +167,21 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
       }
     }
   }, [currentUserId, isInitialLoad, messages])
+
+  // 监听selectedUser变化，自动加载对应消息
+  useEffect(() => {
+    if (selectedUser && currentUserId) {
+      console.log(`🔄 [聊天面板] selectedUser变化，重新加载消息:`, {
+        selectedUserId: selectedUser.id,
+        currentUserId: currentUserId
+      })
+      // 清空之前的消息
+      setMessages([])
+      setIsInitialLoad(true)
+      // 加载新用户的消息
+      loadMessages(selectedUser.id, true)
+    }
+  }, [selectedUser?.id, currentUserId, loadMessages])
 
   // 改进的实时消息检查 - 更频繁且智能
   useEffect(() => {
@@ -249,8 +267,8 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
     const tempId = `temp_${Date.now()}`
     const optimisticMessage: Message = {
       id: tempId,
-      senderId: currentUserId,
-      receiverId: selectedUser.id,
+      senderId: currentUserId.toString(), // 确保是字符串
+      receiverId: selectedUser.id.toString(), // 确保是字符串
       content: messageContent,
       timestamp: new Date(),
       type: 'text',
@@ -299,8 +317,8 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
           // 用服务器返回的真实消息替换临时消息
           const realMessage: Message = {
             id: data.data.id.toString(),
-            senderId: data.data.senderId,
-            receiverId: data.data.receiverId,
+            senderId: data.data.senderId.toString(), // 确保是字符串
+            receiverId: data.data.receiverId.toString(), // 确保是字符串
             content: data.data.content,
             timestamp: new Date(data.data.timestamp),
             type: data.data.messageType || 'text',
@@ -456,7 +474,14 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                   {matchedUsers.map((user) => (
                     <div
                       key={user.id}
-                      onClick={() => setSelectedUser(user)}
+                      onClick={() => {
+                        console.log(`👤 [聊天面板] 用户点击选择:`, {
+                          userId: user.id,
+                          userName: user.name,
+                          currentSelectedUser: selectedUser?.id
+                        })
+                        setSelectedUser(user)
+                      }}
                       className={`p-4 rounded-xl cursor-pointer transition-all duration-200 ${
                         selectedUser?.id === user.id
                           ? 'bg-red-100 border-2 border-red-200 shadow-md'
@@ -608,12 +633,12 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                     <div
                       key={message.id}
                       className={`flex ${
-                        message.senderId === currentUserId ? 'justify-end' : 'justify-start'
+                        message.senderId.toString() === currentUserId.toString() ? 'justify-end' : 'justify-start'
                       }`}
                     >
                       <div
                         className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${
-                          message.senderId === currentUserId
+                          message.senderId.toString() === currentUserId.toString()
                             ? 'bg-red-500 text-white'
                             : 'bg-white text-gray-900 border'
                         } ${
@@ -622,12 +647,12 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                       >
                         <p className="text-sm leading-relaxed">{message.content}</p>
                         <div className={`flex items-center justify-between mt-2 text-xs ${
-                          message.senderId === currentUserId 
+                          message.senderId.toString() === currentUserId.toString()
                             ? 'text-red-100' 
                             : 'text-gray-500'
                         }`}>
                           <span>{formatTime(message.timestamp)}</span>
-                          {message.senderId === currentUserId && !message.id.startsWith('temp_') && (
+                          {message.senderId.toString() === currentUserId.toString() && !message.id.startsWith('temp_') && (
                             <div className="flex items-center ml-2">
                               <ReadStatusIndicator isRead={message.isRead} />
                             </div>
