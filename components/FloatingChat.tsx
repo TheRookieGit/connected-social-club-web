@@ -60,7 +60,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
   const [channelsCreated, setChannelsCreated] = useState(false)
   const [channels, setChannels] = useState<any[]>([])
   const [selectedChannel, setSelectedChannel] = useState<any>(null)
-  const [isMinimized, setIsMinimized] = useState(true)
+  const [isMinimized, setIsMinimized] = useState(false)
   const [isExpanded, setIsExpanded] = useState(false)
   const [unreadCount, setUnreadCount] = useState(0)
   const [initError, setInitError] = useState<string | null>(null)
