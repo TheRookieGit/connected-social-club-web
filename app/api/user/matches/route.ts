@@ -151,7 +151,20 @@ export async function GET(request: NextRequest) {
         last_seen,
         is_verified,
         is_premium,
-        created_at
+        created_at,
+        ethnicity,
+        religion,
+        employer,
+        school,
+        degree,
+        values_preferences,
+        personality_type,
+        languages,
+        family_plans,
+        has_kids,
+        smoking_status,
+        drinking_status,
+        dating_style
       `)
       .neq('id', decoded.userId)
       .eq('status', 'active')
@@ -182,12 +195,22 @@ export async function GET(request: NextRequest) {
 
         const userInterestList = userInterests?.map((i: any) => i.interest) || []
         
+        // 获取用户关系偏好（关系目标）
+        const { data: userRelationshipPrefs } = await supabase
+          .from('user_relationship_preferences')
+          .select('relationship_goals')
+          .eq('user_id', user.id)
+          .single()
+
+        const relationshipGoals = userRelationshipPrefs?.relationship_goals || []
+        
         // 计算匹配分数
         const matchScore = calculateMatchScore(currentUser, user, currentUserInterestList, userInterestList)
         
         return {
           ...user,
           interests: userInterestList,
+          relationship_goals: relationshipGoals,
           matchScore: Math.round(matchScore * 100) // 转换为百分比
         }
       }) || []

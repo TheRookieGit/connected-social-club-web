@@ -1,0 +1,10 @@
+[33me5816f8[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mmain[m[33m, [m[1;33mtag: [m[1;33mv0.7.1[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m)[m v0.7.1: merge dashboard-modify branch - resolve conflicts and integrate user matches API
+[33m7bc72ac[m v0.7.1: merge test-signup-no-email-no-phone-verify branch - resolve conflicts
+[33mf905d16[m v0.7.1: merge melo-work branch - currency and chatting features
+[33m7f412ac[m[33m ([m[1;32mmelo-work[m[33m)[m v0.7.1: merge all branches - currency and chatting updates
+[33m98470b6[m[33m ([m[1;31morigin/melo-work[m[33m)[m currency and chatting
+[33m4673402[m[33m ([m[1;31morigin/dashboard-modify[m[33m, [m[1;32mdashboard-modify[m[33m)[m update user_matches api, all like button now use this api
+[33ma5c113b[m update other user profile card
+[33mf02cead[m fix: click user photo direct to user chat box
+[33m70d56ba[m fix: 修复发送消息按钮跳转问题 - 添加URL参数处理自动显示聊天界面
+[33maf75e74[m feat: 添加点击用户头像进入个人资料页面功能

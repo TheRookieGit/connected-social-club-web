@@ -13,8 +13,8 @@ export default function Footer() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8 justify-items-center">
               {/* Working at ConnectEd */}
               <div className="space-y-4 text-center max-w-sm flex flex-col h-full">
-                <h3 className="text-lg font-bold text-gray-900">加入 ConnectEd</h3>
-                <p className="text-gray-600 text-sm leading-relaxed flex-grow">
+                <h3 className="text-2xl font-bold text-gray-900">加入 ConnectEd</h3>
+                <p className="text-gray-600 text-base leading-relaxed flex-grow">
                   想要帮助单身人士找到他们正在寻找的认真关系吗？我们很乐意有你加入。
                 </p>
                 <div className="mt-auto">
@@ -26,8 +26,8 @@ export default function Footer() {
 
               {/* ConnectEd in the news */}
               <div className="space-y-4 text-center max-w-sm flex flex-col h-full">
-                <h3 className="text-lg font-bold text-gray-900">ConnectEd 新闻</h3>
-                <p className="text-gray-600 text-sm leading-relaxed flex-grow">
+                <h3 className="text-2xl font-bold text-gray-900">ConnectEd 新闻</h3>
+                <p className="text-gray-600 text-base leading-relaxed flex-grow">
                   阅读人们的评价，联系我们，或搜索我们ConnectEd公众号。
                 </p>
                 <div className="mt-auto">

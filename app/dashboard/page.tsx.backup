@@ -11,7 +11,6 @@ import UserCard from '@/components/UserCard'
 import ProfileModal from '@/components/ProfileModal'
 import PendingMatchesPanel from '@/components/PendingMatchesPanel'
 import LocationDisplay from '@/components/LocationDisplay'
-import UserDetailModal from '@/components/UserDetailModal'
 import { syncUserDataToLocalStorage } from '@/lib/hooks'
 import { UserProfile } from '@/types/user'
 import dynamic from 'next/dynamic'
@@ -44,26 +43,6 @@ interface User {
   interests: string[]
   photos: string[]
   isOnline: boolean
-  // 扩展的个人资料字段
-  occupation?: string
-  education?: string
-  relationship_status?: string
-  height?: number
-  weight?: number
-  ethnicity?: string
-  religion?: string
-  employer?: string
-  school?: string
-  degree?: string
-  values_preferences?: string[]
-  personality_type?: string
-  languages?: string[]
-  family_plans?: string
-  has_kids?: string | boolean
-  smoking_status?: string
-  drinking_status?: string
-  dating_style?: string
-  relationship_goals?: string[]
 }
 
 export default function Dashboard() {
@@ -80,8 +59,6 @@ export default function Dashboard() {
   const [users, setUsers] = useState<User[]>([])
   const [showLocationPermission, setShowLocationPermission] = useState(false)
   const [initialChatUserId, setInitialChatUserId] = useState<string | null>(null)
-  const [showUserDetailModal, setShowUserDetailModal] = useState(false)
-  const [selectedUser, setSelectedUser] = useState<User | null>(null)
 
   // 获取已匹配的用户
   const fetchMatchedUsers = async () => {
@@ -389,7 +366,6 @@ export default function Dashboard() {
         if (response.ok) {
           const data = await response.json()
           if (data.success) {
-            console.log('Dashboard - API返回的原始用户数据:', data.users)
             // 转换数据格式以匹配现有组件
             const formattedUsers: User[] = data.users.map((user: any) => ({
               id: user.id.toString(),
@@ -399,29 +375,8 @@ export default function Dashboard() {
               bio: user.bio || '这个人很神秘...',
               interests: user.interests || [],
               photos: [user.avatar_url || '/api/placeholder/400/600'],
-              isOnline: user.is_online || false,
-              // 扩展的个人资料字段
-              occupation: user.occupation,
-              education: user.education,
-              relationship_status: user.relationship_status,
-              height: user.height,
-              weight: user.weight,
-              ethnicity: user.ethnicity,
-              religion: user.religion,
-              employer: user.employer,
-              school: user.school,
-              degree: user.degree,
-              values_preferences: user.values_preferences,
-              personality_type: user.personality_type,
-              languages: user.languages,
-              family_plans: user.family_plans,
-              has_kids: user.has_kids,
-              smoking_status: user.smoking_status,
-              drinking_status: user.drinking_status,
-              dating_style: user.dating_style,
-              relationship_goals: user.relationship_goals
+              isOnline: user.is_online || false
             }))
-            console.log('Dashboard - 格式化后的用户数据:', formattedUsers)
             setUsers(formattedUsers)
           }
         }
@@ -629,140 +584,6 @@ export default function Dashboard() {
     router.push(`/user-profile/${userId}`)
   }
 
-  // 处理用户卡片点击，显示详情模态框
-  const handleUserCardClick = (user: User) => {
-    console.log('Dashboard - 点击用户卡片，用户数据:', user)
-    setSelectedUser(user)
-    setShowUserDetailModal(true)
-  }
-
-  // 处理模态框中的喜欢操作
-  const handleModalLike = async (userId: string) => {
-    const user = users.find(u => u.id === userId)
-    if (!user) return
-
-    console.log(`💖 [模态框] 用户点击喜欢按钮 - 目标用户:`, user)
-
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) {
-        console.error('❌ [模态框] 没有找到登录token')
-        return
-      }
-
-      console.log(`📤 [模态框] 发送喜欢请求 - 目标用户ID: ${userId}`)
-
-      const response = await fetch('/api/user/matches', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          matchedUserId: userId,
-          action: 'like'
-        })
-      })
-
-      console.log(`📡 [模态框] API响应状态:`, response.status)
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log(`📨 [模态框] API响应数据:`, data)
-        
-        if (data.success) {
-          if (data.isMatch) {
-            console.log(`🎉 [模态框] 匹配成功！与${user.name}形成双向匹配`)
-            fetchMatchedUsers()
-            alert(`🎉 恭喜！你和${user.name}匹配成功了！`)
-          } else {
-            console.log(`💌 [模态框] 喜欢请求已发送给${user.name}，等待对方回应`)
-            const notification = document.createElement('div')
-            notification.className = 'fixed top-20 right-4 bg-purple-500 text-white px-6 py-3 rounded-lg shadow-lg z-50'
-            notification.innerHTML = `💌 已向${user.name}发送喜欢请求`
-            document.body.appendChild(notification)
-            setTimeout(() => {
-              document.body.removeChild(notification)
-            }, 3000)
-          }
-        } else {
-          console.error('❌ [模态框] API返回错误:', data.error)
-          alert('操作失败: ' + data.error)
-        }
-      } else {
-        console.error('❌ [模态框] API请求失败，状态码:', response.status)
-        alert('请求失败，请重试')
-      }
-    } catch (error) {
-      console.error('❌ [模态框] 处理喜欢操作失败:', error)
-      alert('网络错误，请重试')
-    }
-
-    setCurrentIndex(prev => prev + 1)
-  }
-
-  // 处理模态框中的超级喜欢操作
-  const handleModalSuperLike = async (userId: string) => {
-    const user = users.find(u => u.id === userId)
-    if (!user) return
-
-    console.log(`⭐ [模态框] 用户点击超级喜欢按钮 - 目标用户:`, user)
-
-    try {
-      const token = localStorage.getItem('token')
-      if (!token) return
-
-      console.log(`📤 [模态框] 发送超级喜欢请求 - 目标用户ID: ${userId}`)
-
-      const response = await fetch('/api/user/matches', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          matchedUserId: userId,
-          action: 'super_like'
-        })
-      })
-
-      console.log(`📡 [模态框] 超级喜欢API响应状态:`, response.status)
-
-      if (response.ok) {
-        const data = await response.json()
-        console.log(`📨 [模态框] 超级喜欢API响应数据:`, data)
-        
-        if (data.success) {
-          if (data.isMatch) {
-            console.log(`🎉 [模态框] 超级喜欢匹配成功！与${user.name}形成双向匹配`)
-            fetchMatchedUsers()
-            alert(`🎉 恭喜！你的超级喜欢生效了，你和${user.name}匹配成功！`)
-          } else {
-            console.log(`⭐ [模态框] 超级喜欢请求已发送给${user.name}，等待对方回应`)
-            const notification = document.createElement('div')
-            notification.className = 'fixed top-20 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50'
-            notification.innerHTML = `⭐ 已向${user.name}发送超级喜欢请求`
-            document.body.appendChild(notification)
-            setTimeout(() => {
-              document.body.removeChild(notification)
-            }, 3000)
-          }
-        } else {
-          console.error('❌ [模态框] 超级喜欢API返回错误:', data.error)
-          alert('操作失败: ' + data.error)
-        }
-      } else {
-        console.error('❌ [模态框] 超级喜欢API请求失败')
-        alert('请求失败，请重试')
-      }
-    } catch (error) {
-      console.error('❌ [模态框] 处理超级喜欢失败:', error)
-      alert('网络错误，请重试')
-    }
-
-    setCurrentIndex(prev => prev + 1)
-  }
-
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100 flex items-center justify-center">
@@ -783,12 +604,9 @@ export default function Dashboard() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-                             <Link href="/" className="hover:opacity-80 transition-opacity">
-                 <h1 className="text-xl font-bold text-red-500 flex items-center">
-                   <Heart className="mr-2 text-red-500" size={24} />
-                   ConnectEd Elite Social Club
-                 </h1>
-               </Link>
+              <Link href="/" className="hover:opacity-80 transition-opacity">
+                <h1 className="text-2xl font-bold text-red-500">ConnectEd Elite Social Club</h1>
+              </Link>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -843,15 +661,15 @@ export default function Dashboard() {
               
               <button
                 onClick={() => setShowProfile(true)}
-                className="relative p-0 bg-gray-100 text-gray-600 rounded-full hover:bg-red-100 hover:text-red-500 transition-colors shadow-lg flex items-center justify-center w-11 h-11"
+                className="p-2 text-gray-600 hover:text-red-500 transition-colors flex items-center"
               >
                 {currentUser?.avatar_url ? (
-                  <div className="w-full h-full rounded-full overflow-hidden">
+                  <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-gray-300 hover:border-red-500 transition-colors">
                     <Image 
                       src={currentUser.avatar_url} 
                       alt={currentUser.name}
-                      width={44}
-                      height={44}
+                      width={32}
+                      height={32}
                       className="w-full h-full object-cover"
                       onError={(e) => {
                         console.log('导航栏头像加载失败，显示默认图标')
@@ -866,7 +684,7 @@ export default function Dashboard() {
                   </div>
                 ) : null}
                 <UserIcon 
-                  size={20} 
+                  size={24} 
                   className={currentUser?.avatar_url ? 'hidden' : ''}
                 />
               </button>
@@ -882,6 +700,17 @@ export default function Dashboard() {
                 <Flower size={24} />
               </motion.button>
 
+              {/* 重新进行注册流程按钮 */}
+              <button
+                onClick={async () => {
+                  try {
+                    const token = localStorage.getItem('token')
+                    if (!token) {
+                      alert('请先登录')
+                      return
+                    }
+
+              
               {/* 管理员控制台入口 */}
               {(() => {
                 console.log('Dashboard: 检查管理员权限...')
@@ -1072,7 +901,7 @@ export default function Dashboard() {
 
           {currentUserCard ? (
             <div className="flex flex-col items-center">
-              <UserCard user={currentUserCard} onClick={handleUserCardClick} />
+              <UserCard user={currentUserCard} />
               
               {/* 操作按钮 */}
               <div className="flex justify-center space-x-8 mt-8">
@@ -1199,60 +1028,48 @@ export default function Dashboard() {
         />
       )}
 
-             {/* 用户详情模态框 */}
-       <UserDetailModal
-         user={selectedUser}
-         isOpen={showUserDetailModal}
-         onClose={() => {
-           setShowUserDetailModal(false)
-           setSelectedUser(null)
-         }}
-         onLike={handleModalLike}
-         onSuperLike={handleModalSuperLike}
-       />
-
-       {/* 位置权限请求模态框 */}
-       {showLocationPermission && (
-         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-           <div className="bg-white rounded-lg p-8 max-w-md mx-4">
-             <div className="text-center">
-               <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                 <MapPin className="text-blue-600" size={24} />
-               </div>
-               <h3 className="text-xl font-bold text-gray-900 mb-2">位置服务</h3>
-               <p className="text-gray-600 mb-6">
-                 为了提供更好的匹配服务，我们需要获取您的位置信息。
-                 <br />
-                 这将帮助我们为您推荐附近的用户。
-               </p>
-               
-               <div className="flex space-x-4">
-                 <button
-                   onClick={() => {
-                     // 记录用户拒绝，24小时内不再询问
-                     recordUserDenial(false)
-                     setShowLocationPermission(false)
-                   }}
-                   className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
-                 >
-                   稍后再说
-                 </button>
-                 <button
-                   onClick={() => {
-                     setShowLocationPermission(false)
-                     // 这里可以添加获取位置的逻辑
-                     // 或者跳转到登录表单的位置权限请求
-                     router.push('/?showLocationPermission=true')
-                   }}
-                   className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-                 >
-                   允许访问
-                 </button>
-               </div>
-             </div>
-           </div>
-         </div>
-       )}
+      {/* 位置权限请求模态框 */}
+      {showLocationPermission && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-8 max-w-md mx-4">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MapPin className="text-blue-600" size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">位置服务</h3>
+              <p className="text-gray-600 mb-6">
+                为了提供更好的匹配服务，我们需要获取您的位置信息。
+                <br />
+                这将帮助我们为您推荐附近的用户。
+              </p>
+              
+              <div className="flex space-x-4">
+                <button
+                  onClick={() => {
+                    // 记录用户拒绝，24小时内不再询问
+                    recordUserDenial(false)
+                    setShowLocationPermission(false)
+                  }}
+                  className="flex-1 px-4 py-2 text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                >
+                  稍后再说
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLocationPermission(false)
+                    // 这里可以添加获取位置的逻辑
+                    // 或者跳转到登录表单的位置权限请求
+                    router.push('/?showLocationPermission=true')
+                  }}
+                  className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  允许访问
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 } 

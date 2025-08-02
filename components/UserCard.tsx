@@ -17,9 +17,10 @@ interface User {
 
 interface UserCardProps {
   user: User
+  onClick?: (user: User) => void
 }
 
-export default function UserCard({ user }: UserCardProps) {
+export default function UserCard({ user, onClick }: UserCardProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const router = useRouter()
 
@@ -74,7 +75,11 @@ export default function UserCard({ user }: UserCardProps) {
 
   // 处理卡片点击
   const handleCardClick = () => {
-    router.push(`/user-profile/${user.id}`)
+    if (onClick) {
+      onClick(user)
+    } else {
+      router.push(`/user-profile/${user.id}`)
+    }
   }
 
   return (

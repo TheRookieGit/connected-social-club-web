@@ -11,10 +11,12 @@ export default function About() {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
-              <Heart className="h-8 w-8 text-red-500" />
-              <span className="text-xl font-bold text-gray-900">ConnectEd Elite Social Club</span>
-            </Link>
+                         <Link href="/" className="hover:opacity-80 transition-opacity">
+               <h1 className="text-xl font-bold text-red-500 flex items-center">
+                 <Heart className="mr-2 text-red-500" size={24} />
+                 ConnectEd Elite Social Club
+               </h1>
+             </Link>
             <div className="hidden md:flex items-center space-x-8">
               <Link href="/" className="text-gray-600 hover:text-red-500 transition-colors">
                 首页
@@ -65,7 +67,7 @@ export default function About() {
       </section>
 
       {/* 使命详情 部分 */}
-      <section id="mission-details" className="bg-gradient-to-br from-blue-50 to-indigo-50 py-20">
+      <section id="mission-details" className="bg-gradient-to-br from-pink-50 to-rose-50 py-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900">
@@ -128,9 +130,10 @@ export default function About() {
             <div className="bg-gradient-to-r from-red-50 to-pink-50 rounded-2xl p-8 shadow-sm">
               <div className="text-center">
                 <div className="text-4xl mb-6">✨</div>
-                <p className="text-xl text-gray-700 leading-relaxed">
-                  通过所有这些努力，我们希望确保所有对研究充满热情的学生都能追求自己的梦想，在学术界蓬勃发展。我们致力于为每个有抱负的学者创造平等的机会，让知识的光芒照亮每个人的未来。
-                </p>
+                                 <p className="text-lg text-gray-700 leading-relaxed">
+                   通过所有这些努力，我们希望确保所有对研究充满热情的学生都能追求自己的梦想，在学术界蓬勃发展。<br />
+                   我们致力于为每个有抱负的学者创造平等的机会，让知识的光芒照亮每个人的未来。
+                 </p>
               </div>
             </div>
           </div>

@@ -765,7 +765,6 @@ export default function StreamChatPanel({
         <div className="flex-1 flex">
           <Chat client={chatClient}>
             <div className="flex w-full h-full">
-<<<<<<< HEAD
               {/* 频道列表 - 嵌入式模式下隐藏 */}
               {!isEmbedded && (
                 <div className="w-80 border-r border-pink-200 bg-gradient-to-b from-pink-50 to-rose-50 flex-shrink-0">

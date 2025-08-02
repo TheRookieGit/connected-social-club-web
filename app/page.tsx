@@ -32,9 +32,11 @@ export default function Home() {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
-              <Heart className="h-8 w-8 text-red-500" />
-              <span className="text-xl font-bold text-gray-900">ConnectEd Elite Social Club</span>
+            <Link href="/" className="hover:opacity-80 transition-opacity">
+              <h1 className="text-xl font-bold text-red-500 flex items-center">
+                <Heart className="mr-2 text-red-500" size={24} />
+                ConnectEd Elite Social Club
+              </h1>
             </Link>
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-600 hover:text-red-500 transition-colors">
@@ -71,45 +73,45 @@ export default function Home() {
               </p>
             </div>
 
-            {/* 特色功能 */}
-            <div className="grid grid-cols-2 gap-6">
-              <div className="flex items-center space-x-3">
-                <div className="bg-red-100 p-2 rounded-lg">
-                  <Users className="h-6 w-6 text-red-500" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">智能匹配</h3>
-                  <p className="text-sm text-gray-600">基于兴趣和性格</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="bg-red-100 p-2 rounded-lg">
-                  <MessageCircle className="h-6 w-6 text-red-500" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">实时聊天</h3>
-                  <p className="text-sm text-gray-600">安全私密交流</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="bg-red-100 p-2 rounded-lg">
-                  <Star className="h-6 w-6 text-red-500" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">优质用户</h3>
-                  <p className="text-sm text-gray-600">严格身份验证</p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="bg-red-100 p-2 rounded-lg">
-                  <Heart className="h-6 w-6 text-red-500" />
-                </div>
-                <div>
-                  <h3 className="font-semibold text-gray-900">真诚交友</h3>
-                  <p className="text-sm text-gray-600">寻找长期关系</p>
-                </div>
-              </div>
-            </div>
+                         {/* 特色功能 */}
+             <div className="grid grid-cols-2 gap-6">
+               <div className="flex items-center space-x-3">
+                 <div className="bg-red-100 p-2 rounded-lg">
+                   <Users className="h-6 w-6 text-red-500" />
+                 </div>
+                 <div>
+                   <h3 className="text-lg font-bold text-gray-900">智能匹配</h3>
+                   <p className="text-base text-gray-600">基于兴趣和性格</p>
+                 </div>
+               </div>
+               <div className="flex items-center space-x-3">
+                 <div className="bg-red-100 p-2 rounded-lg">
+                   <MessageCircle className="h-6 w-6 text-red-500" />
+                 </div>
+                 <div>
+                   <h3 className="text-lg font-bold text-gray-900">实时聊天</h3>
+                   <p className="text-base text-gray-600">安全私密交流</p>
+                 </div>
+               </div>
+               <div className="flex items-center space-x-3">
+                 <div className="bg-red-100 p-2 rounded-lg">
+                   <Star className="h-6 w-6 text-red-500" />
+                 </div>
+                 <div>
+                   <h3 className="text-lg font-bold text-gray-900">优质用户</h3>
+                   <p className="text-base text-gray-600">严格身份验证</p>
+                 </div>
+               </div>
+               <div className="flex items-center space-x-3">
+                 <div className="bg-red-100 p-2 rounded-lg">
+                   <Heart className="h-6 w-6 text-red-500" />
+                 </div>
+                 <div>
+                   <h3 className="text-lg font-bold text-gray-900">真诚交友</h3>
+                   <p className="text-base text-gray-600">寻找长期关系</p>
+                 </div>
+               </div>
+             </div>
           </motion.div>
 
           {/* 右侧图片 */}

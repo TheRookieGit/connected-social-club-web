@@ -7,7 +7,8 @@ import {
   Heart, User, Ruler, Weight, Camera, Upload, Globe, BookOpen, Home, 
   Baby, Activity, Coffee, Wine, MessageCircle, Settings, Star, 
   Award, Palette, Music, Gamepad2, Utensils, Plane, Mountain, 
-  BookOpenCheck, Users2, Sparkles, Target, Shield, Zap, MoreHorizontal, Check
+  BookOpenCheck, Users2, Sparkles, Target, Shield, Zap, MoreHorizontal, Check,
+  Trash2, GripVertical
 } from 'lucide-react'
 
 interface ProfileModalProps {
@@ -24,10 +25,14 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
   const [isEditing, setIsEditing] = useState(false)
   const [editedProfile, setEditedProfile] = useState<Partial<UserProfile>>({})
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false)
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
+  const [isManagingPhotos, setIsManagingPhotos] = useState(false)
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
   const [activeTab, setActiveTab] = useState('basic')
   const [showValuesModal, setShowValuesModal] = useState(false)
   const [selectedValues, setSelectedValues] = useState<string[]>([])
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const photoInputRef = useRef<HTMLInputElement>(null)
 
   // 品质标签数据
   const valueTags = [
@@ -249,6 +254,178 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
 
   const triggerFileInput = () => {
     fileInputRef.current?.click()
+  }
+
+  const handlePhotoUpload = async (file: File) => {
+    setIsUploadingPhoto(true)
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('未找到登录令牌')
+      }
+
+      // 检查文件大小（限制为4MB）
+      const maxSize = 4 * 1024 * 1024 // 4MB
+      if (file.size > maxSize) {
+        alert(`文件过大！请选择小于4MB的图片。当前文件大小：${(file.size / 1024 / 1024).toFixed(2)}MB`)
+        return
+      }
+
+      const formData = new FormData()
+      formData.append('photos', file)
+
+      const response = await fetch('/api/user/upload-photos-admin', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      })
+
+      if (!response.ok) {
+        let errorMessage = `HTTP ${response.status}: ${response.statusText}`
+        try {
+          const errorData = await response.json()
+          errorMessage = errorData.error || errorMessage
+        } catch (parseError) {
+          try {
+            const errorText = await response.text()
+            if (errorText.includes('Authentication Required') || errorText.includes('vercel-auth-redirect')) {
+              errorMessage = '服务器访问保护已启用，请联系管理员禁用Vercel访问保护'
+            } else {
+              errorMessage = `服务器错误 (${response.status}): ${errorText.substring(0, 100)}`
+            }
+          } catch (textError) {
+            errorMessage = `服务器错误 (${response.status})`
+          }
+        }
+        throw new Error(errorMessage)
+      }
+
+      const result = await response.json()
+      console.log('照片上传成功:', result)
+
+      // 重新获取用户资料以更新照片列表
+      await fetchProfile()
+
+      // 显示成功提示
+      alert('照片上传成功！')
+    } catch (error) {
+      console.error('上传照片失败:', error)
+      alert(`照片上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
+    } finally {
+      setIsUploadingPhoto(false)
+    }
+  }
+
+  const handlePhotoFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (file) {
+      handlePhotoUpload(file)
+    }
+  }
+
+  const triggerPhotoInput = () => {
+    photoInputRef.current?.click()
+  }
+
+  const handleDeletePhoto = async (photoIndex: number) => {
+    if (!profile?.photos) return
+    
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('未找到登录令牌')
+      }
+
+      const photoToDelete = profile.photos[photoIndex]
+      const updatedPhotos = profile.photos.filter((_, index) => index !== photoIndex)
+      
+      const response = await fetch('/api/user/update-photos', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          photos: updatedPhotos,
+          deletedPhotos: [photoToDelete]
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('删除照片失败')
+      }
+
+      await fetchProfile() // 重新获取资料以更新照片列表
+      alert('照片删除成功！')
+    } catch (error) {
+      console.error('删除照片失败:', error)
+      alert('删除照片失败，请重试')
+    }
+  }
+
+  const handleReorderPhotos = async (newOrder: string[]) => {
+    if (!profile?.photos) return
+    
+    try {
+      const token = localStorage.getItem('token')
+      if (!token) {
+        throw new Error('未找到登录令牌')
+      }
+
+      const response = await fetch('/api/user/update-photos', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ 
+          photos: newOrder,
+          deletedPhotos: [] // 排序时不删除任何照片
+        })
+      })
+
+      if (!response.ok) {
+        throw new Error('更新照片顺序失败')
+      }
+
+      await fetchProfile() // 重新获取资料以更新照片列表
+      alert('照片顺序更新成功！')
+    } catch (error) {
+      console.error('更新照片顺序失败:', error)
+      alert('更新照片顺序失败，请重试')
+    }
+  }
+
+  const togglePhotoManagement = () => {
+    setIsManagingPhotos(!isManagingPhotos)
+    setDraggedIndex(null)
+  }
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    if (!isManagingPhotos) return
+    setDraggedIndex(index)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!isManagingPhotos) return
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
+    if (!isManagingPhotos || draggedIndex === null || !profile?.photos) return
+    e.preventDefault()
+    
+    const photos = [...profile.photos]
+    const draggedPhoto = photos[draggedIndex]
+    photos.splice(draggedIndex, 1)
+    photos.splice(dropIndex, 0, draggedPhoto)
+    
+    await handleReorderPhotos(photos)
+    setDraggedIndex(null)
   }
 
   const tabs = [
@@ -582,21 +759,37 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                     <Camera className="h-6 w-6 text-purple-600 mr-3" />
                     <h3 className="text-lg font-semibold text-gray-900">我的照片</h3>
                   </div>
-                  <button
-                    onClick={() => {
-                      onClose()
-                      window.open('/user-photos', '_blank')
-                    }}
-                    className="px-4 py-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors"
-                  >
-                    管理照片
-                  </button>
+                                       <button
+                       onClick={togglePhotoManagement}
+                       disabled={isUploadingPhoto}
+                       className="px-4 py-2 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                     >
+                       {isManagingPhotos ? '完成管理' : '管理照片'}
+                     </button>
                 </div>
+                
+                {isManagingPhotos && profile.photos && profile.photos.length > 0 && (
+                  <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-xl">
+                    <p className="text-sm text-blue-700 flex items-center">
+                      <Heart className="h-4 w-4 text-red-500 mr-2" />
+                      💡 管理模式已开启：点击照片右上角的删除按钮可以删除照片，拖拽照片可以调整顺序
+                    </p>
+                  </div>
+                )}
                 
                 {profile.photos && profile.photos.length > 0 ? (
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {profile.photos.map((photo, index) => (
-                      <div key={index} className="aspect-square bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow">
+                      <div 
+                        key={index} 
+                        className={`aspect-square bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group ${
+                          isManagingPhotos ? 'cursor-move' : ''
+                        } ${draggedIndex === index ? 'opacity-50' : ''}`}
+                        draggable={isManagingPhotos}
+                        onDragStart={(e) => handleDragStart(e, index)}
+                        onDragOver={handleDragOver}
+                        onDrop={(e) => handleDrop(e, index)}
+                      >
                         <Image
                           src={photo}
                           alt={`照片 ${index + 1}`}
@@ -604,6 +797,25 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                           height={200}
                           className="w-full h-full object-cover"
                         />
+                        {isManagingPhotos && (
+                          <>
+                            <div className="absolute top-2 left-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
+                            <div className="absolute top-2 right-2 flex space-x-1">
+                              <button
+                                onClick={() => handleDeletePhoto(index)}
+                                className="bg-red-500 text-white p-1 rounded-full hover:bg-red-600 transition-colors"
+                                title="删除照片"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
+                            <div className="absolute bottom-2 left-2">
+                              <GripVertical className="text-white drop-shadow-lg" size={20} />
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -611,17 +823,24 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                   <div className="text-center py-12">
                     <Camera className="h-16 w-16 text-purple-300 mx-auto mb-4" />
                     <p className="text-gray-500 mb-4">还没有上传照片</p>
-                    <button
-                      onClick={() => {
-                        onClose()
-                        window.open('/user-photos', '_blank')
-                      }}
-                      className="px-6 py-3 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors"
-                    >
-                      上传第一张照片
-                    </button>
+                                               <button
+                             onClick={triggerPhotoInput}
+                             disabled={isUploadingPhoto}
+                             className="px-6 py-3 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                           >
+                             {isUploadingPhoto ? '上传中...' : '添加照片'}
+                           </button>
                   </div>
                 )}
+                
+                {/* 隐藏的照片上传输入 */}
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/jpg,image/png,image/webp"
+                  onChange={handlePhotoFileSelect}
+                  className="hidden"
+                />
               </div>
             </div>
           )}
