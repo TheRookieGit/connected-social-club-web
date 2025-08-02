@@ -72,6 +72,67 @@ a {
   animation: fadeIn 0.5s ease-out;
 }
 
+/* 轮播动画 */
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-100%);
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+}
+
+.slide-in-right {
+  animation: slideInRight 0.7s ease-in-out;
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.7s ease-in-out;
+}
+
+.slide-out-left {
+  animation: slideOutLeft 0.7s ease-in-out;
+}
+
+.slide-out-right {
+  animation: slideOutRight 0.7s ease-in-out;
+}
+
 /* 卡片悬停效果 */
 .card-hover {
   transition: all 0.3s ease;

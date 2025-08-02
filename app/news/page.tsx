@@ -7,6 +7,9 @@ import Link from 'next/link'
 export default function News() {
   const [currentTestimonialIndex, setCurrentTestimonialIndex] = useState(0)
   const [isLoaded, setIsLoaded] = useState(false)
+  const [isAutoPlayPaused, setIsAutoPlayPaused] = useState(false)
+  const [slideDirection, setSlideDirection] = useState<'left' | 'right'>('right')
+  const [isAnimating, setIsAnimating] = useState(false)
   
   // 媒体评价数据
   const testimonials = [
@@ -36,19 +39,78 @@ export default function News() {
     setIsLoaded(true)
   }, [])
 
+  // 自动轮播效果
+  useEffect(() => {
+    if (isAutoPlayPaused || isAnimating) return // 如果暂停了自动播放或正在动画中，则不执行
+
+    const interval = setInterval(() => {
+      setSlideDirection('right')
+      setIsAnimating(true)
+      
+      // 先执行淡出动画
+      setTimeout(() => {
+        setCurrentTestimonialIndex((prevIndex) => {
+          return prevIndex === testimonials.length - 1 ? 0 : prevIndex + 1
+        })
+        setIsAnimating(false)
+      }, 350) // 淡出动画的一半时间
+    }, 3000) // 每3秒切换一次
+
+    // 清理定时器
+    return () => clearInterval(interval)
+  }, [testimonials.length, isAutoPlayPaused, isAnimating])
+
   const nextTestimonial = () => {
-    const nextIndex = currentTestimonialIndex === testimonials.length - 1 ? 0 : currentTestimonialIndex + 1
-    setCurrentTestimonialIndex(nextIndex)
+    if (isAnimating) return // 如果正在动画中，忽略点击
+    setIsAutoPlayPaused(true) // 暂停自动播放
+    setSlideDirection('right')
+    setIsAnimating(true)
+    
+    // 先执行淡出动画
+    setTimeout(() => {
+      const nextIndex = currentTestimonialIndex === testimonials.length - 1 ? 0 : currentTestimonialIndex + 1
+      setCurrentTestimonialIndex(nextIndex)
+      setIsAnimating(false)
+    }, 350) // 淡出动画的一半时间
   }
 
   const prevTestimonial = () => {
-    const prevIndex = currentTestimonialIndex === 0 ? testimonials.length - 1 : currentTestimonialIndex - 1
-    setCurrentTestimonialIndex(prevIndex)
+    if (isAnimating) return // 如果正在动画中，忽略点击
+    setIsAutoPlayPaused(true) // 暂停自动播放
+    setSlideDirection('left')
+    setIsAnimating(true)
+    
+    // 先执行淡出动画
+    setTimeout(() => {
+      const prevIndex = currentTestimonialIndex === 0 ? testimonials.length - 1 : currentTestimonialIndex - 1
+      setCurrentTestimonialIndex(prevIndex)
+      setIsAnimating(false)
+    }, 350) // 淡出动画的一半时间
   }
 
   const goToTestimonial = (index: number) => {
-    setCurrentTestimonialIndex(index)
+    if (isAnimating) return // 如果正在动画中，忽略点击
+    setIsAutoPlayPaused(true) // 暂停自动播放
+    setSlideDirection(index > currentTestimonialIndex ? 'right' : 'left')
+    setIsAnimating(true)
+    
+    // 先执行淡出动画
+    setTimeout(() => {
+      setCurrentTestimonialIndex(index)
+      setIsAnimating(false)
+    }, 350) // 淡出动画的一半时间
   }
+
+  // 恢复自动播放
+  useEffect(() => {
+    if (!isAutoPlayPaused) return
+
+    const timer = setTimeout(() => {
+      setIsAutoPlayPaused(false)
+    }, 5000) // 5秒后恢复自动播放
+
+    return () => clearTimeout(timer)
+  }, [isAutoPlayPaused])
 
   if (!isLoaded) {
     return <div className="min-h-screen flex items-center justify-center">加载中...</div>
@@ -98,18 +160,29 @@ export default function News() {
         <div className="relative">
           <div className="bg-gradient-to-r from-red-50 to-pink-50 py-16 overflow-hidden">
             <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-              <div className="text-center transition-all duration-500 ease-in-out">
-                <p className="text-3xl font-bold text-gray-900 mb-4">
-                  "{testimonials[currentTestimonialIndex]?.title || '加载中...'}"
-                </p>
-                <p className="text-xl text-gray-600 italic mb-6 leading-relaxed">
-                  "{testimonials[currentTestimonialIndex]?.content || '加载中...'}"
-                </p>
-                <p className="text-xl font-semibold text-gray-800">
-                  — {testimonials[currentTestimonialIndex]?.source || '加载中...'}
-                </p>
-                
-
+              <div className="text-center overflow-hidden">
+                <div 
+                  className={`${
+                    isAnimating 
+                      ? slideDirection === 'right' 
+                        ? 'slide-out-left' 
+                        : 'slide-out-right'
+                      : slideDirection === 'right' 
+                        ? 'slide-in-right' 
+                        : 'slide-in-left'
+                  }`}
+                  key={currentTestimonialIndex} // 强制重新渲染
+                >
+                  <p className="text-3xl font-bold text-gray-900 mb-4">
+                    "{testimonials[currentTestimonialIndex]?.title || '加载中...'}"
+                  </p>
+                  <p className="text-xl text-gray-600 italic mb-6 leading-relaxed">
+                    "{testimonials[currentTestimonialIndex]?.content || '加载中...'}"
+                  </p>
+                  <p className="text-xl font-semibold text-gray-800">
+                    — {testimonials[currentTestimonialIndex]?.source || '加载中...'}
+                  </p>
+                </div>
               </div>
             </div>
             
