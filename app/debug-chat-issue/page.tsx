@@ -104,8 +104,8 @@ export default function DebugChatIssue() {
             currentUserId: currentUser.id,
             selectedUserId: userId,
             messageCount: formattedMessages.length,
-            senderIds: [...new Set(formattedMessages.map(m => m.senderId))],
-            receiverIds: [...new Set(formattedMessages.map(m => m.receiverId))],
+            senderIds: Array.from(new Set(formattedMessages.map(m => m.senderId))),
+            receiverIds: Array.from(new Set(formattedMessages.map(m => m.receiverId))),
             messages: formattedMessages.slice(-5) // 最近5条消息
           })
         }
