@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { Heart, Users, MessageCircle, Star } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 import LoginForm from '@/components/LoginForm'
 import RegisterForm from '@/components/RegisterForm'
 import Footer from '@/components/Footer'
@@ -30,17 +31,17 @@ export default function Home() {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2">
               <Heart className="h-8 w-8 text-red-500" />
               <span className="text-xl font-bold text-gray-900">ConnectEd Elite Social Club</span>
-            </div>
+            </Link>
             <div className="hidden md:flex items-center space-x-8">
               <a href="#features" className="text-gray-600 hover:text-red-500 transition-colors">
                 功能特色
               </a>
-              <a href="#about" className="text-gray-600 hover:text-red-500 transition-colors">
+              <Link href="/about" className="text-gray-600 hover:text-red-500 transition-colors">
                 关于我们
-              </a>
+              </Link>
               <a href="#contact" className="text-gray-600 hover:text-red-500 transition-colors">
                 联系我们
               </a>

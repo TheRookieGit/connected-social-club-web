@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
 import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock, Flower } from 'lucide-react'
 import useSWR from 'swr'
@@ -584,7 +585,9 @@ export default function Dashboard() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-red-500">ConnectEd Elite Social Club</h1>
+              <Link href="/" className="hover:opacity-80 transition-opacity">
+                <h1 className="text-2xl font-bold text-red-500">ConnectEd Elite Social Club</h1>
+              </Link>
             </div>
             
             <div className="flex items-center space-x-4">

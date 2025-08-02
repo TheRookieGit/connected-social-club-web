@@ -11,7 +11,7 @@ export default function JoinUs() {
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <Link href="/" className="flex items-center space-x-2">
+            <Link href="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
               <Heart className="h-8 w-8 text-red-500" />
               <span className="text-xl font-bold text-gray-900">ConnectEd Elite Social Club</span>
             </Link>
@@ -182,7 +182,7 @@ export default function JoinUs() {
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="text-center">
               <h3 className="text-2xl font-bold text-gray-900 mb-4">准备好加入我们的志愿者团队了吗？</h3>
-              <p className="text-gray-600 mb-8">发送你的申请到 volunteer@connected.com</p>
+              <p className="text-gray-600 mb-8">发送你的申请到 admin@connect-edu.org</p>
               <Link 
                 href="/"
                 className="inline-block bg-red-500 text-white px-8 py-3 rounded-lg hover:bg-red-600 transition-colors font-medium"
