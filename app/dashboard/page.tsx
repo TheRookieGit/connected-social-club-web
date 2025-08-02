@@ -17,10 +17,10 @@ import { UserProfile } from '@/types/user'
 import dynamic from 'next/dynamic'
 import { shouldAutoRequestLocation, recordUserDenial } from '@/lib/locationPermission'
 
-// 动态导入Stream Chat组件，避免SSR问题
-const StreamChatPanel = dynamic(() => import('@/components/StreamChatPanel'), {
+// 动态导入浮动聊天组件，避免SSR问题
+const FloatingChat = dynamic(() => import('@/components/FloatingChat'), {
   ssr: false,
-  loading: () => <div>加载专业聊天中...</div>
+  loading: () => null
 })
 
 // 推荐用户的类型定义
@@ -811,13 +811,13 @@ export default function Dashboard() {
                 )}
               </motion.button>
 
-              {/* 专业聊天按钮（已升级为Stream Chat） */}
+              {/* 浮动聊天按钮 */}
               <motion.button
-                onClick={() => setShowChat(true)}
+                onClick={() => setShowChat(!showChat)}
                 className="relative p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                title="专业级实时聊天 - 已升级！"
+                title="浮动聊天窗口"
               >
                 <Users size={20} />
                 {matchedUsers.length > 0 && (
@@ -829,14 +829,6 @@ export default function Dashboard() {
                     {matchedUsers.length}
                   </motion.span>
                 )}
-                {/* 升级标识 */}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-2 -left-2 bg-green-500 text-white text-[8px] rounded-full px-1.5 py-0.5 font-bold"
-                >
-                  升级
-                </motion.div>
               </motion.button>
 
 
@@ -990,12 +982,12 @@ export default function Dashboard() {
                 
                 {matchedUsers.length > 0 && (
                   <motion.button
-                    onClick={() => setShowChat(true)}
+                    onClick={() => setShowChat(!showChat)}
                     className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    开始聊天
+                    {showChat ? '隐藏聊天' : '开始聊天'}
                   </motion.button>
                 )}
               </div>
@@ -1143,16 +1135,11 @@ export default function Dashboard() {
          />
        )}
 
-      {/* 专业聊天面板（已替代原来的ChatPanel） */}
+      {/* 浮动聊天组件 */}
       {showChat && (
-        <StreamChatPanel
+        <FloatingChat
           matchedUsers={matchedUsers}
-          onClose={() => {
-            setShowChat(false)
-            setInitialChatUserId(null) // 清理初始用户ID
-          }}
           initialUserId={initialChatUserId || undefined}
-          isEmbedded={true}
         />
       )}
 
