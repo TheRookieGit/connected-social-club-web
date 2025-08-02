@@ -130,8 +130,8 @@ export default function TestAddressDebug() {
       const location = await getCurrentLocation()
       console.log('获取到位置:', location)
       await resolveAddress(location.latitude, location.longitude)
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error))
     }
   }
 
