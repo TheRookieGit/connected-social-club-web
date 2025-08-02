@@ -339,7 +339,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
       {!isMinimized && (
         <div className="fixed bottom-6 right-6 z-50">
           <div className={`bg-white rounded-2xl shadow-2xl border border-gray-200 overflow-hidden transition-all duration-300 ${
-            isExpanded ? 'w-[500px] h-[600px]' : 'w-[420px] h-[500px]'
+            isExpanded ? 'w-[600px] h-[700px]' : 'w-[500px] h-[600px]'
           }`}>
             {/* 聊天头部 */}
             <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-4">
