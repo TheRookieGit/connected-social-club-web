@@ -1,10 +1,89 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import Image from 'next/image'
+
+interface UserProfile {
+  id: string
+  name: string
+  email: string
+  avatar_url?: string
+  photos?: string[]
+  bio?: string
+  location?: string
+  birth_date?: string
+  [key: string]: any
+}
+
+interface PhotoAccessTestProps {
+  photoUrl: string
+  index: number
+}
+
+function PhotoAccessTest({ photoUrl, index }: PhotoAccessTestProps) {
+  const [testResult, setTestResult] = useState<any>(null)
+  const [isTesting, setIsTesting] = useState(false)
+
+  const testPhotoAccess = async () => {
+    setIsTesting(true)
+    try {
+      const response = await fetch(`/api/test-photo-access?url=${encodeURIComponent(photoUrl)}`)
+      const result = await response.json()
+      setTestResult(result)
+    } catch (error) {
+      setTestResult({
+        success: false,
+        error: '测试失败',
+        details: error instanceof Error ? error.message : String(error)
+      })
+    } finally {
+      setIsTesting(false)
+    }
+  }
+
+  return (
+    <div className="border border-gray-200 rounded-lg p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center space-x-2">
+          <span className="text-sm font-medium text-gray-700">照片 {index + 1}</span>
+          <button
+            onClick={testPhotoAccess}
+            disabled={isTesting}
+            className="px-2 py-1 text-xs bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
+          >
+            {isTesting ? '测试中...' : '测试访问'}
+          </button>
+        </div>
+        {testResult && (
+          <span className={`text-xs px-2 py-1 rounded ${
+            testResult.accessible ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
+            {testResult.accessible ? '可访问' : '不可访问'}
+          </span>
+        )}
+      </div>
+      
+      <div className="text-xs text-gray-600 mb-2 break-all">
+        {photoUrl}
+      </div>
+      
+      {testResult && (
+        <details className="text-xs">
+          <summary className="cursor-pointer text-blue-600 hover:text-blue-800 mb-1">
+            查看测试详情
+          </summary>
+          <pre className="bg-gray-100 p-2 rounded text-xs overflow-auto max-h-32">
+            {JSON.stringify(testResult, null, 2)}
+          </pre>
+        </details>
+      )}
+    </div>
+  )
+}
 
 export default function TestUserData() {
-  const [userData, setUserData] = useState<any>(null)
-  const [loading, setLoading] = useState(true)
+  const [userData, setUserData] = useState<UserProfile | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
@@ -12,115 +91,240 @@ export default function TestUserData() {
       try {
         const token = localStorage.getItem('token')
         if (!token) {
-          setError('未找到登录token')
-          setLoading(false)
+          setError('未找到登录令牌')
+          setIsLoading(false)
           return
         }
 
         const response = await fetch('/api/user/profile', {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Cache-Control': 'no-store, no-cache, must-revalidate'
           }
         })
 
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+        if (response.ok) {
+          const data = await response.json()
+          console.log('用户资料API返回的完整数据:', data)
+          
+          if (data.success) {
+            setUserData(data.user)
+          } else {
+            setError(data.error || '获取用户资料失败')
+          }
+        } else {
+          setError(`API请求失败: ${response.status}`)
         }
-
-        const data = await response.json()
-        console.log('获取到的用户数据:', data)
-        setUserData(data.user)
-      } catch (err) {
-        console.error('获取用户数据失败:', err)
-        setError(err instanceof Error ? err.message : '未知错误')
+      } catch (error) {
+        setError(`网络错误: ${error}`)
       } finally {
-        setLoading(false)
+        setIsLoading(false)
       }
     }
 
     fetchUserData()
   }, [])
 
-  if (loading) {
-    return <div className="p-8">加载中...</div>
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">加载用户数据中...</p>
+        </div>
+      </div>
+    )
   }
 
   if (error) {
-    return <div className="p-8 text-red-500">错误: {error}</div>
-  }
-
-  if (!userData) {
-    return <div className="p-8">未找到用户数据</div>
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-xl mb-4">❌ 错误</div>
+          <p className="text-gray-600">{error}</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className="p-8 max-w-4xl mx-auto">
-      <h1 className="text-2xl font-bold mb-6">用户数据测试页面</h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">基本信息</h2>
-          <div className="space-y-2">
-            <p><strong>ID:</strong> {userData.id}</p>
-            <p><strong>姓名:</strong> {userData.name}</p>
-            <p><strong>邮箱:</strong> {userData.email}</p>
-            <p><strong>性别:</strong> {userData.gender}</p>
-            <p><strong>生日:</strong> {userData.birth_date}</p>
-          </div>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
+        <div className="bg-white rounded-lg shadow-lg p-6 mb-6">
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">用户资料数据测试</h1>
+          <p className="text-gray-600 mb-6">检查用户资料API返回的完整数据</p>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">约会和家庭信息</h2>
-          <div className="space-y-2">
-            <p><strong>约会目的 (dating_style):</strong> 
-              <span className={userData.dating_style ? 'text-green-600' : 'text-red-500'}>
-                {userData.dating_style || '未设置'}
-              </span>
-            </p>
-            <p><strong>家庭计划 (family_plans):</strong> 
-              <span className={userData.family_plans ? 'text-green-600' : 'text-red-500'}>
-                {userData.family_plans || '未设置'}
-              </span>
-            </p>
-            <p><strong>是否有孩子 (has_kids):</strong> 
-              <span className={userData.has_kids !== null ? 'text-green-600' : 'text-red-500'}>
-                {userData.has_kids !== null ? String(userData.has_kids) : '未设置'}
-              </span>
-            </p>
-            <p><strong>关系状态 (relationship_status):</strong> 
-              <span className={userData.relationship_status ? 'text-green-600' : 'text-red-500'}>
-                {userData.relationship_status || '未设置'}
-              </span>
-            </p>
-          </div>
-        </div>
+        {userData && (
+          <div className="space-y-6">
+            {/* 基本信息 */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">基本信息</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">用户ID</label>
+                  <p className="text-gray-900">{userData.id}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">姓名</label>
+                  <p className="text-gray-900">{userData.name}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">邮箱</label>
+                  <p className="text-gray-900">{userData.email}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">位置</label>
+                  <p className="text-gray-900">{userData.location || '未设置'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">个人简介</label>
+                  <p className="text-gray-900">{userData.bio || '未设置'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">生日</label>
+                  <p className="text-gray-900">{userData.birth_date || '未设置'}</p>
+                </div>
+              </div>
+            </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">其他信息</h2>
-          <div className="space-y-2">
-            <p><strong>个人简介:</strong> {userData.bio || '未设置'}</p>
-            <p><strong>位置:</strong> {userData.location || '未设置'}</p>
-            <p><strong>职业:</strong> {userData.occupation || '未设置'}</p>
-            <p><strong>吸烟状态:</strong> {userData.smoking_status || '未设置'}</p>
-            <p><strong>饮酒状态:</strong> {userData.drinking_status || '未设置'}</p>
-          </div>
-        </div>
+            {/* 头像信息 */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">头像信息</h2>
+              <div className="flex items-center space-x-4">
+                <div className="w-20 h-20 bg-gray-200 rounded-full flex items-center justify-center">
+                  {userData.avatar_url ? (
+                    <Image
+                      src={userData.avatar_url}
+                      alt="头像"
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover rounded-full"
+                      onError={(e) => {
+                        console.log('头像加载失败')
+                        const target = e.currentTarget as HTMLImageElement
+                        target.style.display = 'none'
+                      }}
+                    />
+                  ) : (
+                    <span className="text-2xl font-bold text-gray-500">
+                      {userData.name ? userData.name.charAt(0).toUpperCase() : '?'}
+                    </span>
+                  )}
+                </div>
+                <div>
+                  <p className="text-sm text-gray-600">头像URL</p>
+                  <p className="text-sm text-gray-900 break-all">
+                    {userData.avatar_url || '未设置'}
+                  </p>
+                </div>
+              </div>
+            </div>
 
-        <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-xl font-semibold mb-4">时间戳</h2>
-          <div className="space-y-2">
-            <p><strong>创建时间:</strong> {userData.created_at}</p>
-            <p><strong>更新时间:</strong> {userData.updated_at}</p>
-            <p><strong>最后在线:</strong> {userData.last_seen}</p>
-          </div>
-        </div>
-      </div>
+            {/* 照片信息 */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">照片信息</h2>
+              <div className="mb-4">
+                <p className="text-sm text-gray-600 mb-2">照片数量: {userData.photos?.length || 0}</p>
+                <p className="text-sm text-gray-600 mb-4">照片数组: {JSON.stringify(userData.photos)}</p>
+              </div>
+              
+              {userData.photos && userData.photos.length > 0 ? (
+                <div className="space-y-4">
+                  {/* 照片访问测试 */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">照片访问测试</h3>
+                    <div className="space-y-2">
+                      {userData.photos.map((photo, index) => (
+                        <PhotoAccessTest key={index} photoUrl={photo} index={index} />
+                      ))}
+                    </div>
+                  </div>
+                  
+                  {/* 照片显示 */}
+                  <div>
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">照片显示</h3>
+                    
+                    {/* Next.js Image组件测试 */}
+                    <div className="mb-4">
+                      <h4 className="text-md font-medium text-gray-800 mb-2">Next.js Image组件测试</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {userData.photos.map((photo, index) => (
+                          <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                            <Image
+                              src={photo}
+                              alt={`照片 ${index + 1}`}
+                              width={200}
+                              height={200}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.log(`Next.js Image - 照片 ${index + 1} 加载失败:`, photo)
+                                const target = e.currentTarget as HTMLImageElement
+                                target.style.display = 'none'
+                              }}
+                              onLoad={() => {
+                                console.log(`Next.js Image - 照片 ${index + 1} 加载成功:`, photo)
+                              }}
+                            />
+                            <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {/* 普通img标签测试 */}
+                    <div>
+                      <h4 className="text-md font-medium text-gray-800 mb-2">普通img标签测试</h4>
+                      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                        {userData.photos.map((photo, index) => (
+                          <div key={index} className="relative aspect-square bg-gray-100 rounded-lg overflow-hidden">
+                            <Image
+                              src={photo}
+                              alt={`照片 ${index + 1}`}
+                              width={200}
+                              height={200}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                console.log(`普通img - 照片 ${index + 1} 加载失败:`, photo)
+                                const target = e.currentTarget as HTMLImageElement
+                                target.style.display = 'none'
+                              }}
+                              onLoad={() => {
+                                console.log(`普通img - 照片 ${index + 1} 加载成功:`, photo)
+                              }}
+                            />
+                            <div className="absolute bottom-2 right-2 bg-black bg-opacity-50 text-white text-xs px-2 py-1 rounded">
+                              {index + 1}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">没有照片</p>
+                </div>
+              )}
+            </div>
 
-      <div className="mt-8 bg-gray-100 p-6 rounded-lg">
-        <h2 className="text-xl font-semibold mb-4">原始数据</h2>
-        <pre className="text-sm overflow-auto">
-          {JSON.stringify(userData, null, 2)}
-        </pre>
+            {/* 完整数据 */}
+            <div className="bg-white rounded-lg shadow-lg p-6">
+              <h2 className="text-xl font-semibold text-gray-900 mb-4">完整数据</h2>
+              <details className="text-sm">
+                <summary className="cursor-pointer text-blue-600 hover:text-blue-800 mb-2">
+                  点击查看完整的用户数据
+                </summary>
+                <pre className="bg-gray-100 p-4 rounded-lg overflow-auto max-h-96 text-xs">
+                  {JSON.stringify(userData, null, 2)}
+                </pre>
+              </details>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -162,16 +162,16 @@ export default function Values() {
         {/* 标题和介绍 */}
         <div className="mb-8 text-center">
           <h1 className="text-2xl font-bold text-black mb-3">
-            告诉我们您重视一个人的什么品质
+            我希望你是...
           </h1>
           <p className="text-sm text-gray-600 leading-relaxed">
-            哪些品质能触动您的灵魂？选择3个能让联系更加紧密的品质。
+            选择3个你希望伴侣拥有的品质，让匹配更加精准。
           </p>
         </div>
 
         {/* 品质标签选择 */}
         <div className="mb-8">
-          <h3 className="text-lg font-medium text-black mb-4">他们的品质</h3>
+          <h3 className="text-lg font-medium text-black mb-4">选择你期望的品质</h3>
           <div className="grid grid-cols-2 gap-3">
             {valueTags.map((tag) => (
               <div
@@ -207,7 +207,7 @@ export default function Values() {
           <div className="flex items-start space-x-2">
             <Eye className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
             <div className="text-xs text-gray-600">
-              这将显示在您的个人资料上，以帮助每个人找到他们正在寻找的东西。
+              这将显示在您的个人资料上，让其他人了解您期望的伴侣特质。
             </div>
           </div>
         </div>

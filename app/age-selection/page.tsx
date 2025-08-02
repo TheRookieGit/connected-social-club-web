@@ -79,7 +79,7 @@ export default function AgeSelection() {
         setUserName('用户')
       }
     }
-  }, [router])
+  }, [router, hasCheckedProfile])
 
   // 防止后退功能
   useEffect(() => {

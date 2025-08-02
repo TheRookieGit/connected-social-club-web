@@ -1,17 +1,27 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 禁用静态优化和缓存
-  experimental: {
-    serverActions: {
-      bodySizeLimit: '2mb',
-    },
-  },
-  serverExternalPackages: [],
-  // 禁用图片优化缓存
+  serverExternalPackages: ['@supabase/supabase-js'],
+  
+  // 配置图片域名，允许加载Supabase存储的图片
   images: {
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '*.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ckhxivbcnagwgpzljzrl.supabase.co',
+        port: '',
+        pathname: '/storage/v1/object/public/**',
+      }
+    ],
+    // 禁用图片优化，直接使用原始图片
     unoptimized: true,
   },
-  // 自定义头部
+  
   async headers() {
     return [
       {
@@ -19,38 +29,28 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0, s-maxage=0'
           },
           {
             key: 'Pragma',
-            value: 'no-cache',
+            value: 'no-cache'
           },
           {
             key: 'Expires',
-            value: '0',
-          },
-          {
-            key: 'X-Force-Dynamic',
-            value: 'true',
-          },
-        ],
-      },
+            value: '0'
+          }
+        ]
+      }
     ]
   },
-  // 禁用构建时的静态生成
-  output: 'standalone',
-  // 强制服务器端渲染
-  trailingSlash: false,
-  // 禁用自动静态优化
-  poweredByHeader: false,
-  // 自定义webpack配置以禁用缓存
-  webpack: (config, { dev, isServer }) => {
-    if (!dev) {
-      // 生产环境禁用缓存
-      config.cache = false
-    }
-    return config
-  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: '/api/:path*'
+      }
+    ]
+  }
 }
 
 module.exports = nextConfig 

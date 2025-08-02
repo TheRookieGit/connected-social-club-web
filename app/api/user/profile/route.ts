@@ -204,7 +204,7 @@ export async function PUT(request: NextRequest) {
       'degree', 'values_preferences', 'personality_type', 'hometown',
       'languages', 'family_plans', 'has_kids', 'marital_status',
       'exercise_frequency', 'smoking_status', 'drinking_status', 'dating_style',
-      'relationship_goals'
+      'relationship_goals', 'photos'
     ]
     
     const filteredData: any = {}

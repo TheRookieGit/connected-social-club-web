@@ -3,8 +3,9 @@
 import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock } from 'lucide-react'
+import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock, Flower } from 'lucide-react'
 import useSWR from 'swr'
 import UserCard from '@/components/UserCard'
 import ProfileModal from '@/components/ProfileModal'
@@ -48,7 +49,7 @@ export default function Dashboard() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
   const [currentIndex, setCurrentIndex] = useState(0)
-  const [showChat, setShowChat] = useState(false)
+  const [showChat, setShowChat] = useState(true)
   const [showProfile, setShowProfile] = useState(false)
   const [showPendingMatches, setShowPendingMatches] = useState(false)
   const [matchedUsers, setMatchedUsers] = useState<RecommendedUser[]>([])
@@ -584,7 +585,9 @@ export default function Dashboard() {
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center space-x-4">
-              <h1 className="text-2xl font-bold text-red-500">ConnectEd Elite Social Club</h1>
+              <Link href="/" className="hover:opacity-80 transition-opacity">
+                <h1 className="text-2xl font-bold text-red-500">ConnectEd Elite Social Club</h1>
+              </Link>
             </div>
             
             <div className="flex items-center space-x-4">
@@ -666,6 +669,17 @@ export default function Dashboard() {
                   className={currentUser?.avatar_url ? 'hidden' : ''}
                 />
               </button>
+
+              {/* 桃花币入口 */}
+              <motion.button
+                onClick={() => router.push('/currency')}
+                className="p-2 text-gray-600 hover:text-pink-500 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="桃花币系统"
+              >
+                <Flower size={24} />
+              </motion.button>
 
               {/* 重新进行注册流程按钮 */}
               <button
@@ -999,24 +1013,48 @@ export default function Dashboard() {
               </div>
             </div>
           )}
-        </motion.div>
-      </div>
+                 </motion.div>
+       </div>
 
-      {/* 待接受匹配面板 */}
-      {showPendingMatches && (
-        <PendingMatchesPanel
-          onClose={() => setShowPendingMatches(false)}
-          onMatchAccepted={handleMatchAccepted}
-        />
-      )}
+       {/* 待接受匹配面板 */}
+       {showPendingMatches && (
+         <PendingMatchesPanel
+           onClose={() => setShowPendingMatches(false)}
+           onMatchAccepted={handleMatchAccepted}
+         />
+       )}
 
-      {/* 专业聊天面板（已替代原来的ChatPanel） */}
-      {showChat && (
-        <StreamChatPanel
-          matchedUsers={matchedUsers}
-          onClose={() => setShowChat(false)}
-        />
-      )}
+       {/* LinkedIn风格的右下角聊天面板 */}
+       {showChat && (
+         <div className="fixed bottom-4 right-4 z-50">
+           <div className="bg-white rounded-lg shadow-2xl border border-gray-200 w-80 h-96 flex flex-col">
+             {/* 聊天头部 */}
+             <div className="bg-red-500 text-white p-4 rounded-t-lg flex items-center justify-between">
+               <div className="flex items-center space-x-2">
+                 <Users size={20} />
+                 <span className="font-semibold">聊天 ({matchedUsers.length})</span>
+               </div>
+               <button
+                 onClick={() => setShowChat(false)}
+                 className="text-white hover:text-gray-200 transition-colors"
+               >
+                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                 </svg>
+               </button>
+             </div>
+             
+             {/* 聊天内容区域 */}
+             <div className="flex-1 overflow-hidden">
+               <StreamChatPanel
+                 matchedUsers={matchedUsers}
+                 onClose={() => setShowChat(false)}
+                 isEmbedded={true}
+               />
+             </div>
+           </div>
+         </div>
+       )}
 
       {/* 个人资料模态框 */}
       {showProfile && (

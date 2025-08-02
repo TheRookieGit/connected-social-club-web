@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     // 检查是否频繁发送
     const fullPhone = `${countryCode}${phone}`
-    const existingData = smsCodes.get(fullPhone)
+    const existingData = verificationStorage.getSmsCode(fullPhone)
     if (existingData && Date.now() < existingData.expires + 60000) {
       return NextResponse.json(
         { error: '请等待1分钟后再发送验证码' },
@@ -91,13 +91,13 @@ export async function POST(request: NextRequest) {
     const expires = Date.now() + 10 * 60 * 1000 // 10分钟过期
 
     // 存储验证码
-    smsCodes.set(fullPhone, { code, expires })
+    verificationStorage.setSmsCode(fullPhone, code, expires)
 
     // 发送短信
     const sendResult = await sendSMS(fullPhone, code)
 
     if (!sendResult) {
-      smsCodes.delete(fullPhone)
+      verificationStorage.deleteSmsCode(fullPhone)
       return NextResponse.json(
         { error: '发送验证码失败，请稍后重试' },
         { status: 500 }
@@ -130,7 +130,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const fullPhone = `${countryCode}${phone}`
-    const storedData = smsCodes.get(fullPhone)
+    const storedData = verificationStorage.getSmsCode(fullPhone)
     
     if (!storedData) {
       return NextResponse.json(
@@ -140,7 +140,7 @@ export async function PUT(request: NextRequest) {
     }
 
     if (Date.now() > storedData.expires) {
-      smsCodes.delete(fullPhone)
+      verificationStorage.deleteSmsCode(fullPhone)
       return NextResponse.json(
         { error: '验证码已过期' },
         { status: 400 }
@@ -155,7 +155,7 @@ export async function PUT(request: NextRequest) {
     }
 
     // 验证成功，删除验证码
-    smsCodes.delete(fullPhone)
+    verificationStorage.deleteSmsCode(fullPhone)
 
     return NextResponse.json({
       success: true,
