@@ -16,19 +16,34 @@ import 'stream-chat-react/dist/css/v2/index.css'
 
 // 自定义样式覆盖
 const customStyles = `
+  /* 消息气泡样式 */
   .str-chat__message-bubble {
     max-width: 100% !important;
     word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
+    line-height: 1.4 !important;
+    font-size: 14px !important;
+    padding: 8px 12px !important;
+    border-radius: 12px !important;
+    margin: 2px 0 !important;
   }
   
+  /* 消息文本样式 */
   .str-chat__message-text {
     word-wrap: break-word !important;
     overflow-wrap: break-word !important;
+    white-space: pre-wrap !important;
+    line-height: 1.4 !important;
+    font-size: 14px !important;
+    color: #333 !important;
   }
   
+  /* 消息列表样式 */
   .str-chat__message-list {
     width: 100% !important;
     max-width: 100% !important;
+    padding: 16px !important;
   }
   
   .str-chat__message-list-scroll {
@@ -36,14 +51,113 @@ const customStyles = `
     max-width: 100% !important;
   }
   
+  /* 输入框样式 */
   .str-chat__input-flat {
     width: 100% !important;
     max-width: 100% !important;
+    border: 1px solid #e5e7eb !important;
+    border-radius: 8px !important;
+    margin: 8px !important;
   }
   
   .str-chat__input-flat--textarea {
     width: 100% !important;
     max-width: 100% !important;
+    min-height: 40px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+    resize: none !important;
+  }
+  
+  /* 频道头部样式 */
+  .str-chat__channel-header {
+    background: #f8fafc !important;
+    border-bottom: 1px solid #e5e7eb !important;
+    padding: 12px 16px !important;
+  }
+  
+  .str-chat__channel-header-title {
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #1f2937 !important;
+  }
+  
+  /* 消息容器样式 */
+  .str-chat__message {
+    margin: 4px 0 !important;
+  }
+  
+  /* 发送者消息样式 */
+  .str-chat__message--me .str-chat__message-bubble {
+    background: #3b82f6 !important;
+    color: white !important;
+  }
+  
+  /* 接收者消息样式 */
+  .str-chat__message--other .str-chat__message-bubble {
+    background: #f3f4f6 !important;
+    color: #1f2937 !important;
+  }
+  
+  /* 消息时间戳样式 */
+  .str-chat__message-timestamp {
+    font-size: 11px !important;
+    color: #6b7280 !important;
+    margin-top: 2px !important;
+  }
+  
+  /* 消息发送者样式 */
+  .str-chat__message-sender {
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    color: #374151 !important;
+    margin-bottom: 2px !important;
+  }
+  
+  /* 窗口样式 */
+  .str-chat__channel {
+    height: 100% !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  .str-chat__channel-panel {
+    flex: 1 !important;
+    display: flex !important;
+    flex-direction: column !important;
+  }
+  
+  /* 输入区域样式 */
+  .str-chat__input {
+    border-top: 1px solid #e5e7eb !important;
+    background: white !important;
+    padding: 8px !important;
+  }
+  
+  /* 消息列表容器 */
+  .str-chat__message-list-container {
+    flex: 1 !important;
+    overflow-y: auto !important;
+  }
+  
+  /* 修复中文字体显示 */
+  .str-chat__message-text,
+  .str-chat__input-flat--textarea,
+  .str-chat__channel-header-title {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji" !important;
+  }
+  
+  /* 确保消息文本正确换行 */
+  .str-chat__message-text {
+    word-break: break-word !important;
+    hyphens: auto !important;
+  }
+  
+  /* 修复消息气泡内的文本对齐 */
+  .str-chat__message-bubble-inner {
+    display: block !important;
+    width: 100% !important;
   }
 `
 
@@ -745,7 +859,7 @@ export default function LinkedInStyleChatPanel({
           </div>
 
           {/* 右侧：用户列表或聊天窗口 */}
-          <div className="w-1/2">
+          <div className="w-1/2 bg-white">
             {selectedChannel ? (
               <div className="h-full flex flex-col">
                 <Chat client={chatClient}>
