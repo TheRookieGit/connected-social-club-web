@@ -91,7 +91,7 @@ export default function HowLikesYouWorks() {
                   "喜欢我"功能是如何运作的？
                 </Link>
                 <Link href="/help/getting-started/how-suggested-works" className="block text-gray-600 hover:text-red-500 transition-colors">
-                  推荐匹配是如何运作的？
+                  推荐匹配和发现模式有什么区别？
                 </Link>
                 <Link href="/help/getting-started/how-algorithm-works" className="block text-gray-600 hover:text-red-500 transition-colors">
                   你们的算法是如何运作的？
