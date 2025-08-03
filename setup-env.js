@@ -1,0 +1,38 @@
+const fs = require('fs');
+
+const envContent = `# Supabase配置
+NEXT_PUBLIC_SUPABASE_URL=https://ckhxivbcnagwgpzljzrl.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNraHhpdmJjbmFnd2dwemxqenJsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTM1MjQwMzgsImV4cCI6MjA2OTEwMDAzOH0.ZxoO8QQ9G3tggQFRCHjdnulgv45KtVyx6B7TnqrdHx4
+SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNraHhpdmJjbmFnd2dwemxqenJsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1MzUyNDAzOCwiZXhwIjoyMDY5MTAwMDM4fQ.2Oe_WnHt_By58xRTvIPzfqskpBJO05nZClaAs6RQw8E
+
+# JWT密钥
+JWT_SECRET=social_club_super_secret_key_2024
+
+# LinkedIn OAuth配置
+LINKEDIN_CLIENT_ID=86tejjs0d03idj
+LINKEDIN_CLIENT_SECRET=WPL_AP1.xWZaGwd8cQeKtc7r.FXy/VQ==
+LINKEDIN_CALLBACK_URL=https://social-club-web.vercel.app/api/auth/linkedin/callback
+
+# Next.js URL配置
+NEXTAUTH_URL=https://social-club-web.vercel.app
+
+# Stream Chat配置
+NEXT_PUBLIC_STREAM_API_KEY=d8z9uqdhrj3a
+STREAM_API_SECRET=yx2au2yuz72c9tk9uftwd8v6mrmw4nm4dctx3sy6g9qbstnsvc9vfjxazyersned
+
+# Twilio配置
+TWILIO_ACCOUNT_SID=AC58d321cfe677a7adfa7ec60bf5941567
+TWILIO_AUTH_TOKEN=8c41143c24aeeacf0d24b89cd4583e0f
+TWILIO_PHONE_NUMBER=+15303648187
+
+# 邮件配置
+EMAIL_USER=initialdwx@gmail.com
+EMAIL_PASS=wkqdtsvbtcncjapp
+`;
+
+try {
+  fs.writeFileSync('.env.local', envContent);
+  console.log('✅ 环境变量文件创建成功');
+} catch (error) {
+  console.error('❌ 创建环境变量文件失败:', error);
+} 
