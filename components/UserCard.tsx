@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { MapPin, Calendar, Heart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -22,7 +22,32 @@ interface UserCardProps {
 
 export default function UserCard({ user, onClick }: UserCardProps) {
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+  const [validPhotos, setValidPhotos] = useState<string[]>([])
   const router = useRouter()
+
+  // 验证和过滤照片
+  const validatePhotos = (photos: string[]) => {
+    if (!photos || !Array.isArray(photos)) return []
+    
+    return photos.filter(photo => {
+      return photo && 
+             photo !== null && 
+             photo !== undefined && 
+             photo !== '' && 
+             photo !== '/api/placeholder/400/600' &&
+             !photo.includes('placeholder')
+    })
+  }
+
+  // 当用户数据更新时，重新验证照片
+  React.useEffect(() => {
+    const validated = validatePhotos(user.photos)
+    setValidPhotos(validated)
+    // 如果当前索引超出有效照片范围，重置为0
+    if (currentPhotoIndex >= validated.length) {
+      setCurrentPhotoIndex(0)
+    }
+  }, [user.photos, currentPhotoIndex])
 
   // 兴趣标签映射
   const interestTags = [
@@ -56,16 +81,16 @@ export default function UserCard({ user, onClick }: UserCardProps) {
   ]
 
   const nextPhoto = () => {
-    if (!user.photos || user.photos.length <= 1) return
+    if (!validPhotos || validPhotos.length <= 1) return
     setCurrentPhotoIndex((prev) => 
-      prev === user.photos.length - 1 ? 0 : prev + 1
+      prev === validPhotos.length - 1 ? 0 : prev + 1
     )
   }
 
   const prevPhoto = () => {
-    if (!user.photos || user.photos.length <= 1) return
+    if (!validPhotos || validPhotos.length <= 1) return
     setCurrentPhotoIndex((prev) => 
-      prev === 0 ? user.photos.length - 1 : prev - 1
+      prev === 0 ? validPhotos.length - 1 : prev - 1
     )
   }
 
@@ -86,20 +111,31 @@ export default function UserCard({ user, onClick }: UserCardProps) {
 
   return (
     <div 
-      className="relative bg-white rounded-2xl shadow-lg overflow-hidden card-hover cursor-pointer transform transition-transform hover:scale-105 w-80 mx-auto"
+      className="relative bg-white rounded-2xl shadow-lg overflow-hidden card-hover cursor-pointer transform transition-transform hover:scale-105 w-full max-w-sm"
       onClick={handleCardClick}
     >
       {/* 照片区域 */}
-      <div className="relative h-96 bg-gradient-to-br from-red-100 to-pink-100">
+      <div className="relative h-64 bg-gradient-to-br from-red-100 to-pink-100">
         {/* 显示用户头像或照片 */}
-        {user.photos && user.photos.length > 0 && user.photos[currentPhotoIndex] && user.photos[currentPhotoIndex] !== '/api/placeholder/400/600' ? (
+        {validPhotos && validPhotos.length > 0 && validPhotos[currentPhotoIndex] ? (
           <img 
-            src={user.photos[currentPhotoIndex]} 
+            key={`${user.id}-${currentPhotoIndex}-${validPhotos[currentPhotoIndex]}`}
+            src={validPhotos[currentPhotoIndex]}
             alt={user.name}
             className="w-full h-full object-cover"
             onError={(e) => {
               const target = e.currentTarget as HTMLImageElement
               target.style.display = 'none'
+              
+              // 从有效照片数组中移除加载失败的照片
+              setValidPhotos(prev => {
+                const newPhotos = prev.filter((_, index) => index !== currentPhotoIndex)
+                // 如果当前索引超出范围，重置为0
+                if (currentPhotoIndex >= newPhotos.length && newPhotos.length > 0) {
+                  setCurrentPhotoIndex(0)
+                }
+                return newPhotos
+              })
             }}
           />
         ) : (
@@ -114,10 +150,10 @@ export default function UserCard({ user, onClick }: UserCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10"></div>
         
         {/* 照片指示器 */}
-        {user.photos && user.photos.length > 1 && (
+        {validPhotos && validPhotos.length > 1 && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20">
             <div className="flex space-x-2">
-              {user.photos.map((_, index) => (
+              {validPhotos.map((_, index) => (
                 <div
                   key={index}
                   className={`w-2 h-2 rounded-full ${
@@ -130,7 +166,7 @@ export default function UserCard({ user, onClick }: UserCardProps) {
         )}
 
         {/* 照片切换按钮 */}
-        {user.photos && user.photos.length > 1 && (
+        {validPhotos && validPhotos.length > 1 && (
           <>
             <button
               onClick={(e) => {
@@ -153,35 +189,23 @@ export default function UserCard({ user, onClick }: UserCardProps) {
           </>
         )}
 
-        {/* 在线状态 */}
-        <div className="absolute top-4 right-4 z-20">
-          <div className={`flex items-center space-x-2 px-3 py-1 rounded-full ${
-            user.isOnline ? 'bg-green-500 text-white' : 'bg-gray-500 text-white'
-          }`}>
-            <div className={`w-2 h-2 rounded-full ${
-              user.isOnline ? 'bg-white' : 'bg-gray-300'
-            }`}></div>
-            <span className="text-sm font-medium">
-              {user.isOnline ? '在线' : '离线'}
-            </span>
-          </div>
-        </div>
+
 
         {/* 用户信息覆盖层 */}
-        <div className="absolute bottom-0 left-0 right-0 p-6 z-10">
+        <div className="absolute bottom-0 left-0 right-0 p-4 z-10">
           <div className="flex items-end justify-between">
             <div>
-              <h2 className="text-2xl font-bold text-white mb-1">
+              <h2 className="text-lg font-bold text-white mb-1">
                 {user.name}, {user.age}
               </h2>
-              <div className="flex items-center space-x-2 text-white/90 mb-2">
-                <MapPin className="h-4 w-4" />
-                <span className="text-sm">{user.location}</span>
+              <div className="flex items-center space-x-2 text-white/90">
+                <MapPin className="h-3 w-3" />
+                <span className="text-xs">{user.location}</span>
               </div>
             </div>
             <div className="flex space-x-2">
               <button 
-                className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
                 onClick={async (e) => {
                   e.stopPropagation()
                   
@@ -224,7 +248,7 @@ export default function UserCard({ user, onClick }: UserCardProps) {
                   }
                 }}
               >
-                <Heart className="h-5 w-5" />
+                <Heart className="h-4 w-4" />
               </button>
             </div>
           </div>
@@ -232,39 +256,39 @@ export default function UserCard({ user, onClick }: UserCardProps) {
       </div>
 
       {/* 详细信息 */}
-      <div className="p-6">
-        <p className="text-gray-700 mb-4 leading-relaxed">
+      <div className="p-4">
+        <p className="text-gray-700 mb-3 leading-relaxed text-sm line-clamp-2">
           {user.bio}
         </p>
 
         {/* 兴趣标签 */}
-        <div className="mb-4">
-          <h4 className="text-sm font-semibold text-gray-900 mb-2">兴趣爱好</h4>
-          <div className="flex flex-wrap gap-2">
-            {user.interests.slice(0, 3).map((interest, index) => (
+        <div className="mb-3">
+          <h4 className="text-xs font-semibold text-gray-900 mb-1">兴趣爱好</h4>
+          <div className="flex flex-wrap gap-1">
+            {user.interests.slice(0, 2).map((interest, index) => (
               <span
                 key={index}
-                className="px-3 py-1 bg-red-100 text-red-700 text-sm rounded-full"
+                className="px-2 py-1 bg-red-100 text-red-700 text-xs rounded-full"
               >
                 {getInterestDisplayName(interest)}
               </span>
             ))}
-            {user.interests.length > 3 && (
-              <span className="px-3 py-1 bg-gray-100 text-gray-600 text-sm rounded-full">
-                +{user.interests.length - 3}
+            {user.interests.length > 2 && (
+              <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                +{user.interests.length - 2}
               </span>
             )}
           </div>
         </div>
 
         {/* 基本信息 */}
-        <div className="grid grid-cols-2 gap-4 text-sm text-gray-600">
-          <div className="flex items-center space-x-2">
-            <Calendar className="h-4 w-4" />
+        <div className="flex items-center justify-between text-xs text-gray-600">
+          <div className="flex items-center space-x-1">
+            <Calendar className="h-3 w-3" />
             <span>{user.age}岁</span>
           </div>
-          <div className="flex items-center space-x-2">
-            <MapPin className="h-4 w-4" />
+          <div className="flex items-center space-x-1">
+            <MapPin className="h-3 w-3" />
             <span>{user.location}</span>
           </div>
         </div>

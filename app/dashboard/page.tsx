@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock, Flower } from 'lucide-react'
+import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock, Flower, RefreshCw } from 'lucide-react'
 import useSWR from 'swr'
 import UserCard from '@/components/UserCard'
 import ProfileModal from '@/components/ProfileModal'
@@ -17,8 +17,8 @@ import { UserProfile } from '@/types/user'
 import dynamic from 'next/dynamic'
 import { shouldAutoRequestLocation, recordUserDenial } from '@/lib/locationPermission'
 
-// 动态导入浮动聊天组件，避免SSR问题
-const FloatingChat = dynamic(() => import('@/components/FloatingChat'), {
+// 动态导入聊天面板组件，避免SSR问题
+const StreamChatPanel = dynamic(() => import('@/components/StreamChatPanel'), {
   ssr: false,
   loading: () => null
 })
@@ -93,9 +93,14 @@ function DashboardContent() {
       }
 
       console.log('fetchMatchedUsers: 开始获取已匹配用户...')
-      const response = await fetch('/api/user/matched-users', {
+      // 添加时间戳来避免缓存，确保获取最新数据
+      const timestamp = Date.now()
+      const response = await fetch(`/api/user/matched-users?t=${timestamp}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       })
 
@@ -150,9 +155,14 @@ function DashboardContent() {
       }
 
       console.log('fetchPendingMatchesCount: 开始获取待接受匹配数量...')
-      const response = await fetch('/api/user/pending-matches', {
+      // 添加时间戳来避免缓存，确保获取最新数据
+      const timestamp = Date.now()
+      const response = await fetch(`/api/user/pending-matches?t=${timestamp}`, {
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         }
       })
 
@@ -307,6 +317,18 @@ function DashboardContent() {
     fetchMatchedUsers() // 获取已匹配的用户
     fetchPendingMatchesCount() // 获取待接受匹配数量
     
+    // 设置定期刷新已匹配用户数据，每60秒更新一次
+    const matchedUsersInterval = setInterval(fetchMatchedUsers, 60000)
+    
+    // 设置定期刷新待接受匹配数量，每30秒更新一次
+    const pendingMatchesInterval = setInterval(fetchPendingMatchesCount, 30000)
+    
+    // 清理定时器
+    return () => {
+      clearInterval(matchedUsersInterval)
+      clearInterval(pendingMatchesInterval)
+    }
+    
     // 检查是否需要请求位置权限
     const checkLocationPermission = () => {
       if (shouldAutoRequestLocation()) {
@@ -375,7 +397,7 @@ function DashboardContent() {
     return age
   }
 
-  // 获取推荐用户数据
+  // 获取推荐用户
   useEffect(() => {
     if (isLoading || !currentUser) return
     
@@ -384,9 +406,14 @@ function DashboardContent() {
         const token = localStorage.getItem('token')
         if (!token) return
 
-        const response = await fetch('/api/user/matches?limit=10', {
+        // 添加时间戳来避免缓存，确保获取最新数据
+        const timestamp = Date.now()
+        const response = await fetch(`/api/user/matches?limit=10&t=${timestamp}`, {
           headers: {
-            'Authorization': `Bearer ${token}`
+            'Authorization': `Bearer ${token}`,
+            'Cache-Control': 'no-cache, no-store, must-revalidate, proxy-revalidate, max-age=0',
+            'Pragma': 'no-cache',
+            'Expires': '0'
           }
         })
 
@@ -395,36 +422,63 @@ function DashboardContent() {
           if (data.success) {
             console.log('Dashboard - API返回的原始用户数据:', data.users)
             // 转换数据格式以匹配现有组件
-            const formattedUsers: User[] = data.users.map((user: any) => ({
-              id: user.id.toString(),
-              name: user.name,
-              age: calculateAge(user.birth_date),
-              location: user.location || '未知',
-              bio: user.bio || '这个人很神秘...',
-              interests: user.interests || [],
-              photos: user.photos && user.photos.length > 0 ? user.photos : [user.avatar_url || '/api/placeholder/400/600'],
-              isOnline: user.is_online || false,
-              // 扩展的个人资料字段
-              occupation: user.occupation,
-              education: user.education,
-              relationship_status: user.relationship_status,
-              height: user.height,
-              weight: user.weight,
-              ethnicity: user.ethnicity,
-              religion: user.religion,
-              employer: user.employer,
-              school: user.school,
-              degree: user.degree,
-              values_preferences: user.values_preferences,
-              personality_type: user.personality_type,
-              languages: user.languages,
-              family_plans: user.family_plans,
-              has_kids: user.has_kids,
-              smoking_status: user.smoking_status,
-              drinking_status: user.drinking_status,
-              dating_style: user.dating_style,
-              relationship_goals: user.relationship_goals
-            }))
+            const formattedUsers: User[] = data.users.map((user: any) => {
+              // 过滤和验证照片数组，移除无效的照片URL
+              let validPhotos = []
+              if (user.photos && Array.isArray(user.photos)) {
+                console.log(`用户 ${user.name} 的原始照片数组:`, user.photos)
+                validPhotos = user.photos.filter((photo: string) => {
+                  // 过滤掉空值、null、undefined和占位符URL
+                  const isValid = photo && 
+                         photo !== null && 
+                         photo !== undefined && 
+                         photo !== '' && 
+                         photo !== '/api/placeholder/400/600' &&
+                         !photo.includes('placeholder')
+                  if (!isValid) {
+                    console.log(`过滤掉无效照片: ${photo}`)
+                  }
+                  return isValid
+                })
+                console.log(`用户 ${user.name} 的有效照片数组:`, validPhotos)
+              }
+              
+              // 如果没有有效照片，使用头像或占位符
+              if (validPhotos.length === 0) {
+                validPhotos = user.avatar_url ? [user.avatar_url] : ['/api/placeholder/400/600']
+              }
+              
+              return {
+                id: user.id.toString(),
+                name: user.name,
+                age: calculateAge(user.birth_date),
+                location: user.location || '未知',
+                bio: user.bio || '这个人很神秘...',
+                interests: user.interests || [],
+                                photos: validPhotos,
+                isOnline: user.is_online || false,
+                // 扩展的个人资料字段
+                occupation: user.occupation,
+                education: user.education,
+                relationship_status: user.relationship_status,
+                height: user.height,
+                weight: user.weight,
+                ethnicity: user.ethnicity,
+                religion: user.religion,
+                employer: user.employer,
+                school: user.school,
+                degree: user.degree,
+                values_preferences: user.values_preferences,
+                personality_type: user.personality_type,
+                languages: user.languages,
+                family_plans: user.family_plans,
+                has_kids: user.has_kids,
+                smoking_status: user.smoking_status,
+                drinking_status: user.drinking_status,
+                dating_style: user.dating_style,
+                relationship_goals: user.relationship_goals
+              }
+            })
             console.log('Dashboard - 格式化后的用户数据:', formattedUsers)
             setUsers(formattedUsers)
           }
@@ -435,6 +489,12 @@ function DashboardContent() {
     }
 
     fetchRecommendedUsers()
+
+    // 设置定期刷新，每30秒更新一次推荐用户数据
+    const refreshInterval = setInterval(fetchRecommendedUsers, 30000)
+
+    // 清理定时器
+    return () => clearInterval(refreshInterval)
   }, [isLoading, currentUser])
 
   // 处理喜欢操作
@@ -857,20 +917,7 @@ function DashboardContent() {
                 </motion.button>
               )}
 
-              {/* 喜欢列表按钮 - 所有用户都可以访问 */}
-              <motion.button
-                onClick={() => router.push('/liked-users')}
-                className={`relative p-3 rounded-full transition-colors shadow-lg ${
-                  (currentUser?.gender === '女' || currentUser?.gender === 'female')
-                    ? 'bg-purple-500 text-white hover:bg-purple-600'
-                    : 'bg-blue-500 text-white hover:bg-blue-600'
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                title="我的喜欢"
-              >
-                <Heart size={20} />
-              </motion.button>
+
 
 
               
@@ -956,7 +1003,9 @@ function DashboardContent() {
       </nav>
 
       {/* 主要内容区域 */}
-      <div className="max-w-6xl mx-auto px-4 py-8 relative">
+      <div className="flex max-w-6xl mx-auto">
+        {/* 左侧主要内容 */}
+        <div className="flex-1 px-4 py-8 relative max-w-3xl">
         {/* 位置显示 - 右上角 */}
         <div className="absolute top-0 right-4 z-10 flex items-center space-x-2">
           {(() => {
@@ -1010,6 +1059,20 @@ function DashboardContent() {
               </div>
               
               <div className="flex space-x-3">
+                {/* 刷新按钮 */}
+                <motion.button
+                  onClick={() => {
+                    fetchMatchedUsers()
+                    fetchPendingMatchesCount()
+                  }}
+                  className="px-3 py-2 bg-gray-100 text-gray-600 rounded-lg hover:bg-gray-200 transition-colors"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  title="刷新数据"
+                >
+                  <RefreshCw size={16} />
+                </motion.button>
+                
                 {pendingMatchesCount > 0 && (
                   <motion.button
                     onClick={() => setShowPendingMatches(true)}
@@ -1109,39 +1172,18 @@ function DashboardContent() {
             <p className="text-gray-500">根据你的喜好为你推荐的用户</p>
           </div>
 
-          {currentUserCard ? (
-            <div className="flex flex-col items-center">
-              <UserCard user={currentUserCard} onClick={handleUserCardClick} />
-              
-              {/* 操作按钮 */}
-              <div className="flex justify-center space-x-8 mt-8">
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handlePass}
-                  className="w-16 h-16 bg-gray-400 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-gray-500 transition-colors"
+          {users.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 max-w-4xl">
+              {users.map((user, index) => (
+                <motion.div
+                  key={user.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
                 >
-                  ✕
-                </motion.button>
-                
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleSuperLike}
-                  className="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-blue-600 transition-colors"
-                >
-                  <Star size={24} />
-                </motion.button>
-                
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  onClick={handleLike}
-                  className="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-white shadow-lg hover:bg-red-600 transition-colors"
-                >
-                  <Heart size={24} />
-                </motion.button>
-              </div>
+                  <UserCard user={user} onClick={handleUserCardClick} />
+                </motion.div>
+              ))}
             </div>
           ) : (
             <div className="text-center py-20">
@@ -1171,22 +1213,89 @@ function DashboardContent() {
               </div>
             </div>
           )}
-                 </motion.div>
-       </div>
+                         </motion.div>
+        </div>
 
-       {/* 待接受匹配面板 */}
-       {showPendingMatches && (
-         <PendingMatchesPanel
-           onClose={() => setShowPendingMatches(false)}
-           onMatchAccepted={handleMatchAccepted}
-         />
-       )}
+        {/* 右侧用户头像列表 */}
+        {matchedUsers.length > 0 && (
+          <div className="hidden xl:block w-72 bg-white border-l border-gray-200 p-4 flex flex-col">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-semibold text-gray-900">我的匹配</h3>
+              <button
+                onClick={() => setShowChat(!showChat)}
+                className="p-2 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors"
+              >
+                <MessageCircle size={16} />
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-y-auto space-y-3">
+              {matchedUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
+                  onClick={() => {
+                    setInitialChatUserId(user.id)
+                    setShowChat(true)
+                  }}
+                >
+                  <div className="relative">
+                    <div className="w-12 h-12 bg-red-200 rounded-full flex items-center justify-center overflow-hidden">
+                      {user.photos && user.photos.length > 0 && user.photos[0] && user.photos[0] !== '/api/placeholder/400/600' ? (
+                        <img 
+                          src={user.photos[0]} 
+                          alt={user.name}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.currentTarget as HTMLImageElement
+                            target.style.display = 'none'
+                            const fallback = target.nextElementSibling as HTMLElement
+                            if (fallback) {
+                              fallback.style.display = 'flex'
+                            }
+                          }}
+                        />
+                      ) : null}
+                      <span 
+                        className="text-red-600 font-medium"
+                        style={{ display: (user.photos && user.photos.length > 0 && user.photos[0] && user.photos[0] !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
+                      >
+                        {user.name.charAt(0)}
+                      </span>
+                    </div>
+                    {user.isOnline && (
+                      <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-white"></div>
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{user.name}</p>
+                    <p className="text-xs text-gray-500 truncate">{user.location}</p>
+                  </div>
+                  <button className="p-1 text-gray-400 hover:text-red-500 transition-colors">
+                    <MessageCircle size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
-      {/* 浮动聊天组件 */}
+      {/* 待接受匹配面板 */}
+      {showPendingMatches && (
+        <PendingMatchesPanel
+          onClose={() => setShowPendingMatches(false)}
+          onMatchAccepted={handleMatchAccepted}
+        />
+      )}
+
+      {/* 聊天面板组件 */}
       {showChat && (
-        <FloatingChat
+        <StreamChatPanel
           matchedUsers={matchedUsers}
           initialUserId={initialChatUserId || undefined}
+          isOpen={showChat}
+          onClose={() => setShowChat(false)}
         />
       )}
 

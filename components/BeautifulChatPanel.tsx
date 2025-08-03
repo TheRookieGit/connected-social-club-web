@@ -318,8 +318,8 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
   }
 
   return (
-    <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-6xl h-[90vh] flex flex-col overflow-hidden border border-pink-100">
+    <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 flex items-center justify-center z-50 p-2">
+      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden border border-pink-100">
         {/* 头部 */}
         <div className="flex items-center justify-between p-6 bg-gradient-to-r from-pink-500 to-rose-500 text-white">
           <div className="flex items-center space-x-4">
@@ -343,9 +343,9 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
 
         <div className="flex flex-1 overflow-hidden">
           {/* 对话列表 */}
-          <div className="w-96 bg-gradient-to-b from-pink-50 to-rose-50 border-r border-pink-200 flex flex-col">
+          <div className="w-64 bg-gradient-to-b from-pink-50 to-rose-50 border-r border-pink-200 flex flex-col">
             {/* 搜索和过滤 */}
-            <div className="p-4 space-y-3">
+            <div className="p-3 space-y-3">
               {/* 搜索功能已注释掉 */}
               {/* <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-pink-400" size={18} />
@@ -385,7 +385,7 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
             </div>
 
             {/* 对话列表 */}
-            <div className="flex-1 overflow-y-auto p-4 space-y-2">
+            <div className="flex-1 overflow-y-auto p-3 space-y-2">
               {sortedConversations.length === 0 ? (
                 <div className="text-center py-12">
                   <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -558,11 +558,11 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
           </div>
 
           {/* 聊天区域 */}
-          <div className="flex-1 flex flex-col bg-white">
+          <div className="flex-1 flex flex-col bg-white p-2">
             {selectedConversation ? (
               <>
                 {/* 聊天头部 */}
-                <div className="flex items-center justify-between p-4 border-b border-pink-100 bg-gradient-to-r from-pink-50 to-rose-50">
+                <div className="flex items-center justify-between p-6 border-b border-pink-100 bg-gradient-to-r from-pink-50 to-rose-50">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-br from-pink-200 to-rose-200 rounded-full flex items-center justify-center text-pink-600 font-semibold overflow-hidden">
                       {selectedConversation.user.photos && selectedConversation.user.photos.length > 0 && selectedConversation.user.photos[0] && selectedConversation.user.photos[0] !== '/api/placeholder/400/600' ? (
@@ -612,7 +612,7 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
                 </div>
 
                 {/* 消息列表 */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gradient-to-b from-pink-25 to-white">
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-pink-25 to-white">
                   {loading && selectedConversation.messages.length === 0 && (
                     <div className="flex justify-center py-8">
                       <div className="text-center">
@@ -628,57 +628,69 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
                         <Heart className="text-pink-500" size={32} />
                       </div>
                       <h5 className="font-medium text-gray-900 mb-2">开始甜蜜对话</h5>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         你们已经匹配成功了！<br/>
                         发送第一条消息来打破沉默吧 💕
                       </p>
                     </div>
                   )}
                   
-                  {selectedConversation.messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${
-                        message.senderId === currentUserId ? 'justify-end' : 'justify-start'
-                      }`}
-                    >
+                  {selectedConversation.messages.map((message) => {
+                    // 确保ID比较的一致性
+                    const isOwnMessage = message.senderId.toString() === currentUserId.toString()
+                    console.log(`🔍 [美丽聊天面板] 消息显示检查:`, {
+                      messageId: message.id,
+                      messageSenderId: message.senderId,
+                      currentUserId: currentUserId,
+                      isOwnMessage: isOwnMessage,
+                      messageContent: message.content?.substring(0, 50)
+                    })
+                    
+                    return (
                       <div
-                        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${
-                          message.senderId === currentUserId
-                            ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
-                            : 'bg-white text-gray-900 border border-pink-100'
-                        } ${
-                          message.id.startsWith('temp_') ? 'opacity-70' : ''
+                        key={message.id}
+                        className={`flex ${
+                          isOwnMessage ? 'justify-end' : 'justify-start'
                         }`}
                       >
-                        <p className="text-sm leading-relaxed">{message.content}</p>
-                        <div className={`flex items-center justify-between mt-2 text-xs ${
-                          message.senderId === currentUserId 
-                            ? 'text-pink-100' 
-                            : 'text-gray-500'
-                        }`}>
-                          <span>{formatTime(message.timestamp)}</span>
-                          {message.senderId === currentUserId && !message.id.startsWith('temp_') && (
-                            <div className="flex items-center ml-2">
-                              {message.isRead ? (
-                                <CheckCheck size={14} className="text-blue-300" />
-                              ) : (
-                                <Check size={14} className="text-gray-300" />
-                              )}
-                            </div>
-                          )}
-                          {message.id.startsWith('temp_') && (
-                            <span className="text-xs opacity-60">发送中...</span>
-                          )}
+                        <div
+                          className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${
+                            isOwnMessage
+                              ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
+                              : 'bg-white text-gray-900 border border-pink-100'
+                          } ${
+                            message.id.startsWith('temp_') ? 'opacity-70' : ''
+                          }`}
+                        >
+                          <p className="text-sm leading-relaxed">{message.content}</p>
+                          <div className={`flex items-center justify-between mt-2 text-xs ${
+                            isOwnMessage
+                              ? 'text-pink-100' 
+                              : 'text-gray-500'
+                          }`}>
+                            <span>{formatTime(message.timestamp)}</span>
+                            {isOwnMessage && !message.id.startsWith('temp_') && (
+                              <div className="flex items-center ml-2">
+                                {message.isRead ? (
+                                  <CheckCheck size={14} className="text-blue-300" />
+                                ) : (
+                                  <Check size={14} className="text-gray-300" />
+                                )}
+                              </div>
+                            )}
+                            {message.id.startsWith('temp_') && (
+                              <span className="text-xs opacity-60">发送中...</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                   <div ref={messagesEndRef} />
                 </div>
 
                 {/* 消息输入区域 */}
-                <div className="p-4 border-t border-pink-100 bg-white">
+                <div className="p-6 border-t border-pink-100 bg-white">
                   <div className="flex space-x-3">
                     <button className="p-2 text-pink-400 hover:bg-pink-50 rounded-lg transition-colors">
                       <Paperclip size={20} />

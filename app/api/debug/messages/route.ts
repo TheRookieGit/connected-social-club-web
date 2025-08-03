@@ -22,7 +22,7 @@ function verifyToken(authHeader: string | null) {
   }
 }
 
-// 调试消息查询
+// 调试消息数据
 export async function GET(request: NextRequest) {
   try {
     const supabase = createSupabaseClient()
@@ -44,79 +44,139 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url)
-    const otherUserId = searchParams.get('userId')
+    const userId = searchParams.get('userId')
+    const currentUserId = decoded.userId
 
-    if (!otherUserId) {
+    console.log(`🔍 [调试API] 用户 ${currentUserId} 请求调试消息数据`)
+
+    // 获取用户的所有匹配
+    const { data: matches, error: matchError } = await supabase
+      .from('user_matches')
+      .select('id, user_id, matched_user_id, match_status')
+      .or(`and(user_id.eq.${currentUserId},match_status.eq.accepted),and(matched_user_id.eq.${currentUserId},match_status.eq.accepted)`)
+
+    if (matchError) {
+      console.error('❌ [调试API] 获取匹配数据失败:', matchError)
       return NextResponse.json(
-        { success: false, error: '用户ID不能为空' },
-        { status: 400 }
-      )
-    }
-
-    console.log(`🔍 [调试API] 用户 ${decoded.userId} 调试与用户 ${otherUserId} 的消息`)
-
-    // 1. 查询所有相关消息（不限制条件）
-    const { data: allMessages, error: allError } = await supabase
-      .from('user_messages')
-      .select('*')
-      .or(`sender_id.eq.${decoded.userId},receiver_id.eq.${decoded.userId}`)
-      .order('created_at', { ascending: true })
-
-    if (allError) {
-      console.error('❌ [调试API] 查询所有消息错误:', allError)
-      return NextResponse.json(
-        { success: false, error: '查询失败: ' + allError.message },
+        { success: false, error: '获取匹配数据失败' },
         { status: 500 }
       )
     }
 
-    console.log(`📋 [调试API] 用户 ${decoded.userId} 相关的所有消息:`, allMessages)
+    console.log(`📊 [调试API] 找到 ${matches?.length || 0} 个匹配`)
 
-    // 2. 查询特定对话的消息
-    const { data: conversationMessages, error: convError } = await supabase
+    // 获取所有相关消息
+    let messagesQuery = supabase
       .from('user_messages')
-      .select('*')
-      .or(`and(sender_id.eq.${decoded.userId},receiver_id.eq.${otherUserId}),and(sender_id.eq.${otherUserId},receiver_id.eq.${decoded.userId})`)
-      .order('created_at', { ascending: true })
+      .select(`
+        id,
+        sender_id,
+        receiver_id,
+        message,
+        message_type,
+        is_read,
+        is_deleted,
+        created_at
+      `)
+      .eq('is_deleted', false)
 
-    if (convError) {
-      console.error('❌ [调试API] 查询对话消息错误:', convError)
-      return NextResponse.json(
-        { success: false, error: '查询失败: ' + convError.message },
-        { status: 500 }
-      )
-    }
-
-    console.log(`💬 [调试API] 与用户 ${otherUserId} 的对话消息:`, conversationMessages)
-
-    // 3. 查询最近的消息
-    const { data: recentMessages, error: recentError } = await supabase
-      .from('user_messages')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(10)
-
-    if (recentError) {
-      console.error('❌ [调试API] 查询最近消息错误:', recentError)
+    // 如果指定了特定用户，只获取与该用户的消息
+    if (userId) {
+      messagesQuery = messagesQuery.or(`and(sender_id.eq.${currentUserId},receiver_id.eq.${userId}),and(sender_id.eq.${userId},receiver_id.eq.${currentUserId})`)
     } else {
-      console.log(`🕒 [调试API] 最近10条消息:`, recentMessages)
+      // 获取所有匹配用户的消息
+      const matchedUserIds = matches?.map(m => 
+        m.user_id === currentUserId ? m.matched_user_id : m.user_id
+      ) || []
+      
+      if (matchedUserIds.length > 0) {
+        const conditions = matchedUserIds.map(id => 
+          `and(sender_id.eq.${currentUserId},receiver_id.eq.${id}),and(sender_id.eq.${id},receiver_id.eq.${currentUserId})`
+        ).join(',')
+        messagesQuery = messagesQuery.or(conditions)
+      }
     }
+
+    const { data: messages, error: messagesError } = await messagesQuery
+      .order('created_at', { ascending: true })
+
+    if (messagesError) {
+      console.error('❌ [调试API] 获取消息数据失败:', messagesError)
+      return NextResponse.json(
+        { success: false, error: '获取消息数据失败' },
+        { status: 500 }
+      )
+    }
+
+    console.log(`📨 [调试API] 找到 ${messages?.length || 0} 条消息`)
+
+    // 格式化消息数据
+    const formattedMessages = messages?.map(msg => ({
+      id: msg.id,
+      senderId: msg.sender_id.toString(),
+      receiverId: msg.receiver_id.toString(),
+      content: msg.message,
+      messageType: msg.message_type,
+      timestamp: msg.created_at,
+      isRead: msg.is_read,
+      isDeleted: msg.is_deleted
+    })) || []
+
+    // 按对话分组
+    const conversations = new Map()
+    formattedMessages.forEach(msg => {
+      const otherUserId = msg.senderId === currentUserId.toString() ? msg.receiverId : msg.senderId
+      if (!conversations.has(otherUserId)) {
+        conversations.set(otherUserId, [])
+      }
+      conversations.get(otherUserId).push(msg)
+    })
+
+    // 获取用户信息
+    const allUserIds = new Set()
+    formattedMessages.forEach(msg => {
+      allUserIds.add(msg.senderId)
+      allUserIds.add(msg.receiverId)
+    })
+
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id, name, email, is_online, last_seen')
+      .in('id', Array.from(allUserIds))
+
+    if (usersError) {
+      console.error('❌ [调试API] 获取用户数据失败:', usersError)
+    }
+
+    const userMap = new Map()
+    users?.forEach(user => {
+      userMap.set(user.id.toString(), user)
+    })
+
+    // 构建调试信息
+    const debugInfo = {
+      currentUserId: currentUserId.toString(),
+      matches: matches || [],
+      totalMessages: formattedMessages.length,
+      conversations: Array.from(conversations.entries()).map(([userId, msgs]) => ({
+        userId,
+        userInfo: userMap.get(userId),
+        messageCount: msgs.length,
+        messages: msgs.slice(-5) // 只显示最近5条消息
+      })),
+      allMessages: formattedMessages.slice(-20), // 只显示最近20条消息
+      users: users || []
+    }
+
+    console.log(`✅ [调试API] 成功返回调试信息`)
 
     return NextResponse.json({
       success: true,
-      debug: {
-        currentUserId: decoded.userId,
-        otherUserId: otherUserId,
-        allUserMessages: allMessages || [],
-        conversationMessages: conversationMessages || [],
-        recentMessages: recentMessages || [],
-        totalAllMessages: allMessages?.length || 0,
-        totalConversationMessages: conversationMessages?.length || 0
-      }
+      data: debugInfo
     })
 
   } catch (error) {
-    console.error('❌ [调试API] 调试消息查询错误:', error)
+    console.error('❌ [调试API] 系统错误:', error)
     return NextResponse.json(
       { success: false, error: '服务器错误' },
       { status: 500 }

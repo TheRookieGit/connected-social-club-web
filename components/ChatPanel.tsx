@@ -420,8 +420,8 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl h-[85vh] flex flex-col">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl h-[85vh] flex flex-col">
         {/* 头部 */}
         <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-red-50 to-pink-50">
           <div className="flex items-center space-x-3">
@@ -448,8 +448,8 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
 
         <div className="flex flex-1 overflow-hidden">
           {/* 用户列表 */}
-          <div className="w-96 border-r bg-gray-50">
-            <div className="p-4">
+          <div className="w-64 border-r bg-gray-50">
+            <div className="p-3">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="font-semibold text-gray-900">已配对用户</h4>
                 <span className="text-sm text-gray-500 bg-red-100 px-2 py-1 rounded-full">
@@ -546,11 +546,11 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
           </div>
 
           {/* 聊天区域 */}
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col bg-white">
             {selectedUser ? (
               <>
                 {/* 聊天头部 */}
-                <div className="flex items-center justify-between p-4 border-b bg-white">
+                <div className="flex items-center justify-between p-6 border-b bg-white">
                   <div className="flex items-center space-x-3">
                     <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center text-white font-semibold overflow-hidden">
                       {selectedUser.photos && selectedUser.photos.length > 0 && selectedUser.photos[0] && selectedUser.photos[0] !== '/api/placeholder/400/600' ? (
@@ -606,7 +606,7 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                 </div>
 
                 {/* 消息列表 */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gray-50">
                   {loading && messages.length === 0 && (
                     <div className="flex justify-center py-8">
                       <div className="text-center">
@@ -622,53 +622,65 @@ export default function ChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
                         <Heart className="text-red-500" size={24} />
                       </div>
                       <h5 className="font-medium text-gray-900 mb-2">开始对话</h5>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs text-gray-500">
                         你们已经匹配成功了！<br/>
                         发送第一条消息来打破沉默吧
                       </p>
                     </div>
                   )}
                   
-                  {messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${
-                        message.senderId.toString() === currentUserId.toString() ? 'justify-end' : 'justify-start'
-                      }`}
-                    >
+                  {messages.map((message) => {
+                    // 确保ID比较的一致性
+                    const isOwnMessage = message.senderId.toString() === currentUserId.toString()
+                    console.log(`🔍 [聊天面板] 消息显示检查:`, {
+                      messageId: message.id,
+                      messageSenderId: message.senderId,
+                      currentUserId: currentUserId,
+                      isOwnMessage: isOwnMessage,
+                      messageContent: message.content?.substring(0, 50)
+                    })
+                    
+                    return (
                       <div
-                        className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${
-                          message.senderId.toString() === currentUserId.toString()
-                            ? 'bg-red-500 text-white'
-                            : 'bg-white text-gray-900 border'
-                        } ${
-                          message.id.startsWith('temp_') ? 'opacity-70' : ''
+                        key={message.id}
+                        className={`flex ${
+                          isOwnMessage ? 'justify-end' : 'justify-start'
                         }`}
                       >
-                        <p className="text-sm leading-relaxed">{message.content}</p>
-                        <div className={`flex items-center justify-between mt-2 text-xs ${
-                          message.senderId.toString() === currentUserId.toString()
-                            ? 'text-red-100' 
-                            : 'text-gray-500'
-                        }`}>
-                          <span>{formatTime(message.timestamp)}</span>
-                          {message.senderId.toString() === currentUserId.toString() && !message.id.startsWith('temp_') && (
-                            <div className="flex items-center ml-2">
-                              <ReadStatusIndicator isRead={message.isRead} />
-                            </div>
-                          )}
-                          {message.id.startsWith('temp_') && (
-                            <span className="text-xs opacity-60">发送中...</span>
-                          )}
+                        <div
+                          className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${
+                            isOwnMessage
+                              ? 'bg-red-500 text-white'
+                              : 'bg-white text-gray-900 border'
+                          } ${
+                            message.id.startsWith('temp_') ? 'opacity-70' : ''
+                          }`}
+                        >
+                          <p className="text-sm leading-relaxed">{message.content}</p>
+                          <div className={`flex items-center justify-between mt-2 text-xs ${
+                            isOwnMessage
+                              ? 'text-red-100' 
+                              : 'text-gray-500'
+                          }`}>
+                            <span>{formatTime(message.timestamp)}</span>
+                            {isOwnMessage && !message.id.startsWith('temp_') && (
+                              <div className="flex items-center ml-2">
+                                <ReadStatusIndicator isRead={message.isRead} />
+                              </div>
+                            )}
+                            {message.id.startsWith('temp_') && (
+                              <span className="text-xs opacity-60">发送中...</span>
+                            )}
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  })}
                   <div ref={messagesEndRef} />
                 </div>
 
                 {/* 消息输入区域 */}
-                <div className="p-4 border-t bg-white">
+                <div className="p-6 border-t bg-white">
                   <div className="flex space-x-2">
                     <input
                       type="text"
