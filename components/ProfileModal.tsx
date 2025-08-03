@@ -8,7 +8,7 @@ import {
   Baby, Activity, Coffee, Wine, MessageCircle, Settings, Star, 
   Award, Palette, Music, Gamepad2, Utensils, Plane, Mountain, 
   BookOpenCheck, Users2, Sparkles, Target, Shield, Zap, MoreHorizontal, Check,
-  Trash2, GripVertical
+  Trash2, GripVertical, ChevronLeft, ChevronRight
 } from 'lucide-react'
 
 interface ProfileModalProps {
@@ -31,6 +31,8 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
   const [activeTab, setActiveTab] = useState('basic')
   const [showValuesModal, setShowValuesModal] = useState(false)
   const [selectedValues, setSelectedValues] = useState<string[]>([])
+  const [showPhotoViewer, setShowPhotoViewer] = useState(false)
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const photoInputRef = useRef<HTMLInputElement>(null)
 
@@ -307,9 +309,6 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
 
       // 重新获取用户资料以更新照片列表
       await fetchProfile()
-
-      // 显示成功提示
-      alert('照片上传成功！')
     } catch (error) {
       console.error('上传照片失败:', error)
       alert(`照片上传失败: ${error instanceof Error ? error.message : '未知错误'}`)
@@ -358,7 +357,6 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
       }
 
       await fetchProfile() // 重新获取资料以更新照片列表
-      alert('照片删除成功！')
     } catch (error) {
       console.error('删除照片失败:', error)
       alert('删除照片失败，请重试')
@@ -391,7 +389,6 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
       }
 
       await fetchProfile() // 重新获取资料以更新照片列表
-      alert('照片顺序更新成功！')
     } catch (error) {
       console.error('更新照片顺序失败:', error)
       alert('更新照片顺序失败，请重试')
@@ -427,6 +424,57 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
     await handleReorderPhotos(photos)
     setDraggedIndex(null)
   }
+
+  // 照片查看器相关函数
+  const openPhotoViewer = (photoIndex: number) => {
+    if (!isManagingPhotos) {
+      setCurrentPhotoIndex(photoIndex)
+      setShowPhotoViewer(true)
+    }
+  }
+
+  const closePhotoViewer = () => {
+    setShowPhotoViewer(false)
+    setCurrentPhotoIndex(0)
+  }
+
+  const nextPhoto = () => {
+    if (!profile?.photos || profile.photos.length === 0) return
+    setCurrentPhotoIndex((prev) => 
+      prev === (profile?.photos?.length || 0) - 1 ? 0 : prev + 1
+    )
+  }
+
+  const prevPhoto = () => {
+    if (!profile?.photos || profile.photos.length === 0) return
+    setCurrentPhotoIndex((prev) => 
+      prev === 0 ? (profile?.photos?.length || 0) - 1 : prev - 1
+    )
+  }
+
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (!showPhotoViewer) return
+    
+    switch (e.key) {
+      case 'Escape':
+        closePhotoViewer()
+        break
+      case 'ArrowLeft':
+        prevPhoto()
+        break
+      case 'ArrowRight':
+        nextPhoto()
+        break
+    }
+  }
+
+  // 键盘事件监听
+  useEffect(() => {
+    if (showPhotoViewer) {
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [showPhotoViewer])
 
   const tabs = [
     { id: 'basic', label: '基本信息', icon: User, color: 'text-blue-600' },
@@ -783,12 +831,13 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                       <div 
                         key={index} 
                         className={`aspect-square bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-md transition-shadow relative group ${
-                          isManagingPhotos ? 'cursor-move' : ''
+                          isManagingPhotos ? 'cursor-move' : 'cursor-pointer'
                         } ${draggedIndex === index ? 'opacity-50' : ''}`}
                         draggable={isManagingPhotos}
                         onDragStart={(e) => handleDragStart(e, index)}
                         onDragOver={handleDragOver}
                         onDrop={(e) => handleDrop(e, index)}
+                        onClick={() => !isManagingPhotos && openPhotoViewer(index)}
                       >
                         <Image
                           src={photo}
@@ -818,18 +867,31 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
                         )}
                       </div>
                     ))}
+                    
+                    {/* 添加照片的虚线框 */}
+                    <div 
+                      className="aspect-square bg-white rounded-2xl border-2 border-dashed border-purple-300 hover:border-purple-500 transition-colors flex flex-col items-center justify-center cursor-pointer group"
+                      onClick={triggerPhotoInput}
+                    >
+                      <div className="text-purple-400 group-hover:text-purple-600 transition-colors">
+                        <Camera className="h-8 w-8 mx-auto mb-2" />
+                        <p className="text-sm font-medium">添加照片</p>
+                      </div>
+                    </div>
                   </div>
                 ) : (
-                  <div className="text-center py-12">
-                    <Camera className="h-16 w-16 text-purple-300 mx-auto mb-4" />
-                    <p className="text-gray-500 mb-4">还没有上传照片</p>
-                                               <button
-                             onClick={triggerPhotoInput}
-                             disabled={isUploadingPhoto}
-                             className="px-6 py-3 bg-purple-500 text-white rounded-xl hover:bg-purple-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                           >
-                             {isUploadingPhoto ? '上传中...' : '添加照片'}
-                           </button>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                    {/* 添加照片的虚线框 - 当没有照片时 */}
+                    <div 
+                      className="aspect-square bg-white rounded-2xl border-2 border-dashed border-purple-300 hover:border-purple-500 transition-colors flex flex-col items-center justify-center cursor-pointer group"
+                      onClick={triggerPhotoInput}
+                    >
+                      <div className="text-purple-400 group-hover:text-purple-600 transition-colors">
+                        <Camera className="h-12 w-12 mx-auto mb-3" />
+                        <p className="text-sm font-medium">添加照片</p>
+                        <p className="text-xs text-gray-400 mt-1">点击上传您的第一张照片</p>
+                      </div>
+                    </div>
                   </div>
                 )}
                 
@@ -1347,6 +1409,63 @@ export default function ProfileModal({ isOpen, onClose, userId }: ProfileModalPr
           </div>
         </div>
       )}
+
+                          {/* 照片查看器弹窗 */}
+                    {showPhotoViewer && profile?.photos && profile.photos.length > 0 && (
+                      <div className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[60] p-4">
+                        <div className="relative max-w-4xl max-h-[80vh] w-full bg-white rounded-2xl overflow-hidden shadow-2xl">
+                          {/* 关闭按钮 */}
+                          <button
+                            onClick={closePhotoViewer}
+                            className="absolute top-4 right-4 z-10 text-gray-600 hover:text-gray-800 transition-colors bg-white bg-opacity-80 rounded-full p-2"
+                          >
+                            <X className="h-6 w-6" />
+                          </button>
+                    
+                          {/* 照片显示 */}
+                          <div className="relative w-full h-full flex items-center justify-center p-8">
+                            <div className="w-[700px] h-[600px] flex items-center justify-center">
+                              <Image
+                                src={profile.photos[currentPhotoIndex]}
+                                alt={`照片 ${currentPhotoIndex + 1}`}
+                                width={700}
+                                height={600}
+                                className="w-full h-full object-contain rounded-lg"
+                                priority
+                              />
+                            </div>
+                            
+                            {/* 照片计数器 */}
+                            <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded-full text-sm">
+                              {currentPhotoIndex + 1} / {profile.photos.length}
+                            </div>
+                          </div>
+                    
+                          {/* 导航按钮 */}
+                          {profile.photos.length > 1 && (
+                            <>
+                              {/* 上一张按钮 */}
+                              <button
+                                onClick={prevPhoto}
+                                className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 text-gray-600 p-3 rounded-full hover:bg-opacity-100 transition-all shadow-lg"
+                              >
+                                <ChevronLeft className="h-6 w-6" />
+                              </button>
+                    
+                              {/* 下一张按钮 */}
+                              <button
+                                onClick={nextPhoto}
+                                className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-80 text-gray-600 p-3 rounded-full hover:bg-opacity-100 transition-all shadow-lg"
+                              >
+                                <ChevronRight className="h-6 w-6" />
+                              </button>
+                            </>
+                          )}
+                    
+
+                        </div>
+                      </div>
+                    )}
         </div>
       </div>
     </div>

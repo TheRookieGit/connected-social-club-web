@@ -57,7 +57,7 @@ export default function Home() {
       </nav>
 
       {/* 主要内容 */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 pb-8">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
           {/* 左侧内容 */}
           <motion.div
@@ -135,8 +135,8 @@ export default function Home() {
         </div>
       </div>
 
-             {/* 登录注册按钮部分 */}
-       <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-12">
+                          {/* 登录注册按钮部分 */}
+        <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8 py-8 pb-16">
          <motion.div
            initial={{ opacity: 0, y: 20 }}
            animate={{ opacity: 1, y: 0 }}

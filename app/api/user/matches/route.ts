@@ -164,7 +164,8 @@ export async function GET(request: NextRequest) {
         has_kids,
         smoking_status,
         drinking_status,
-        dating_style
+        dating_style,
+        photos
       `)
       .neq('id', decoded.userId)
       .eq('status', 'active')

@@ -18,6 +18,7 @@ export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [rememberMe, setRememberMe] = useState(false)
   const [showLocationPermission, setShowLocationPermission] = useState(false)
   const [locationPermissionGranted, setLocationPermissionGranted] = useState(false)
   const [rememberLocationPermission, setRememberLocationPermission] = useState(false)
@@ -87,6 +88,19 @@ export default function LoginForm() {
     // 移除自动显示逻辑，只在用户主动登录后显示
   }, [])
 
+  // 检查是否有保存的登录信息
+  useEffect(() => {
+    const savedEmail = localStorage.getItem('rememberedEmail')
+    const savedPassword = localStorage.getItem('rememberedPassword')
+    const remembered = localStorage.getItem('rememberMe') === 'true'
+    
+    if (remembered && savedEmail && savedPassword) {
+      setEmail(savedEmail)
+      setPassword(savedPassword)
+      setRememberMe(true)
+    }
+  }, [])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
@@ -107,6 +121,18 @@ export default function LoginForm() {
         // 保存token到localStorage
         localStorage.setItem('token', data.token)
         localStorage.setItem('user', JSON.stringify(data.user))
+        
+        // 处理"记住我"功能
+        if (rememberMe) {
+          localStorage.setItem('rememberedEmail', email)
+          localStorage.setItem('rememberedPassword', password)
+          localStorage.setItem('rememberMe', 'true')
+        } else {
+          // 如果用户没有选择"记住我"，清除保存的信息
+          localStorage.removeItem('rememberedEmail')
+          localStorage.removeItem('rememberedPassword')
+          localStorage.removeItem('rememberMe')
+        }
         
         // 不管注册是否完成，只要用户以前登录过就直接跳转到dashboard
         router.push('/dashboard')
@@ -286,6 +312,8 @@ export default function LoginForm() {
             <input
               id="remember-me"
               type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
               className="h-4 w-4 text-red-500 focus:ring-red-500 border-gray-300 rounded"
             />
             <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-700">

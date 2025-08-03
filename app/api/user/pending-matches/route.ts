@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
     const senderUserIds = pendingMatches.map(match => match.user_id)
     const { data: senderUsersData, error: usersError } = await supabase
       .from('users')
-      .select('id, name, birth_date, gender, avatar_url, bio, location, occupation, is_online, last_seen')
+      .select('id, name, birth_date, gender, avatar_url, bio, location, occupation, is_online, last_seen, photos')
       .in('id', senderUserIds)
 
     if (usersError) {

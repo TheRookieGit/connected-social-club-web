@@ -56,12 +56,14 @@ export default function UserCard({ user, onClick }: UserCardProps) {
   ]
 
   const nextPhoto = () => {
+    if (!user.photos || user.photos.length <= 1) return
     setCurrentPhotoIndex((prev) => 
       prev === user.photos.length - 1 ? 0 : prev + 1
     )
   }
 
   const prevPhoto = () => {
+    if (!user.photos || user.photos.length <= 1) return
     setCurrentPhotoIndex((prev) => 
       prev === 0 ? user.photos.length - 1 : prev - 1
     )
@@ -112,7 +114,7 @@ export default function UserCard({ user, onClick }: UserCardProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10"></div>
         
         {/* 照片指示器 */}
-        {user.photos.length > 1 && (
+        {user.photos && user.photos.length > 1 && (
           <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20">
             <div className="flex space-x-2">
               {user.photos.map((_, index) => (
@@ -128,7 +130,7 @@ export default function UserCard({ user, onClick }: UserCardProps) {
         )}
 
         {/* 照片切换按钮 */}
-        {user.photos.length > 1 && (
+        {user.photos && user.photos.length > 1 && (
           <>
             <button
               onClick={(e) => {

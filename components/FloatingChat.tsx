@@ -197,7 +197,7 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
           {
             id: currentUser.id.toString(),
             name: currentUser.name,
-            image: currentUser.avatar_url || undefined
+            image: currentUser.photos && currentUser.photos.length > 0 ? currentUser.photos[0] : (currentUser.avatar_url || undefined)
           },
           token
         )
@@ -283,11 +283,15 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
     
     if (otherUserId) {
       const member = (channel.state.members as any)[otherUserId]
+      
+      // 从matchedUsers中查找对应的用户数据
+      const matchedUser = matchedUsers.find(user => user.id === otherUserId)
+      
       return {
         id: otherUserId,
-        name: member.user?.name || `用户${otherUserId}`,
-        image: member.user?.image,
-        online: member.user?.online || false
+        name: member.user?.name || matchedUser?.name || `用户${otherUserId}`,
+        image: matchedUser?.photos && matchedUser.photos.length > 0 ? matchedUser.photos[0] : member.user?.image,
+        online: member.user?.online || matchedUser?.isOnline || false
       }
     }
     return null
@@ -298,6 +302,19 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
     if (!chatClient || !currentUser || !matchedUsers.length || channelsCreated) return
 
     try {
+      // 首先为所有匹配的用户设置用户信息
+      for (const matchedUser of matchedUsers) {
+        try {
+          await chatClient.upsertUser({
+            id: matchedUser.id.toString(),
+            name: matchedUser.name,
+            image: matchedUser.photos && matchedUser.photos.length > 0 ? matchedUser.photos[0] : undefined
+          })
+        } catch (error) {
+          console.error(`设置用户信息失败 ${matchedUser.id}:`, error)
+        }
+      }
+
       const channelPromises = matchedUsers.map(async (matchedUser) => {
         const channelId = `chat-${Math.min(currentUser.id, matchedUser.id)}-${Math.max(currentUser.id, matchedUser.id)}`
         
@@ -442,16 +459,28 @@ export default function FloatingChat({ matchedUsers, initialUserId }: FloatingCh
                             >
                               <div className="flex items-center space-x-2">
                                 <div className="relative">
-                                  <div className="w-8 h-8 rounded-full bg-pink-200 flex items-center justify-center text-xs font-bold text-pink-600">
-                                    {otherUser?.image ? (
+                                  <div className="w-8 h-8 rounded-full bg-pink-200 flex items-center justify-center text-xs font-bold text-pink-600 overflow-hidden">
+                                    {otherUser?.image && otherUser.image !== '/api/placeholder/400/600' ? (
                                       <img 
                                         src={otherUser.image} 
                                         alt={otherUser.name}
                                         className="w-full h-full object-cover rounded-full"
+                                        onError={(e) => {
+                                          const target = e.currentTarget as HTMLImageElement
+                                          target.style.display = 'none'
+                                          const fallback = target.nextElementSibling as HTMLElement
+                                          if (fallback) {
+                                            fallback.style.display = 'flex'
+                                          }
+                                        }}
                                       />
-                                    ) : (
-                                      otherUser?.name?.charAt(0) || '?'
-                                    )}
+                                    ) : null}
+                                    <span 
+                                      className="text-xs font-bold text-pink-600"
+                                      style={{ display: (otherUser?.image && otherUser.image !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
+                                    >
+                                      {otherUser?.name?.charAt(0) || '?'}
+                                    </span>
                                   </div>
                                   {otherUser?.online && (
                                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 rounded-full border border-white"></div>

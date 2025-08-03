@@ -12,7 +12,7 @@ interface PendingUser {
   bio: string
   matchScore: number
   isOnline: boolean
-  avatar_url?: string
+  photos?: string[]
   matchedAt: string
 }
 
@@ -58,7 +58,7 @@ export default function PendingMatchesPanel({ onClose, onMatchAccepted }: Pendin
               bio: user.bio,
               matchScore: user.matchScore,
               isOnline: user.isOnline,
-              avatar_url: user.avatar_url,
+              photos: user.photos && user.photos.length > 0 ? user.photos : [user.avatar_url || '/api/placeholder/400/600'],
               matchedAt: user.matchedAt
             }))
             setPendingUsers(formattedUsers)
@@ -231,9 +231,9 @@ export default function PendingMatchesPanel({ onClose, onMatchAccepted }: Pendin
                     <div className="flex items-center space-x-4 mb-4">
                       <div className="relative">
                         <div className="w-16 h-16 bg-gradient-to-br from-purple-200 to-pink-200 rounded-full flex items-center justify-center overflow-hidden">
-                          {user.avatar_url && user.avatar_url !== '/api/placeholder/400/600' ? (
+                          {user.photos && user.photos.length > 0 && user.photos[0] && user.photos[0] !== '/api/placeholder/400/600' ? (
                             <img 
-                              src={user.avatar_url} 
+                              src={user.photos[0]} 
                               alt={user.name}
                               className="w-full h-full object-cover"
                               onError={(e) => {
@@ -248,7 +248,7 @@ export default function PendingMatchesPanel({ onClose, onMatchAccepted }: Pendin
                           ) : null}
                           <span 
                             className="text-purple-600 font-bold text-xl"
-                            style={{ display: (user.avatar_url && user.avatar_url !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
+                            style={{ display: (user.photos && user.photos.length > 0 && user.photos[0] && user.photos[0] !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
                           >
                             {user.name.charAt(0)}
                           </span>

@@ -115,12 +115,14 @@ export default function UserDetailModal({
   ]
 
   const nextPhoto = () => {
+    if (!user.photos || user.photos.length <= 1) return
     setCurrentPhotoIndex((prev) => 
       prev === user.photos.length - 1 ? 0 : prev + 1
     )
   }
 
   const prevPhoto = () => {
+    if (!user.photos || user.photos.length <= 1) return
     setCurrentPhotoIndex((prev) => 
       prev === 0 ? user.photos.length - 1 : prev - 1
     )
@@ -130,6 +132,8 @@ export default function UserDetailModal({
   const handleDragEnd = (event: any, info: PanInfo) => {
     setIsDragging(false)
     const threshold = 50 // 拖拽阈值
+
+    if (!user.photos || user.photos.length <= 1) return
 
     if (info.offset.x > threshold && currentPhotoIndex > 0) {
       // 向右拖拽，显示上一张
@@ -165,6 +169,39 @@ export default function UserDetailModal({
   const getValueInfo = (valueId: string) => {
     const tag = valueTags.find(tag => tag.id === valueId)
     return tag || { name: valueId, icon: Star, color: 'bg-gray-100 text-gray-600' }
+  }
+
+  // 生活方式字段映射
+  const getLifestyleDisplayName = (field: string, value: string) => {
+    const mappings: { [key: string]: { [key: string]: string } } = {
+      family_plans: {
+        'want_kids': '想要孩子',
+        'dont_want_kids': '不想要孩子',
+        'open_to_kids': '对孩子持开放态度',
+        'not_sure': '不确定'
+      },
+                          smoking_status: {
+                      'yes_smoke': '是的，我吸烟',
+                      'sometimes_smoke': '我有时吸烟',
+                      'no_smoke': '不，我不吸烟',
+                      'trying_quit': '我正在尝试戒烟'
+                    },
+                    drinking_status: {
+                      'yes_drink': '是的，我喝酒',
+                      'sometimes_drink': '我有时喝酒',
+                      'rarely_drink': '我很少喝酒',
+                      'no_drink': '不，我不喝酒',
+                      'sober': '我戒酒了'
+                    },
+      dating_style: {
+        'long_term': '长期关系',
+        'life_partner': '人生伴侣',
+        'casual_dates': '有趣的随意约会',
+        'intimacy_no_commitment': '肉体关系'
+      }
+    }
+
+    return mappings[field]?.[value] || value
   }
 
   const handleLike = () => {
@@ -444,11 +481,11 @@ export default function UserDetailModal({
           <div className="mb-6">
             <h4 className="text-sm font-semibold text-gray-900 mb-3">生活方式</h4>
             <div className="bg-gray-50 p-4 rounded-xl space-y-2">
-              {user.family_plans && renderInfoItem(<Baby className="h-4 w-4" />, "家庭计划", user.family_plans)}
+              {user.family_plans && renderInfoItem(<Baby className="h-4 w-4" />, "家庭计划", getLifestyleDisplayName('family_plans', user.family_plans))}
               {user.has_kids && renderInfoItem(<Baby className="h-4 w-4" />, "是否有孩子", typeof user.has_kids === 'boolean' ? (user.has_kids ? "是" : "否") : user.has_kids)}
-              {user.smoking_status && renderInfoItem(<Cigarette className="h-4 w-4" />, "吸烟状态", user.smoking_status)}
-              {user.drinking_status && renderInfoItem(<Wine className="h-4 w-4" />, "饮酒状态", user.drinking_status)}
-              {user.dating_style && renderInfoItem(<Target className="h-4 w-4" />, "约会风格", user.dating_style)}
+              {user.smoking_status && renderInfoItem(<Cigarette className="h-4 w-4" />, "吸烟状态", getLifestyleDisplayName('smoking_status', user.smoking_status))}
+              {user.drinking_status && renderInfoItem(<Wine className="h-4 w-4" />, "饮酒状态", getLifestyleDisplayName('drinking_status', user.drinking_status))}
+              {user.dating_style && renderInfoItem(<Target className="h-4 w-4" />, "约会风格", getLifestyleDisplayName('dating_style', user.dating_style))}
             </div>
           </div>
 

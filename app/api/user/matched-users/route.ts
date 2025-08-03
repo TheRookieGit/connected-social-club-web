@@ -129,7 +129,7 @@ export async function GET(request: NextRequest) {
     // 获取匹配用户的详细信息
     const { data: matchedUsersData, error: usersError } = await supabase
       .from('users')
-      .select('id, name, birth_date, gender, avatar_url, bio, location, occupation, is_online, last_seen')
+      .select('id, name, birth_date, gender, avatar_url, bio, location, occupation, is_online, last_seen, photos')
       .in('id', Array.from(matchedUserIds))
 
     if (usersError) {
@@ -161,6 +161,7 @@ export async function GET(request: NextRequest) {
         bio: user.bio || '这个人很神秘...',
         occupation: user.occupation,
         avatar_url: user.avatar_url,
+        photos: user.photos,
         isOnline: isActuallyOnline,
         lastSeen: user.last_seen,
         matchScore: Math.round((details?.match_score || 0) * 100),

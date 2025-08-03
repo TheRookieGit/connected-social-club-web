@@ -197,30 +197,29 @@ export default function UserProfilePage() {
         'separated': '分居'
       },
       family_plans: {
-        'wants_kids': '想要孩子',
-        'open_to_kids': '对要孩子持开放态度',
-        'no_kids': '不想要孩子',
-        'has_kids': '已有孩子'
+        'want_kids': '想要孩子',
+        'dont_want_kids': '不想要孩子',
+        'open_to_kids': '对孩子持开放态度',
+        'not_sure': '不确定'
       },
       dating_style: {
-        'casual': '随意约会',
-        'serious': '认真恋爱',
-        'marriage_minded': '以结婚为目的',
-        'friends_first': '先做朋友'
+        'long_term': '长期关系',
+        'life_partner': '人生伴侣',
+        'casual_dates': '有趣的随意约会',
+        'intimacy_no_commitment': '肉体关系'
       },
       smoking_status: {
-        'never': '从不吸烟',
-        'occasionally': '偶尔吸烟',
-        'regularly': '经常吸烟',
-        'trying_to_quit': '正在戒烟',
-        'no_smoke': '不吸烟'
+        'yes_smoke': '是的，我吸烟',
+        'sometimes_smoke': '我有时吸烟',
+        'no_smoke': '不，我不吸烟',
+        'trying_quit': '我正在尝试戒烟'
       },
       drinking_status: {
-        'never': '从不饮酒',
-        'occasionally': '偶尔饮酒',
-        'regularly': '经常饮酒',
-        'social_only': '只在社交场合饮酒',
-        'no_drink': '不饮酒'
+        'yes_drink': '是的，我喝酒',
+        'sometimes_drink': '我有时喝酒',
+        'rarely_drink': '我很少喝酒',
+        'no_drink': '不，我不喝酒',
+        'sober': '我戒酒了'
       },
       exercise_frequency: {
         'daily': '每天',

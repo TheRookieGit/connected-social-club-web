@@ -107,16 +107,20 @@ function DashboardContent() {
         
         if (data.success) {
           if (data.matchedUsers && data.matchedUsers.length > 0) {
-            const formattedUsers: RecommendedUser[] = data.matchedUsers.map((user: any) => ({
-              id: user.id.toString(),
-              name: user.name,
-              age: user.age,
-              location: user.location,
-              bio: user.bio,
-              interests: [], // 可以后续添加兴趣获取
-              photos: [user.avatar_url || '/api/placeholder/400/600'],
-              isOnline: user.isOnline
-            }))
+            console.log('🔍 原始匹配用户数据:', data.matchedUsers)
+            const formattedUsers: RecommendedUser[] = data.matchedUsers.map((user: any) => {
+              console.log(`🔍 用户 ${user.name} 的照片数据:`, user.photos)
+              return {
+                id: user.id.toString(),
+                name: user.name,
+                age: user.age,
+                location: user.location,
+                bio: user.bio,
+                interests: [], // 可以后续添加兴趣获取
+                photos: user.photos && user.photos.length > 0 ? user.photos : (user.avatar_url ? [user.avatar_url] : ['/api/placeholder/400/600']),
+                isOnline: user.isOnline
+              }
+            })
             setMatchedUsers(formattedUsers)
             console.log('✅ 成功获取到已匹配用户:', formattedUsers)
           } else {
@@ -398,7 +402,7 @@ function DashboardContent() {
               location: user.location || '未知',
               bio: user.bio || '这个人很神秘...',
               interests: user.interests || [],
-              photos: [user.avatar_url || '/api/placeholder/400/600'],
+              photos: user.photos && user.photos.length > 0 ? user.photos : [user.avatar_url || '/api/placeholder/400/600'],
               isOnline: user.is_online || false,
               // 扩展的个人资料字段
               occupation: user.occupation,
@@ -1036,11 +1040,12 @@ function DashboardContent() {
                 {matchedUsers.slice(0, 5).map((user) => (
                   <motion.div
                     key={user.id}
-                    className="flex-shrink-0 w-20 text-center cursor-pointer"
+                    className="flex-shrink-0 w-20 text-center cursor-pointer p-1"
                     onClick={() => handleUserAvatarClick(user.id)}
                     whileHover={{ scale: 1.05 }}
+                    style={{ transformOrigin: 'center' }}
                   >
-                    <div className="w-16 h-16 bg-red-200 rounded-full flex items-center justify-center mx-auto mb-2 relative">
+                    <div className="w-16 h-16 bg-red-200 rounded-full flex items-center justify-center mx-auto mb-2 relative overflow-visible">
                       <div className="w-full h-full rounded-full overflow-hidden">
                         {user.photos && user.photos.length > 0 && user.photos[0] && user.photos[0] !== '/api/placeholder/400/600' ? (
                           <img 
@@ -1048,12 +1053,16 @@ function DashboardContent() {
                             alt={user.name}
                             className="w-full h-full object-cover"
                             onError={(e) => {
+                              console.log(`❌ 图片加载失败: ${user.name} - ${user.photos[0]}`)
                               const target = e.currentTarget as HTMLImageElement
                               target.style.display = 'none'
                               const fallback = target.nextElementSibling as HTMLElement
                               if (fallback) {
                                 fallback.style.display = 'flex'
                               }
+                            }}
+                            onLoad={() => {
+                              console.log(`✅ 图片加载成功: ${user.name} - ${user.photos[0]}`)
                             }}
                           />
                         ) : null}
@@ -1073,9 +1082,10 @@ function DashboardContent() {
                 ))}
                 {matchedUsers.length > 5 && (
                   <motion.div
-                    className="flex-shrink-0 w-20 text-center cursor-pointer"
+                    className="flex-shrink-0 w-20 text-center cursor-pointer p-1"
                     onClick={() => setShowChat(true)}
                     whileHover={{ scale: 1.05 }}
+                    style={{ transformOrigin: 'center' }}
                   >
                     <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-2">
                       <span className="text-gray-500 font-medium">+{matchedUsers.length - 5}</span>
