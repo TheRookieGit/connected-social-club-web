@@ -8,6 +8,7 @@ import { useState } from 'react'
 
 export default function Couples() {
   const [showForm, setShowForm] = useState(false)
+  const [showVideoForm, setShowVideoForm] = useState(false)
   const [formData, setFormData] = useState({
     coupleName: '',
     story: '',
@@ -15,7 +16,15 @@ export default function Couples() {
     photos: [] as File[],
     videos: [] as File[]
   })
+  const [videoFormData, setVideoFormData] = useState({
+    coupleName: '',
+    videoTitle: '',
+    videoDescription: '',
+    videoFile: null as File | null,
+    contactInfo: ''
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isVideoSubmitting, setIsVideoSubmitting] = useState(false)
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target
@@ -53,6 +62,40 @@ export default function Couples() {
         videos: []
       })
       alert('感谢分享你们的故事！我们会尽快联系你们。')
+    }, 2000)
+  }
+
+  const handleVideoInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target
+    setVideoFormData(prev => ({ ...prev, [name]: value }))
+  }
+
+  const handleVideoFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      setVideoFormData(prev => ({ ...prev, videoFile: file }))
+    }
+  }
+
+  const handleVideoSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsVideoSubmitting(true)
+    
+    // 这里可以添加实际的视频提交逻辑
+    console.log('提交的视频数据:', videoFormData)
+    
+    // 模拟提交延迟
+    setTimeout(() => {
+      setIsVideoSubmitting(false)
+      setShowVideoForm(false)
+      setVideoFormData({
+        coupleName: '',
+        videoTitle: '',
+        videoDescription: '',
+        videoFile: null,
+        contactInfo: ''
+      })
+      alert('感谢提交你们的视频！我们会尽快审核并联系你们。')
     }, 2000)
   }
 
@@ -172,11 +215,14 @@ export default function Couples() {
             赢得100元约会津贴
           </h2>
           <p className="text-lg text-gray-600 mb-8 leading-relaxed">
-            制作一个可以被我们用户广告宣传的，关于你们ConnectEd故事的公众号文章、抖音或小红书。我们将为你们的下一次约会买单！
+            制作一个可以被我们用户广告宣传的，关于你们ConnectEd故事的公众号、抖音或小红书视频。我们将为你们的下一次约会买单！
           </p>
-          <button className="bg-red-500 text-white px-8 py-3 rounded-lg hover:bg-red-600 transition-colors font-medium">
-            提交视频
-          </button>
+                     <button 
+             onClick={() => setShowVideoForm(true)}
+             className="bg-red-500 text-white px-8 py-3 rounded-lg hover:bg-red-600 transition-colors font-medium"
+           >
+             提交视频
+           </button>
         </div>
       </section>
 
@@ -367,8 +413,138 @@ export default function Couples() {
         </div>
       )}
 
-      {/* Footer */}
-      <SimpleFooter />
-    </div>
-  )
-} 
+             {/* 视频提交表单模态框 */}
+       {showVideoForm && (
+         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+           <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+             <div className="p-6">
+               <div className="flex justify-between items-center mb-6">
+                 <h2 className="text-2xl font-bold text-gray-900">提交ConnectEd故事视频</h2>
+                 <button 
+                   onClick={() => setShowVideoForm(false)}
+                   className="text-gray-400 hover:text-gray-600 transition-colors"
+                 >
+                   <X size={24} />
+                 </button>
+               </div>
+               
+               <form onSubmit={handleVideoSubmit} className="space-y-6">
+                 {/* 情侣姓名 */}
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                     你们的名字 *
+                   </label>
+                   <input
+                     type="text"
+                     name="coupleName"
+                     value={videoFormData.coupleName}
+                     onChange={handleVideoInputChange}
+                     required
+                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                     placeholder="例如：王小明 & 李小红"
+                   />
+                 </div>
+
+                 {/* 视频标题 */}
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                     视频标题 *
+                   </label>
+                   <input
+                     type="text"
+                     name="videoTitle"
+                     value={videoFormData.videoTitle}
+                     onChange={handleVideoInputChange}
+                     required
+                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                     placeholder="为你们的视频起一个吸引人的标题"
+                   />
+                 </div>
+
+                 {/* 视频描述 */}
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                     视频描述 *
+                   </label>
+                   <textarea
+                     name="videoDescription"
+                     value={videoFormData.videoDescription}
+                     onChange={handleVideoInputChange}
+                     required
+                     rows={4}
+                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none"
+                     placeholder="请描述视频内容，分享你们的故事..."
+                   />
+                 </div>
+
+                 {/* 视频文件上传 */}
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                     上传视频文件 *
+                   </label>
+                   <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:border-red-400 transition-colors">
+                     <Upload className="h-8 w-8 text-gray-400 mx-auto mb-2" />
+                     <input
+                       type="file"
+                       accept="video/*"
+                       onChange={handleVideoFileUpload}
+                       className="hidden"
+                       id="video-file-upload"
+                       required
+                     />
+                     <label htmlFor="video-file-upload" className="cursor-pointer">
+                       <span className="text-red-500 font-medium">点击上传视频</span>
+                       <span className="text-gray-500 text-sm block">支持 MP4、MOV 格式，最大 100MB</span>
+                     </label>
+                   </div>
+                   {videoFormData.videoFile && (
+                     <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                       <span className="text-sm text-gray-600">{videoFormData.videoFile.name}</span>
+                     </div>
+                   )}
+                 </div>
+
+                 {/* 联系方式 */}
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                     联系方式 *
+                   </label>
+                   <input
+                     type="text"
+                     name="contactInfo"
+                     value={videoFormData.contactInfo}
+                     onChange={handleVideoInputChange}
+                     required
+                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-red-500 focus:border-transparent"
+                     placeholder="微信号、手机号或邮箱"
+                   />
+                 </div>
+
+                 {/* 提交按钮 */}
+                 <div className="flex space-x-4 pt-4">
+                   <button
+                     type="button"
+                     onClick={() => setShowVideoForm(false)}
+                     className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                   >
+                     取消
+                   </button>
+                   <button
+                     type="submit"
+                     disabled={isVideoSubmitting}
+                     className="flex-1 px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                   >
+                     {isVideoSubmitting ? '提交中...' : '提交视频'}
+                   </button>
+                 </div>
+               </form>
+             </div>
+           </div>
+         </div>
+       )}
+
+       {/* Footer */}
+       <SimpleFooter />
+     </div>
+   )
+ } 

@@ -120,13 +120,13 @@ export default function GettingStarted() {
             </div>
           </Link>
 
-          <Link href="/help/getting-started/how-suggested-works" className="block">
-            <div className="p-4 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
-              <h3 className="text-lg font-semibold text-gray-900 hover:text-red-500 transition-colors">
-                推荐匹配是如何运作的？
-              </h3>
-            </div>
-          </Link>
+                          <Link href="/help/getting-started/how-suggested-works" className="block">
+                  <div className="p-4 hover:bg-gray-50 rounded-lg transition-colors cursor-pointer">
+                    <h3 className="text-lg font-semibold text-gray-900 hover:text-red-500 transition-colors">
+                      推荐匹配和发现模式有什么区别？
+                    </h3>
+                  </div>
+                </Link>
 
           {/* 查看更多链接 */}
           <div className="pt-4 border-t border-gray-200">

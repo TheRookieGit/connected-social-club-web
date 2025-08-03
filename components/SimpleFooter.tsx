@@ -24,12 +24,12 @@ export default function SimpleFooter() {
           <Link href="/news" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
             媒体合作
           </Link>
-          <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+          <Link href="/privacy-policy" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
             隐私政策
-          </a>
-          <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+          </Link>
+          <Link href="/terms-of-service" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
             服务条款
-          </a>
+          </Link>
         </div>
       </div>
     </footer>

@@ -54,7 +54,7 @@ export default function HowSuggestedWorks() {
             开始使用
           </Link>
           <ChevronLeft className="h-4 w-4 mx-2 rotate-180" />
-          <span className="text-gray-700">推荐匹配是如何运作的？</span>
+          <span className="text-gray-700">推荐匹配和发现模式有什么区别？</span>
         </div>
 
         {/* 搜索栏 */}
@@ -91,7 +91,7 @@ export default function HowSuggestedWorks() {
                   "喜欢我"功能是如何运作的？
                 </Link>
                 <Link href="/help/getting-started/how-suggested-works" className="block text-red-500 font-medium">
-                  推荐匹配是如何运作的？
+                  推荐匹配和发现模式有什么区别？
                 </Link>
                 <Link href="/help/getting-started/how-algorithm-works" className="block text-gray-600 hover:text-red-500 transition-colors">
                   你们的算法是如何运作的？
@@ -108,7 +108,7 @@ export default function HowSuggestedWorks() {
             {/* 文章标题和元数据 */}
             <div className="mb-8">
               <h1 className="text-3xl font-bold text-gray-900 mb-4">
-                「推荐（Suggested）」是如何运作的？
+                「推荐」和「发现」有什么区别？
               </h1>
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
@@ -129,356 +129,190 @@ export default function HowSuggestedWorks() {
 
             {/* 文章内容 */}
             <div className="prose prose-lg max-w-none">
-              {/* 功能介绍 */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-8">
-                <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-blue-600 text-2xl">📅</span>
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900">功能介绍</h2>
-                </div>
-                
-                <div className="bg-white rounded-lg p-6 shadow-sm">
-                  <p className="text-gray-700 leading-relaxed mb-4">
-                    每天中午左右，我们会在「推荐」页面为你推送一批个性化的潜在匹配对象。这些人选是根据你的：
-                  </p>
-                  
-                  <div className="grid md:grid-cols-3 gap-4 mb-6">
-                    <div className="bg-blue-50 rounded-lg p-3">
-                      <div className="flex items-center">
-                        <span className="text-blue-600 mr-2">⚙️</span>
-                        <span className="text-gray-700 font-medium">偏好设置</span>
-                      </div>
-                    </div>
-                    <div className="bg-blue-50 rounded-lg p-3">
-                      <div className="flex items-center">
-                        <span className="text-blue-600 mr-2">📊</span>
-                        <span className="text-gray-700 font-medium">过往的"喜欢"与"跳过"记录</span>
-                      </div>
-                    </div>
-                    <div className="bg-blue-50 rounded-lg p-3">
-                      <div className="flex items-center">
-                        <span className="text-blue-600 mr-2">💕</span>
-                        <span className="text-gray-700 font-medium">双方互相喜欢的可能性</span>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <p className="text-gray-700 leading-relaxed mb-4">
-                    等综合因素精挑细选出来的。
-                  </p>
-                  
-                  <div className="bg-green-50 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <span className="text-green-600 text-xl mr-3">⏰</span>
-                      <p className="text-gray-700 leading-relaxed">
-                        你可以查看页面顶部的<strong className="text-green-600">倒计时</strong>，了解距离下一轮推荐还有多久。
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              <div className="text-gray-700 leading-relaxed space-y-6">
+                <p>
+                  在 ConnectEd 中，我们提供两种不同的匹配模式：「推荐」和「发现」，它们各有特色和用途。
+                </p>
 
-              {/* 点赞与配对 */}
-              <div className="bg-gradient-to-br from-pink-50 to-rose-50 border border-pink-200 rounded-lg p-6 mb-8">
-                <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 bg-pink-100 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-pink-600 text-2xl">❤️</span>
+                {/* 推荐模式 */}
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-6 mb-8">
+                  <div className="flex items-center mb-6">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mr-4">
+                      <span className="text-blue-600 text-2xl">🌟</span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900">🌟 推荐（Suggested）</h2>
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">点赞与配对</h2>
-                </div>
-                
-                <div className="bg-white rounded-lg p-6 shadow-sm">
-                  <div className="space-y-6">
-                    <div className="bg-pink-50 rounded-lg p-4">
-                      <div className="flex items-start">
-                        <span className="text-pink-600 text-xl mr-3">💝</span>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">免费点赞</h3>
-                          <p className="text-gray-700 leading-relaxed">
-                            在「推荐」中发送普通"喜欢"是<strong className="text-pink-600">完全免费的</strong>。
-                          </p>
+                  
+                  <div className="bg-white rounded-lg p-6 shadow-sm">
+                    <p className="text-gray-700 leading-relaxed mb-4">
+                      「推荐」是我们每天中午为你精挑细选的匹配对象列表。系统会根据你的：
+                    </p>
+                    
+                    <div className="grid md:grid-cols-3 gap-4 mb-6">
+                      <div className="bg-blue-50 rounded-lg p-3">
+                        <div className="flex items-center">
+                          <span className="text-blue-600 mr-2">⚙️</span>
+                          <span className="text-gray-700 font-medium">偏好设置</span>
+                        </div>
+                      </div>
+                      <div className="bg-blue-50 rounded-lg p-3">
+                        <div className="flex items-center">
+                          <span className="text-blue-600 mr-2">📊</span>
+                          <span className="text-gray-700 font-medium">历史"喜欢"与"跳过"记录</span>
+                        </div>
+                      </div>
+                      <div className="bg-blue-50 rounded-lg p-3">
+                        <div className="flex items-center">
+                          <span className="text-blue-600 mr-2">💕</span>
+                          <span className="text-gray-700 font-medium">彼此互相喜欢的可能性</span>
                         </div>
                       </div>
                     </div>
+                    
+                    <p className="text-gray-700 leading-relaxed mb-4">
+                      等多个因素，每天推送一小批专属匹配对象。
+                    </p>
                     
                     <div className="bg-green-50 rounded-lg p-4">
                       <div className="flex items-start">
-                        <span className="text-green-600 text-xl mr-3">🔄</span>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">双向推荐</h3>
-                          <p className="text-gray-700 leading-relaxed">
-                            当你对某人点赞后，你的资料会很快出现在他们的推荐中，对方也就有机会免费与你配对。
-                          </p>
+                        <span className="text-green-600 text-xl mr-3">⏰</span>
+                        <p className="text-gray-700 leading-relaxed">
+                          「推荐」的节奏设计为每日限量推送，目的是避免刷人疲劳。我们重视质量胜于数量，希望你能认真了解每一位推荐对象。
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 发现模式 */}
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6 mb-8">
+                  <div className="flex items-center mb-6">
+                    <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                      <span className="text-green-600 text-2xl">🔍</span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900">🔍 发现（Discover）</h2>
+                  </div>
+                  
+                  <div className="bg-white rounded-lg p-6 shadow-sm">
+                    <p className="text-gray-700 leading-relaxed mb-4">
+                      「发现」是你探索更多每日推荐之外用户的地方。如果你觉得推荐列表还不够，可以进一步切换到「发现」页面。
+                    </p>
+                    
+                    <p className="text-gray-700 leading-relaxed mb-4">
+                      你可以使用多种筛选器发起搜索，包括：
+                    </p>
+                    
+                    <div className="grid md:grid-cols-2 gap-4 mb-6">
+                      <div className="space-y-3">
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <div className="flex items-center">
+                            <span className="text-green-600 mr-2">📊</span>
+                            <span className="text-gray-700 font-medium">年龄范围</span>
+                          </div>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <div className="flex items-center">
+                            <span className="text-green-600 mr-2">📏</span>
+                            <span className="text-gray-700 font-medium">身高范围</span>
+                          </div>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <div className="flex items-center">
+                            <span className="text-green-600 mr-2">📍</span>
+                            <span className="text-gray-700 font-medium">距离</span>
+                          </div>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <div className="flex items-center">
+                            <span className="text-green-600 mr-2">🎓</span>
+                            <span className="text-gray-700 font-medium">学历</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <div className="flex items-center">
+                            <span className="text-green-600 mr-2">🌍</span>
+                            <span className="text-gray-700 font-medium">种族</span>
+                          </div>
+                        </div>
+                        <div className="bg-green-50 rounded-lg p-3">
+                          <div className="flex items-center">
+                            <span className="text-green-600 mr-2">⏰</span>
+                            <span className="text-gray-700 font-medium">最近活跃时间等</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                     
-                    <div className="bg-purple-50 rounded-lg p-4">
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
                       <div className="flex items-start">
-                        <span className="text-purple-600 text-xl mr-3">✨</span>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">即时配对</h3>
-                          <p className="text-gray-700 leading-relaxed">
-                            有时候，你还会在推荐中看到已经喜欢过你的人！只要你回赞，就可以<strong className="text-purple-600">立即配对成功</strong>。
-                          </p>
-                        </div>
+                        <span className="text-yellow-600 text-xl mr-3">⚠️</span>
+                        <p className="text-gray-700 leading-relaxed">
+                          请注意：「发现」主要是为探索更多可能性而设，你设置的搜索条件不会被保存，每次关闭 App 后需要重新设置。
+                        </p>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 偏好设置 */}
-              <div className="bg-gradient-to-br from-green-50 to-emerald-50 border border-green-200 rounded-lg p-6 mb-8">
-                <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-green-600 text-2xl">⚙️</span>
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900">偏好设置</h2>
-                </div>
-                
-                <div className="bg-white rounded-lg p-6 shadow-sm">
-                  <p className="text-gray-700 leading-relaxed mb-6">
-                    点击「推荐」页面右上角进入"偏好设置"，你可以免费设置筛选条件，包括：
-                  </p>
-                  
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <div className="flex items-center">
-                          <span className="text-green-600 mr-2">👥</span>
-                          <span className="text-gray-700 font-medium">性别</span>
-                        </div>
-                      </div>
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <div className="flex items-center">
-                          <span className="text-green-600 mr-2">📊</span>
-                          <span className="text-gray-700 font-medium">年龄</span>
-                        </div>
-                      </div>
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <div className="flex items-center">
-                          <span className="text-green-600 mr-2">📍</span>
-                          <span className="text-gray-700 font-medium">距离</span>
-                        </div>
-                      </div>
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <div className="flex items-center">
-                          <span className="text-green-600 mr-2">🌍</span>
-                          <span className="text-gray-700 font-medium">种族</span>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="space-y-4">
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <div className="flex items-center">
-                          <span className="text-green-600 mr-2">🙏</span>
-                          <span className="text-gray-700 font-medium">宗教信仰</span>
-                        </div>
-                      </div>
-                      <div className="bg-green-50 rounded-lg p-3">
-                        <div className="flex items-center">
-                          <span className="text-green-600 mr-2">💕</span>
-                          <span className="text-gray-700 font-medium">恋爱目标</span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 bg-orange-50 border border-orange-200 rounded-lg p-4">
-                    <div className="flex items-start">
-                      <span className="text-orange-600 text-xl mr-3">⚠️</span>
-                      <p className="text-gray-700 leading-relaxed">
-                        请注意：这些偏好只适用于「推荐」页面，不会影响「发现」或「喜欢你的人」中的显示内容。
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 强硬偏好 */}
-              <div className="bg-gradient-to-br from-red-50 to-pink-50 border border-red-200 rounded-lg p-6 mb-8">
-                <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-red-600 text-2xl">🚫</span>
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900">强硬偏好（Dealbreakers）</h2>
-                </div>
-                
-                <div className="bg-white rounded-lg p-6 shadow-sm">
-                  <div className="space-y-6">
-                    <div className="bg-blue-50 rounded-lg p-4">
+                    
+                    <div className="bg-blue-50 rounded-lg p-4 mb-4">
                       <div className="flex items-start">
                         <span className="text-blue-600 text-xl mr-3">💡</span>
-                        <div>
-                          <p className="text-gray-700 leading-relaxed">
-                            我们将你的偏好视为<strong className="text-blue-600">「倾向」而非「绝对限制」</strong>。
-                          </p>
-                        </div>
+                        <p className="text-gray-700 leading-relaxed">
+                          在「发现」中显示的用户会符合你的性别偏好，但可能不符合你其他的偏好设置，反之你也可能不符合他们的设置条件。
+                        </p>
                       </div>
                     </div>
                     
-                    <div className="bg-green-50 rounded-lg p-4">
-                      <div className="flex items-start">
-                        <span className="text-green-600 text-xl mr-3">🎯</span>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">智能推荐示例</h3>
-                          <p className="text-gray-700 leading-relaxed">
-                            例如：你希望看到 5 英里范围内的用户，但我们发现 7 英里外有个非常适合你的人，我们仍然会向你推荐，以免你错过机会。
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-red-50 rounded-lg p-4">
-                      <div className="flex items-start">
-                        <span className="text-red-600 text-xl mr-3">🔒</span>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">设置强硬偏好</h3>
-                          <p className="text-gray-700 leading-relaxed">
-                            当然，如果你对此非常坚持，可以在偏好设置页面底部打开"这是我的硬性条件"选项。只要你设置为"强硬偏好"，我们就绝不会推荐超出该条件的用户。
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
-                      <div className="flex items-start">
-                        <span className="text-orange-600 text-xl mr-3">⚠️</span>
-                        <div>
-                          <p className="text-gray-700 leading-relaxed">
-                            请注意，设置过多强硬偏好可能会<strong className="text-orange-600">显著减少你的推荐池</strong>，从而导致匹配机会减少。
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 订阅用户专属权益 */}
-              <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6 mb-8">
-                <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-purple-600 text-2xl">💎</span>
-                  </div>
-                  <h2 className="text-2xl font-bold text-gray-900">订阅用户在「推荐」中的专属权益</h2>
-                </div>
-                
-                <div className="bg-white rounded-lg p-6 shadow-sm">
-                  <div className="space-y-8">
-                    {/* 高级偏好筛选 */}
-                    <div>
-                      <h3 className="text-xl font-semibold text-gray-900 mb-4">高级偏好筛选</h3>
-                      <p className="text-gray-700 leading-relaxed mb-4">
-                        订阅用户可以解锁额外的「高级偏好」，包括：
-                      </p>
-                      
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-3">
-                          <div className="bg-purple-50 rounded-lg p-3">
-                            <div className="flex items-center">
-                              <span className="text-purple-600 mr-2">📏</span>
-                              <span className="text-gray-700 font-medium">身高</span>
-                            </div>
-                          </div>
-                          <div className="bg-purple-50 rounded-lg p-3">
-                            <div className="flex items-center">
-                              <span className="text-purple-600 mr-2">🎓</span>
-                              <span className="text-gray-700 font-medium">学历</span>
-                            </div>
-                          </div>
-                          <div className="bg-purple-50 rounded-lg p-3">
-                            <div className="flex items-center">
-                              <span className="text-purple-600 mr-2">👨‍👩‍👧‍👦</span>
-                              <span className="text-gray-700 font-medium">是否计划成家</span>
-                            </div>
-                          </div>
-                          <div className="bg-purple-50 rounded-lg p-3">
-                            <div className="flex items-center">
-                              <span className="text-purple-600 mr-2">👶</span>
-                              <span className="text-gray-700 font-medium">是否有小孩</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="space-y-3">
-                          <div className="bg-purple-50 rounded-lg p-3">
-                            <div className="flex items-center">
-                              <span className="text-purple-600 mr-2">💍</span>
-                              <span className="text-gray-700 font-medium">婚姻状态</span>
-                            </div>
-                          </div>
-                          <div className="bg-purple-50 rounded-lg p-3">
-                            <div className="flex items-center">
-                              <span className="text-purple-600 mr-2">🚬</span>
-                              <span className="text-gray-700 font-medium">是否吸烟</span>
-                            </div>
-                          </div>
-                          <div className="bg-purple-50 rounded-lg p-3">
-                            <div className="flex items-center">
-                              <span className="text-purple-600 mr-2">🍷</span>
-                              <span className="text-gray-700 font-medium">是否饮酒</span>
-                            </div>
-                          </div>
-                          <div className="bg-purple-50 rounded-lg p-3">
-                            <div className="flex items-center">
-                              <span className="text-purple-600 mr-2">💪</span>
-                              <span className="text-gray-700 font-medium">是否健身等</span>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* 赠送桃花功能 */}
                     <div className="bg-pink-50 rounded-lg p-4">
                       <div className="flex items-start">
                         <span className="text-pink-600 text-xl mr-3">🌸</span>
-                        <div>
-                          <h3 className="text-lg font-semibold text-gray-900 mb-2">赠送桃花功能</h3>
-                          <p className="text-gray-700 leading-relaxed">
-                            某些订阅计划包含每月免费桃花。你可以用桃花代替普通的"喜欢"来表达更强烈的兴趣，从而<strong className="text-pink-600">更容易脱颖而出并更快被注意到</strong>。
-                          </p>
-                        </div>
+                        <p className="text-gray-700 leading-relaxed">
+                          在「发现」页面中无法发送普通"喜欢"，你可以选择发送桃花来表达兴趣。发送桃花可让你立即出现在对方的「喜欢你的人」页面，提高被关注的机会。发送时系统会提示你使用平台虚拟货币——桃花币进行购买。
+                        </p>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* 使用建议 */}
-              <div className="bg-gradient-to-br from-yellow-50 to-orange-50 border border-yellow-200 rounded-lg p-6 mb-8">
-                <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center mr-4">
-                    <span className="text-yellow-600 text-2xl">💡</span>
+                {/* 总结对比 */}
+                <div className="bg-gradient-to-br from-purple-50 to-indigo-50 border border-purple-200 rounded-lg p-6 mb-8">
+                  <div className="flex items-center mb-6">
+                    <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mr-4">
+                      <span className="text-purple-600 text-2xl">📊</span>
+                    </div>
+                    <h2 className="text-2xl font-bold text-gray-900">模式对比总结</h2>
                   </div>
-                  <h2 className="text-2xl font-bold text-gray-900">使用建议</h2>
+                  
+                  <div className="bg-white rounded-lg p-6 shadow-sm">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-blue-900">🌟 推荐模式</h3>
+                        <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-2">
+                          <li>每日限量推送</li>
+                          <li>基于算法智能匹配</li>
+                          <li>免费发送"喜欢"</li>
+                          <li>重视质量胜于数量</li>
+                          <li>适合认真寻找伴侣</li>
+                        </ul>
+                      </div>
+                      <div className="space-y-4">
+                        <h3 className="text-lg font-semibold text-green-900">🔍 发现模式</h3>
+                        <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-2">
+                          <li>主动探索更多用户</li>
+                          <li>多种筛选条件</li>
+                          <li>需要桃花币发送桃花</li>
+                          <li>搜索条件不保存</li>
+                          <li>适合扩大搜索范围</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                
-                <div className="bg-white rounded-lg p-6 shadow-sm">
-                  <div className="grid md:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-900">✅ 推荐做法</h3>
-                      <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-2">
-                        <li>每天查看推荐页面</li>
-                        <li>合理设置偏好条件</li>
-                        <li>及时回应感兴趣的人</li>
-                        <li>保持开放心态</li>
-                        <li>考虑订阅获得更多功能</li>
-                      </ul>
-                    </div>
-                    <div className="space-y-4">
-                      <h3 className="text-lg font-semibold text-gray-900">❌ 避免做法</h3>
-                      <ul className="list-disc list-inside text-gray-700 leading-relaxed space-y-2">
-                        <li>设置过多强硬偏好</li>
-                        <li>忽视推荐页面</li>
-                        <li>过于挑剔</li>
-                        <li>错过倒计时提醒</li>
-                        <li>忽略已经喜欢你的人</li>
-                      </ul>
-                    </div>
-                  </div>
+
+                <div className="bg-blue-50 border-l-4 border-blue-400 p-4 mt-8">
+                  <p className="text-blue-800">
+                    <strong>小贴士：</strong> 建议先使用「推荐」模式，如果觉得匹配对象不够多，再使用「发现」模式来探索更多可能性。两种模式结合使用，能帮助你找到最适合的伴侣。
+                  </p>
                 </div>
               </div>
             </div>

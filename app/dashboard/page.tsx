@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { motion } from 'framer-motion'
-import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock, Flower, X, Activity } from 'lucide-react'
+import { Heart, MessageCircle, User as UserIcon, Settings, LogOut, Star, MapPin, Calendar, Users, Badge, Clock, Flower, X, Activity, ChevronLeft, ChevronRight } from 'lucide-react'
 import useSWR from 'swr'
 import UserCard from '@/components/UserCard'
 import ProfileModal from '@/components/ProfileModal'
@@ -62,6 +62,8 @@ function DashboardContent() {
   const [initialChatUserId, setInitialChatUserId] = useState<string | null>(null)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [showUserDetail, setShowUserDetail] = useState(false)
+  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
+  const [showPhotoModal, setShowPhotoModal] = useState(false)
 
   // 获取已匹配的用户
   const fetchMatchedUsers = async () => {
@@ -755,6 +757,34 @@ function DashboardContent() {
   const handleCloseUserDetail = () => {
     setShowUserDetail(false)
     setSelectedUser(null)
+    setCurrentPhotoIndex(0) // 重置照片索引
+    setShowPhotoModal(false) // 同时关闭图片大图悬浮窗
+  }
+
+  // 照片轮播控制函数
+  const handlePreviousPhoto = () => {
+    if (selectedUser && selectedUser.photos && selectedUser.photos.length > 1) {
+      setCurrentPhotoIndex(prev => 
+        prev === 0 ? selectedUser.photos.length - 1 : prev - 1
+      )
+    }
+  }
+
+  const handleNextPhoto = () => {
+    if (selectedUser && selectedUser.photos && selectedUser.photos.length > 1) {
+      setCurrentPhotoIndex(prev => 
+        prev === selectedUser.photos.length - 1 ? 0 : prev + 1
+      )
+    }
+  }
+
+  // 图片点击处理函数
+  const handlePhotoClick = () => {
+    setShowPhotoModal(true)
+  }
+
+  const handleClosePhotoModal = () => {
+    setShowPhotoModal(false)
   }
 
   if (isLoading) {
@@ -1372,11 +1402,12 @@ function DashboardContent() {
             <div className="relative">
               {/* 用户照片轮播 */}
               <div className="h-64 bg-gradient-to-br from-purple-100 to-pink-100 relative overflow-hidden rounded-t-2xl">
-                {selectedUser.photos && selectedUser.photos.length > 0 && selectedUser.photos[0] && selectedUser.photos[0] !== '/api/placeholder/400/600' ? (
+                {selectedUser.photos && selectedUser.photos.length > 0 && selectedUser.photos[currentPhotoIndex] && selectedUser.photos[currentPhotoIndex] !== '/api/placeholder/400/600' ? (
                   <img
-                    src={selectedUser.photos[0]}
-                    alt={selectedUser.name}
-                    className="w-full h-full object-cover"
+                    src={selectedUser.photos[currentPhotoIndex]}
+                    alt={`${selectedUser.name} 照片 ${currentPhotoIndex + 1}`}
+                    className="w-full h-full object-cover transition-opacity duration-300 cursor-pointer hover:scale-105 transition-transform duration-200"
+                    onClick={handlePhotoClick}
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-6xl font-bold text-gray-400">
@@ -1384,10 +1415,46 @@ function DashboardContent() {
                   </div>
                 )}
                 
+                {/* 照片轮播控制按钮 */}
+                {selectedUser.photos && selectedUser.photos.length > 1 && (
+                  <>
+                    {/* 上一张按钮 */}
+                    <button
+                      onClick={handlePreviousPhoto}
+                      className="absolute left-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white bg-opacity-80 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all z-20"
+                    >
+                      <ChevronLeft size={20} className="text-gray-600" />
+                    </button>
+                    
+                    {/* 下一张按钮 */}
+                    <button
+                      onClick={handleNextPhoto}
+                      className="absolute right-4 top-1/2 transform -translate-y-1/2 w-10 h-10 bg-white bg-opacity-80 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all z-20"
+                    >
+                      <ChevronRight size={20} className="text-gray-600" />
+                    </button>
+                    
+                    {/* 照片指示器 */}
+                    <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-20">
+                      {selectedUser.photos.map((_, index) => (
+                        <button
+                          key={index}
+                          onClick={() => setCurrentPhotoIndex(index)}
+                          className={`w-2 h-2 rounded-full transition-all ${
+                            index === currentPhotoIndex 
+                              ? 'bg-white scale-125' 
+                              : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </>
+                )}
+                
                 {/* 关闭按钮 */}
                 <button
                   onClick={handleCloseUserDetail}
-                  className="absolute top-4 right-4 w-8 h-8 bg-white bg-opacity-80 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all"
+                  className="absolute top-4 right-4 w-8 h-8 bg-white bg-opacity-80 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all z-30"
                 >
                   <X size={20} className="text-gray-600" />
                 </button>
@@ -1594,6 +1661,92 @@ function DashboardContent() {
                 >
                   喜欢
                 </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
+
+      {/* 图片大图悬浮窗 */}
+      {showPhotoModal && selectedUser && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 flex items-center justify-center z-[60] p-4"
+          onClick={handleClosePhotoModal}
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            className="relative max-w-4xl max-h-[90vh] w-full h-full flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 大图显示 */}
+            <div className="relative w-full h-full flex items-center justify-center">
+              {selectedUser.photos && selectedUser.photos.length > 0 && selectedUser.photos[currentPhotoIndex] && selectedUser.photos[currentPhotoIndex] !== '/api/placeholder/400/600' ? (
+                <img
+                  src={selectedUser.photos[currentPhotoIndex]}
+                  alt={`${selectedUser.name} 照片 ${currentPhotoIndex + 1}`}
+                  className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-8xl font-bold text-gray-400 bg-white rounded-lg">
+                  {selectedUser.name.charAt(0)}
+                </div>
+              )}
+              
+              {/* 照片轮播控制按钮 */}
+              {selectedUser.photos && selectedUser.photos.length > 1 && (
+                <>
+                  {/* 上一张按钮 */}
+                  <button
+                    onClick={handlePreviousPhoto}
+                    className="absolute left-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all z-20 shadow-lg"
+                  >
+                    <ChevronLeft size={24} className="text-gray-700" />
+                  </button>
+                  
+                  {/* 下一张按钮 */}
+                  <button
+                    onClick={handleNextPhoto}
+                    className="absolute right-4 top-1/2 transform -translate-y-1/2 w-12 h-12 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all z-20 shadow-lg"
+                  >
+                    <ChevronRight size={24} className="text-gray-700" />
+                  </button>
+                  
+                  {/* 照片指示器 */}
+                  <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 flex space-x-3 z-20">
+                    {selectedUser.photos.map((_, index) => (
+                      <button
+                        key={index}
+                        onClick={() => setCurrentPhotoIndex(index)}
+                        className={`w-3 h-3 rounded-full transition-all ${
+                          index === currentPhotoIndex 
+                            ? 'bg-white scale-125' 
+                            : 'bg-white bg-opacity-50 hover:bg-opacity-75'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* 照片计数 */}
+                  <div className="absolute top-6 left-1/2 transform -translate-x-1/2 bg-black bg-opacity-50 text-white px-4 py-2 rounded-full text-sm z-20">
+                    {currentPhotoIndex + 1} / {selectedUser.photos.length}
+                  </div>
+                </>
+              )}
+              
+              {/* 关闭按钮 */}
+              <button
+                onClick={handleClosePhotoModal}
+                className="absolute top-6 right-6 w-10 h-10 bg-black bg-opacity-50 rounded-full flex items-center justify-center hover:bg-opacity-70 transition-all z-30"
+              >
+                <X size={24} className="text-white" />
+              </button>
+              
+              {/* 用户信息 */}
+              <div className="absolute bottom-6 left-6 bg-black bg-opacity-50 text-white px-4 py-2 rounded-lg text-sm z-20">
+                <div className="font-semibold">{selectedUser.name}</div>
+                <div className="text-gray-300">{selectedUser.age}岁 • {selectedUser.location}</div>
               </div>
             </div>
           </motion.div>
