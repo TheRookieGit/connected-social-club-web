@@ -31,7 +31,7 @@ export default function TestImages() {
         imageResults.push({
           url: imageUrl,
           accessible: false,
-          error: error.message
+          error: error instanceof Error ? error.message : String(error)
         })
       }
     }

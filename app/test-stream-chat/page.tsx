@@ -81,8 +81,6 @@ export default function TestStreamChat() {
         <StreamChatPanel
           matchedUsers={mockMatchedUsers}
           onClose={() => setShowChat(false)}
-          isOpen={showChat}
-          position="left"
         />
       )}
     </div>

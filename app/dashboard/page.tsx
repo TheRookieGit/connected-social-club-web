@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -16,8 +16,8 @@ import { UserProfile } from '@/types/user'
 import dynamic from 'next/dynamic'
 import { shouldAutoRequestLocation, recordUserDenial } from '@/lib/locationPermission'
 
-// 动态导入Stream Chat组件，避免SSR问题
-const StreamChatPanel = dynamic(() => import('@/components/StreamChatPanel'), {
+// 动态导入LinkedIn风格聊天组件，避免SSR问题
+const LinkedInStyleChatPanel = dynamic(() => import('@/components/LinkedInStyleChatPanel'), {
   ssr: false,
   loading: () => <div>加载聊天中...</div>
 })
@@ -46,7 +46,7 @@ interface User {
   values_preferences?: string[]
 }
 
-export default function Dashboard() {
+function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
@@ -805,15 +805,15 @@ export default function Dashboard() {
                 )}
               </motion.button>
 
-              {/* 专业聊天按钮（已升级为Stream Chat） */}
+              {/* LinkedIn风格聊天浮窗按钮 */}
               <motion.button
                 onClick={() => setShowChat(true)}
-                className="relative p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
+                className="relative p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 transition-colors shadow-lg"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                title="专业级实时聊天 - 已升级！"
+                title="LinkedIn风格聊天浮窗"
               >
-                <Users size={20} />
+                <MessageCircle size={20} />
                 {matchedUsers.length > 0 && (
                   <motion.span
                     initial={{ scale: 0 }}
@@ -823,13 +823,13 @@ export default function Dashboard() {
                     {matchedUsers.length}
                   </motion.span>
                 )}
-                {/* 升级标识 */}
+                {/* 新功能标识 */}
                 <motion.div
                       initial={{ scale: 0 }}
                       animate={{ scale: 1 }}
                   className="absolute -top-2 -left-2 bg-green-500 text-white text-[8px] rounded-full px-1.5 py-0.5 font-bold"
                     >
-                  升级
+                  新
                 </motion.div>
                 </motion.button>
 
@@ -1277,11 +1277,11 @@ export default function Dashboard() {
                 {matchedUsers.length > 0 && (
                   <motion.button
                     onClick={() => setShowChat(true)}
-                    className="px-8 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
+                    className="px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    查看我的匹配
+                    打开聊天浮窗
                   </motion.button>
                 )}
               </div>
@@ -1298,9 +1298,9 @@ export default function Dashboard() {
         />
       )}
 
-      {/* Stream Chat聊天面板 - 左侧布局 */}
+      {/* LinkedIn风格聊天浮窗 */}
       {showChat && (
-        <StreamChatPanel
+        <LinkedInStyleChatPanel
           matchedUsers={matchedUsers}
           onClose={() => {
             setShowChat(false)
@@ -1308,7 +1308,7 @@ export default function Dashboard() {
           }}
           initialUserId={initialChatUserId || undefined}
           isOpen={showChat}
-          position="left"
+          position="bottom-right"
         />
       )}
 
@@ -1643,5 +1643,20 @@ export default function Dashboard() {
          </div>
        )}
     </div>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-pink-100 via-purple-50 to-blue-100 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-red-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 } 

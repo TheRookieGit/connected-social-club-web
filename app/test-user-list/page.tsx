@@ -200,7 +200,6 @@ export default function TestUserList() {
       {showChat && (
         <StreamChatPanel
           matchedUsers={matchedUsers}
-          isOpen={showChat}
           onClose={() => setShowChat(false)}
         />
       )}
