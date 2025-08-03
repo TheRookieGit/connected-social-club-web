@@ -94,10 +94,14 @@ export default function LoginForm() {
     const savedPassword = localStorage.getItem('rememberedPassword')
     const remembered = localStorage.getItem('rememberMe') === 'true'
     
-    if (remembered && savedEmail && savedPassword) {
-      setEmail(savedEmail)
-      setPassword(savedPassword)
+    // 如果用户之前选择了"记住我"，保持勾选状态
+    if (remembered) {
       setRememberMe(true)
+      // 如果有保存的邮箱和密码，自动填充
+      if (savedEmail && savedPassword) {
+        setEmail(savedEmail)
+        setPassword(savedPassword)
+      }
     }
   }, [])
 

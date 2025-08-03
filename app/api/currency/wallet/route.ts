@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
     
     if (!walletData) {
       return NextResponse.json(
-        { success: false, message: '钱包不存在' },
-        { status: 404 }
+        { success: false, message: '无法获取钱包数据' },
+        { status: 500 }
       )
     }
 

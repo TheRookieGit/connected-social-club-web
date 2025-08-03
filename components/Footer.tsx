@@ -61,12 +61,12 @@ export default function Footer() {
             <Link href="/join-us" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
               职业机会
             </Link>
-            <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+            <Link href="/couples" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
               ConnectEd 情侣
-            </a>
-            <a href="#" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
+            </Link>
+            <Link href="/help" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
               帮助中心
-            </a>
+            </Link>
             <Link href="/" className="text-gray-600 hover:text-gray-900 transition-colors font-medium">
               首页
             </Link>

@@ -142,6 +142,9 @@ export default function News() {
               <Link href="/news" className="text-red-500 font-medium">
                 媒体合作
               </Link>
+              <Link href="/couples" className="text-gray-600 hover:text-red-500 transition-colors">
+                ConnectEd 情侣
+              </Link>
             </div>
           </div>
         </div>

@@ -386,7 +386,8 @@ export class CurrencyService {
   // 获取钱包余额和交易记录
   static async getWalletBalance(userId: number): Promise<WalletBalanceResponse | null> {
     try {
-      const wallet = await this.getUserWallet(userId)
+      // 获取或创建用户钱包
+      const wallet = await this.getOrCreateWallet(userId)
       if (!wallet) {
         return null
       }

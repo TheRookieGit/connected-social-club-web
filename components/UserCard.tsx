@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { MapPin, Calendar, Heart } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 
@@ -21,8 +21,8 @@ interface UserCardProps {
 }
 
 export default function UserCard({ user, onClick }: UserCardProps) {
-  const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0)
   const [validPhotos, setValidPhotos] = useState<string[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const router = useRouter()
 
   // 验证和过滤照片
@@ -40,14 +40,11 @@ export default function UserCard({ user, onClick }: UserCardProps) {
   }
 
   // 当用户数据更新时，重新验证照片
-  React.useEffect(() => {
+  useEffect(() => {
     const validated = validatePhotos(user.photos)
     setValidPhotos(validated)
-    // 如果当前索引超出有效照片范围，重置为0
-    if (currentPhotoIndex >= validated.length) {
-      setCurrentPhotoIndex(0)
-    }
-  }, [user.photos, currentPhotoIndex])
+    setIsLoading(true)
+  }, [user.photos])
 
   // 兴趣标签映射
   const interestTags = [
@@ -80,24 +77,56 @@ export default function UserCard({ user, onClick }: UserCardProps) {
     { id: 'gaming', name: '游戏', emoji: '🎮' }
   ]
 
-  const nextPhoto = () => {
-    if (!validPhotos || validPhotos.length <= 1) return
-    setCurrentPhotoIndex((prev) => 
-      prev === validPhotos.length - 1 ? 0 : prev + 1
-    )
-  }
 
-  const prevPhoto = () => {
-    if (!validPhotos || validPhotos.length <= 1) return
-    setCurrentPhotoIndex((prev) => 
-      prev === 0 ? validPhotos.length - 1 : prev - 1
-    )
-  }
 
   // 获取兴趣标签的显示名称
   const getInterestDisplayName = (interestId: string) => {
     const tag = interestTags.find(tag => tag.id === interestId)
-    return tag ? `${tag.emoji} ${tag.name}` : interestId
+    
+    if (tag) {
+      // 如果找到ID映射，使用emoji + 中文名称
+      return `${tag.emoji} ${tag.name}`
+    } else {
+      // 如果没有找到ID映射，检查是否已经是中文文本
+      const chineseInterestMap: { [key: string]: string } = {
+        '编程': '💻 编程',
+        '管理': '📊 管理',
+        '旅行': '✈️ 旅行',
+        '摄影': '📸 摄影',
+        '音乐': '🎵 音乐',
+        '游戏': '🎮 游戏',
+        '咖啡': '☕ 咖啡',
+        '美食': '🍜 美食',
+        '运动': '🏅 运动',
+        '阅读': '📚 阅读',
+        '写作': '✍️ 写作',
+        '艺术': '🎨 艺术',
+        '电影': '🎬 电影',
+        '跳舞': '💃 跳舞',
+        '瑜伽': '🧘 瑜伽',
+        '徒步': '⛰️ 徒步',
+        '露营': '⛺ 露营',
+        '园艺': '🌱 园艺',
+        '手工艺': '🧷 手工艺',
+        '节日': '🎉 节日',
+        '音乐会': '🎟️ 音乐会',
+        '葡萄酒': '🍷 葡萄酒',
+        '女权主义': '♀️ 女权主义',
+        '烘焙': '🍰 烘焙',
+        '素食': '🥦 素食',
+        '博物馆': '🏛️ 博物馆',
+        '绘画': '🖼️ 绘画',
+        '狗': '🐶 狗',
+        '猫': '🐱 猫'
+      }
+      
+      if (chineseInterestMap[interestId]) {
+        return chineseInterestMap[interestId]
+      }
+      
+      // 如果都不是，返回原始文本
+      return interestId
+    }
   }
 
   // 处理卡片点击
@@ -115,29 +144,33 @@ export default function UserCard({ user, onClick }: UserCardProps) {
       onClick={handleCardClick}
     >
       {/* 照片区域 */}
-      <div className="relative h-64 bg-gradient-to-br from-red-100 to-pink-100">
+      <div className="relative h-64 bg-gradient-to-br from-red-100 to-pink-100 overflow-hidden">
         {/* 显示用户头像或照片 */}
-        {validPhotos && validPhotos.length > 0 && validPhotos[currentPhotoIndex] ? (
-          <img 
-            key={`${user.id}-${currentPhotoIndex}-${validPhotos[currentPhotoIndex]}`}
-            src={validPhotos[currentPhotoIndex]}
-            alt={user.name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              const target = e.currentTarget as HTMLImageElement
-              target.style.display = 'none'
-              
-              // 从有效照片数组中移除加载失败的照片
-              setValidPhotos(prev => {
-                const newPhotos = prev.filter((_, index) => index !== currentPhotoIndex)
-                // 如果当前索引超出范围，重置为0
-                if (currentPhotoIndex >= newPhotos.length && newPhotos.length > 0) {
-                  setCurrentPhotoIndex(0)
-                }
-                return newPhotos
-              })
-            }}
-          />
+        {validPhotos && validPhotos.length > 0 && validPhotos[0] ? (
+          <>
+            <img 
+              key={`${user.id}-${validPhotos[0]}`}
+              src={validPhotos[0]}
+              alt={`${user.name}的照片`}
+              className={`w-full h-full object-cover transition-opacity duration-300 ${
+                isLoading ? 'opacity-0' : 'opacity-100'
+              }`}
+              onLoad={() => setIsLoading(false)}
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement
+                target.style.display = 'none'
+                setIsLoading(false)
+                
+                // 从有效照片数组中移除加载失败的照片
+                setValidPhotos(prev => prev.filter(photo => photo !== validPhotos[0]))
+              }}
+            />
+            {isLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-gray-100">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div>
+              </div>
+            )}
+          </>
         ) : (
           // 如果没有照片，显示用户首字母
           <div className="w-full h-full flex items-center justify-center">
@@ -149,45 +182,9 @@ export default function UserCard({ user, onClick }: UserCardProps) {
         
         <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent z-10"></div>
         
-        {/* 照片指示器 */}
-        {validPhotos && validPhotos.length > 1 && (
-          <div className="absolute top-4 left-1/2 transform -translate-x-1/2 z-20">
-            <div className="flex space-x-2">
-              {validPhotos.map((_, index) => (
-                <div
-                  key={index}
-                  className={`w-2 h-2 rounded-full ${
-                    index === currentPhotoIndex ? 'bg-white' : 'bg-white/50'
-                  }`}
-                ></div>
-              ))}
-            </div>
-          </div>
-        )}
 
-        {/* 照片切换按钮 */}
-        {validPhotos && validPhotos.length > 1 && (
-          <>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                prevPhoto()
-              }}
-              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-            >
-              ‹
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation()
-                nextPhoto()
-              }}
-              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 w-10 h-10 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center text-white hover:bg-white/30 transition-colors"
-            >
-              ›
-            </button>
-          </>
-        )}
+
+
 
 
 
@@ -293,6 +290,8 @@ export default function UserCard({ user, onClick }: UserCardProps) {
           </div>
         </div>
       </div>
+
+
     </div>
   )
 } 
