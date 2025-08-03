@@ -345,7 +345,7 @@ export default function StreamChatPanel({
           setShowRetryButton(true)
         }
     }
-      }, [chatClient, currentUser, selectedChannel])
+      }, [chatClient, currentUser, selectedChannel, initialUserId])
 
   // 重试获取频道列表
   const retryFetchChannels = useCallback(() => {
@@ -455,7 +455,7 @@ export default function StreamChatPanel({
     const otherUserId = memberIds.find(id => id !== currentUser.id.toString())
     
     if (otherUserId) {
-      const member = channel.state.members[otherUserId]
+      const member = (channel.state.members as any)[otherUserId]
       return {
         id: otherUserId,
         name: member.user?.name || `用户${otherUserId}`,
@@ -524,8 +524,8 @@ export default function StreamChatPanel({
       if (!aPinned && bPinned) return 1
       
       // 如果置顶状态相同，按最后消息时间排序
-      const aTime = a.state.last_message?.created_at || 0
-      const bTime = b.state.last_message?.created_at || 0
+      const aTime = (a.state as any).last_message?.created_at || 0
+      const bTime = (b.state as any).last_message?.created_at || 0
       return new Date(bTime).getTime() - new Date(aTime).getTime()
     })
   }
@@ -982,7 +982,7 @@ export default function StreamChatPanel({
                   {channels.length > 0 ? (
                     getSortedChannels().map((channel) => {
                       const otherUser = getOtherUser(channel)
-                      const lastMessage = channel.state.last_message
+                      const lastMessage = (channel.state as any).last_message
                       const isSelected = selectedChannel?.id === channel.id
                       const isPinned = pinnedChannels.has(channel.id)
                       
@@ -1047,7 +1047,7 @@ export default function StreamChatPanel({
                                 <span className={`text-xs ${
                                   isSelected ? 'text-pink-100' : 'text-gray-500'
                                 }`}>
-                                  {lastMessage ? formatTime(new Date(lastMessage.created_at)) : ''}
+                                  {lastMessage ? formatTime(new Date((lastMessage as any).created_at)) : ''}
                                 </span>
                               </div>
                               
@@ -1065,7 +1065,7 @@ export default function StreamChatPanel({
                                 <p className={`text-sm truncate ${
                                   isSelected ? 'text-pink-100' : 'text-gray-600'
                                 }`}>
-                                  {lastMessage.user?.id === currentUser?.id ? '你: ' : ''}
+                                  {(lastMessage as any).user?.id === currentUser?.id ? '你: ' : ''}
                                   {lastMessage.text || '图片消息'}
                                 </p>
                               )}
@@ -1074,9 +1074,9 @@ export default function StreamChatPanel({
                             {/* 操作按钮 */}
                             <div className="flex flex-col items-end space-y-2">
                               {/* 未读消息数 */}
-                              {channel.count_unread > 0 && (
+                              {(channel as any).count_unread > 0 && (
                                 <div className="bg-pink-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
-                                  {channel.count_unread}
+                                  {(channel as any).count_unread}
                                 </div>
                               )}
                               

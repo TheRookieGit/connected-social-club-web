@@ -5,8 +5,11 @@ import { useState, useEffect } from 'react'
 export default function DebugLikesPage() {
   const [likedUsers, setLikedUsers] = useState<string[]>([])
   const [currentUserId, setCurrentUserId] = useState<string>('')
+  const [isClient, setIsClient] = useState(false)
 
   useEffect(() => {
+    setIsClient(true)
+    
     // 从localStorage读取喜欢用户列表
     const stored = localStorage.getItem('likedUsers')
     if (stored) {
@@ -26,15 +29,19 @@ export default function DebugLikesPage() {
   }, [])
 
   const clearLikes = () => {
-    localStorage.removeItem('likedUsers')
-    setLikedUsers([])
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('likedUsers')
+      setLikedUsers([])
+    }
   }
 
   const addTestLike = () => {
-    const testUserId = 'test-user-' + Date.now()
-    const newLikedUsers = [...likedUsers, testUserId]
-    localStorage.setItem('likedUsers', JSON.stringify(newLikedUsers))
-    setLikedUsers(newLikedUsers)
+    if (typeof window !== 'undefined') {
+      const testUserId = 'test-user-' + Date.now()
+      const newLikedUsers = [...likedUsers, testUserId]
+      localStorage.setItem('likedUsers', JSON.stringify(newLikedUsers))
+      setLikedUsers(newLikedUsers)
+    }
   }
 
   return (
@@ -84,7 +91,7 @@ export default function DebugLikesPage() {
           <div className="bg-purple-50 p-4 rounded">
             <h2 className="font-semibold mb-2">LocalStorage 原始数据</h2>
             <pre className="text-xs bg-gray-100 p-2 rounded overflow-auto">
-              {localStorage.getItem('likedUsers') || 'null'}
+              {isClient ? (localStorage.getItem('likedUsers') || 'null') : '客户端加载中...'}
             </pre>
           </div>
         </div>

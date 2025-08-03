@@ -7,9 +7,12 @@ export default function DebugRegistration() {
   const [userInfo, setUserInfo] = useState<any>(null)
   const [profileData, setProfileData] = useState<any>(null)
   const [loading, setLoading] = useState(false)
+  const [isClient, setIsClient] = useState(false)
   const router = useRouter()
 
   useEffect(() => {
+    setIsClient(true)
+    
     // 检查localStorage中的用户信息
     const userStr = localStorage.getItem('user')
     const token = localStorage.getItem('token')
@@ -27,6 +30,11 @@ export default function DebugRegistration() {
   const checkProfile = async () => {
     setLoading(true)
     try {
+      if (!isClient) {
+        alert('客户端未初始化')
+        return
+      }
+      
       const token = localStorage.getItem('token')
       if (!token) {
         alert('没有找到token')
@@ -53,6 +61,8 @@ export default function DebugRegistration() {
   }
 
   const simulateNewRegistration = () => {
+    if (!isClient) return
+    
     // 模拟新注册用户
     const mockUser = {
       id: 'new-user-' + Date.now(),
@@ -75,6 +85,8 @@ export default function DebugRegistration() {
   }
 
   const clearAll = () => {
+    if (!isClient) return
+    
     localStorage.removeItem('token')
     localStorage.removeItem('user')
     setUserInfo(null)

@@ -61,8 +61,8 @@ export default function TestZipAccuracy() {
       }
 
       setResults(testResults)
-    } catch (error: any) {
-      setError(error.message)
+    } catch (error) {
+      setError(error instanceof Error ? error.message : String(error))
     } finally {
       setIsLoading(false)
     }

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 
 export default function DebugAdmin() {
   const [loading, setLoading] = useState(false)
@@ -8,6 +8,11 @@ export default function DebugAdmin() {
   const [testLoading, setTestLoading] = useState(false)
   const [message, setMessage] = useState('')
   const [steps, setSteps] = useState<string[]>([])
+  const [isClient, setIsClient] = useState(false)
+
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
 
   const createTestMatches = async () => {
     setLoading(true)
@@ -15,6 +20,11 @@ export default function DebugAdmin() {
     setSteps([])
     
     try {
+      if (!isClient) {
+        setMessage('❌ 客户端未初始化')
+        return
+      }
+      
       const token = localStorage.getItem('token')
       const user = localStorage.getItem('user')
       
@@ -56,6 +66,11 @@ export default function DebugAdmin() {
     setSteps([])
     
     try {
+      if (!isClient) {
+        setMessage('❌ 客户端未初始化')
+        return
+      }
+      
       const token = localStorage.getItem('token')
       const user = localStorage.getItem('user')
       

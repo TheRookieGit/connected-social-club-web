@@ -37,6 +37,10 @@ export async function GET(
     const { id } = await params
     const supabase = createSupabaseClient()
     
+    if (!supabase) {
+      return NextResponse.json({ error: '数据库连接失败' }, { status: 500 })
+    }
+    
     const authHeader = request.headers.get('authorization')
     const decoded = verifyToken(authHeader)
     

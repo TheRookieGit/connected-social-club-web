@@ -59,8 +59,8 @@ export default function TestLocation() {
         testLocation.longitude
       )
       setDistance(dist)
-    } catch (error: any) {
-      alert(`获取位置失败: ${error.message}`)
+    } catch (error) {
+      alert(`获取位置失败: ${error instanceof Error ? error.message : String(error)}`)
     }
   }
 

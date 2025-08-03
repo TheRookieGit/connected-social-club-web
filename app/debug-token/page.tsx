@@ -27,7 +27,7 @@ export default function DebugTokenPage() {
       } catch (error) {
         setTokenInfo({
           token: token,
-          error: 'Token解析失败: ' + error.message
+          error: 'Token解析失败: ' + (error instanceof Error ? error.message : String(error))
         })
       }
     } else {

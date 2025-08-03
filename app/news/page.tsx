@@ -178,10 +178,10 @@ export default function News() {
                   key={currentTestimonialIndex} // 强制重新渲染
                 >
                   <p className="text-3xl font-bold text-gray-900 mb-4">
-                    "{testimonials[currentTestimonialIndex]?.title || '加载中...'}"
+                    &ldquo;{testimonials[currentTestimonialIndex]?.title || '加载中...'}&rdquo;
                   </p>
                   <p className="text-xl text-gray-600 italic mb-6 leading-relaxed">
-                    "{testimonials[currentTestimonialIndex]?.content || '加载中...'}"
+                    &ldquo;{testimonials[currentTestimonialIndex]?.content || '加载中...'}&rdquo;
                   </p>
                   <p className="text-xl font-semibold text-gray-800">
                     — {testimonials[currentTestimonialIndex]?.source || '加载中...'}

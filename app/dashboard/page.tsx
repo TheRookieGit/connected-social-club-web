@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import Image from 'next/image'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
@@ -17,10 +17,10 @@ import { UserProfile } from '@/types/user'
 import dynamic from 'next/dynamic'
 import { shouldAutoRequestLocation, recordUserDenial } from '@/lib/locationPermission'
 
-// 动态导入Stream Chat组件，避免SSR问题
-const StreamChatPanel = dynamic(() => import('@/components/StreamChatPanel'), {
+// 动态导入浮动聊天组件，避免SSR问题
+const FloatingChat = dynamic(() => import('@/components/FloatingChat'), {
   ssr: false,
-  loading: () => <div>加载专业聊天中...</div>
+  loading: () => null
 })
 
 // 推荐用户的类型定义
@@ -66,7 +66,7 @@ interface User {
   relationship_goals?: string[]
 }
 
-export default function Dashboard() {
+function DashboardContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [isLoading, setIsLoading] = useState(true)
@@ -355,7 +355,7 @@ export default function Dashboard() {
       clearInterval(dataRefreshInterval)
       window.removeEventListener('beforeunload', handleBeforeUnload)
     }
-  }, [router])
+  }, [router, searchParams])
 
   // 计算年龄的辅助函数
   const calculateAge = (birthDate: string) => {
@@ -811,13 +811,13 @@ export default function Dashboard() {
                 )}
               </motion.button>
 
-              {/* 专业聊天按钮（已升级为Stream Chat） */}
+              {/* 浮动聊天按钮 */}
               <motion.button
-                onClick={() => setShowChat(true)}
+                onClick={() => setShowChat(!showChat)}
                 className="relative p-3 bg-red-500 text-white rounded-full hover:bg-red-600 transition-colors shadow-lg"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                title="专业级实时聊天 - 已升级！"
+                title="浮动聊天窗口"
               >
                 <Users size={20} />
                 {matchedUsers.length > 0 && (
@@ -829,14 +829,43 @@ export default function Dashboard() {
                     {matchedUsers.length}
                   </motion.span>
                 )}
-                {/* 升级标识 */}
-                <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute -top-2 -left-2 bg-green-500 text-white text-[8px] rounded-full px-1.5 py-0.5 font-bold"
+              </motion.button>
+
+              {/* 性别相关功能按钮 */}
+              {(currentUser?.gender === '女' || currentUser?.gender === 'female') && (
+                <motion.button
+                  onClick={() => router.push('/female-matches')}
+                  className="relative p-3 bg-pink-500 text-white rounded-full hover:bg-pink-600 transition-colors shadow-lg"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  title="我的匹配 - 开始对话"
                 >
-                  升级
-                </motion.div>
+                  <Heart size={20} />
+                  {matchedUsers.length > 0 && (
+                    <motion.span
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute -top-1 -right-1 bg-white text-pink-500 text-xs rounded-full w-6 h-6 flex items-center justify-center font-bold"
+                    >
+                      {matchedUsers.length}
+                    </motion.span>
+                  )}
+                </motion.button>
+              )}
+
+              {/* 喜欢列表按钮 - 所有用户都可以访问 */}
+              <motion.button
+                onClick={() => router.push('/liked-users')}
+                className={`relative p-3 rounded-full transition-colors shadow-lg ${
+                  (currentUser?.gender === '女' || currentUser?.gender === 'female')
+                    ? 'bg-purple-500 text-white hover:bg-purple-600'
+                    : 'bg-blue-500 text-white hover:bg-blue-600'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                title="我的喜欢"
+              >
+                <Heart size={20} />
               </motion.button>
 
 
@@ -990,12 +1019,12 @@ export default function Dashboard() {
                 
                 {matchedUsers.length > 0 && (
                   <motion.button
-                    onClick={() => setShowChat(true)}
+                    onClick={() => setShowChat(!showChat)}
                     className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors font-medium"
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    开始聊天
+                    {showChat ? '隐藏聊天' : '开始聊天'}
                   </motion.button>
                 )}
               </div>
@@ -1143,16 +1172,11 @@ export default function Dashboard() {
          />
        )}
 
-      {/* 专业聊天面板（已替代原来的ChatPanel） */}
+      {/* 浮动聊天组件 */}
       {showChat && (
-        <StreamChatPanel
+        <FloatingChat
           matchedUsers={matchedUsers}
-          onClose={() => {
-            setShowChat(false)
-            setInitialChatUserId(null) // 清理初始用户ID
-          }}
           initialUserId={initialChatUserId || undefined}
-          isEmbedded={true}
         />
       )}
 
@@ -1254,5 +1278,20 @@ export default function Dashboard() {
          </div>
        )}
     </div>
+  )
+}
+
+export default function Dashboard() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-rose-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-pink-200 border-t-pink-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">加载中...</p>
+        </div>
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   )
 } 

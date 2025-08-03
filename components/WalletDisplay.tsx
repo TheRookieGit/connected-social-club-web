@@ -16,6 +16,7 @@ export default function WalletDisplay({ userId, className = '' }: WalletDisplayP
 
   useEffect(() => {
     fetchWalletData()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userId])
 
   const fetchWalletData = async () => {
