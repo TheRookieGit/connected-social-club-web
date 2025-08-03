@@ -123,6 +123,16 @@ export async function GET(request: NextRequest) {
 
     const currentUserInterestList = currentUserInterests?.map((i: any) => i.interest) || []
 
+    // 获取当前用户的约会偏好
+    const { data: currentUserPreferences } = await supabase
+      .from('user_preferences')
+      .select('preferred_gender')
+      .eq('user_id', decoded.userId)
+      .single()
+
+    const preferredGenders = currentUserPreferences?.preferred_gender || []
+    console.log(`🎯 用户 ${decoded.userId} 的约会偏好:`, preferredGenders)
+
     // 获取已匹配的用户ID
     const { data: existingMatches } = await supabase
       .from('user_matches')
@@ -169,7 +179,25 @@ export async function GET(request: NextRequest) {
       `)
       .neq('id', decoded.userId)
       .eq('status', 'active')
-      .limit(limit)
+
+    // 根据约会偏好过滤用户
+    if (preferredGenders.length > 0) {
+      // 如果用户选择了具体性别偏好
+      if (preferredGenders.includes('everyone')) {
+        // 如果选择"约会所有人"，不添加性别过滤
+        console.log('🎯 用户选择约会所有人，不进行性别过滤')
+      } else {
+        // 根据选择的性别进行过滤
+        console.log(`🎯 根据用户偏好过滤性别: ${preferredGenders.join(', ')}`)
+        query = query.in('gender', preferredGenders)
+      }
+    } else {
+      // 如果用户没有设置偏好，默认推荐所有性别
+      console.log('🎯 用户未设置约会偏好，推荐所有性别')
+    }
+
+    // 添加分页限制
+    query = query.limit(limit)
 
     if (matchedUserIds.length > 0) {
       query = query.not('id', 'in', `(${matchedUserIds.join(',')})`)
@@ -196,6 +224,25 @@ export async function GET(request: NextRequest) {
 
         const userInterestList = userInterests?.map((i: any) => i.interest) || []
         
+        // 获取推荐用户的约会偏好
+        const { data: userPreferences } = await supabase
+          .from('user_preferences')
+          .select('preferred_gender')
+          .eq('user_id', user.id)
+          .single()
+
+        const userPreferredGenders = userPreferences?.preferred_gender || []
+        
+        // 检查双向匹配：当前用户是否符合推荐用户的偏好
+        let isMutualMatch = true
+        if (userPreferredGenders.length > 0 && !userPreferredGenders.includes('everyone')) {
+          // 如果推荐用户有具体偏好且不是"约会所有人"
+          if (!userPreferredGenders.includes(currentUser.gender)) {
+            isMutualMatch = false
+            console.log(`❌ 用户 ${user.id} 不匹配当前用户 ${decoded.userId} 的性别偏好`)
+          }
+        }
+        
         // 获取用户关系偏好（关系目标）
         const { data: userRelationshipPrefs } = await supabase
           .from('user_relationship_preferences')
@@ -208,11 +255,15 @@ export async function GET(request: NextRequest) {
         // 计算匹配分数
         const matchScore = calculateMatchScore(currentUser, user, currentUserInterestList, userInterestList)
         
+        // 如果不是双向匹配，降低匹配分数
+        const finalMatchScore = isMutualMatch ? matchScore : matchScore * 0.3
+        
         return {
           ...user,
           interests: userInterestList,
           relationship_goals: relationshipGoals,
-          matchScore: Math.round(matchScore * 100) // 转换为百分比
+          matchScore: Math.round(finalMatchScore * 100), // 转换为百分比
+          isMutualMatch: isMutualMatch
         }
       }) || []
     )
