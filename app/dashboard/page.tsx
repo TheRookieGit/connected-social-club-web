@@ -19,7 +19,7 @@ import { shouldAutoRequestLocation, recordUserDenial } from '@/lib/locationPermi
 // 动态导入Stream Chat组件，避免SSR问题
 const StreamChatPanel = dynamic(() => import('@/components/StreamChatPanel'), {
   ssr: false,
-  loading: () => <div>加载专业聊天中...</div>
+  loading: () => <div>加载聊天中...</div>
 })
 
 // 推荐用户的类型定义
@@ -1298,7 +1298,7 @@ export default function Dashboard() {
         />
       )}
 
-      {/* 专业聊天面板（已替代原来的ChatPanel） */}
+      {/* Stream Chat聊天面板 - 左侧布局 */}
       {showChat && (
         <StreamChatPanel
           matchedUsers={matchedUsers}
@@ -1308,6 +1308,7 @@ export default function Dashboard() {
           }}
           initialUserId={initialChatUserId || undefined}
           isOpen={showChat}
+          position="left"
         />
       )}
 
