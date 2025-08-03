@@ -16,11 +16,13 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons } from '@expo/vector-icons'
 import { UserAPI, ChatAPI } from '../lib/api'
 import { UserProfile, RecommendedUser } from '../types/user'
+import { useAuth } from '../lib/auth'
 
 const { width, height } = Dimensions.get('window')
 
 export default function DashboardScreen() {
   const navigation = useNavigation()
+  const { setIsAuthenticated } = useAuth()
   const [users, setUsers] = useState<RecommendedUser[]>([])
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
@@ -292,7 +294,7 @@ export default function DashboardScreen() {
           onPress: async () => {
             await AsyncStorage.removeItem('token')
             await AsyncStorage.removeItem('user_info')
-            navigation.navigate('Login' as never)
+            setIsAuthenticated(false)
           }
         }
       ]

@@ -17,9 +17,11 @@ import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons } from '@expo/vector-icons'
 import * as WebBrowser from 'expo-web-browser'
 import { UserAPI } from '../lib/api'
+import { useAuth } from '../lib/auth'
 
 export default function LoginScreen() {
   const navigation = useNavigation()
+  const { setIsAuthenticated } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
@@ -63,8 +65,8 @@ export default function LoginScreen() {
               await AsyncStorage.setItem('token', token)
               await AsyncStorage.setItem('user_info', JSON.stringify(userData))
               
-              // 跳转到仪表板
-              navigation.navigate('Dashboard' as never)
+              // 更新认证状态
+              setIsAuthenticated(true)
             } catch (error) {
               console.error('处理LinkedIn登录数据时出错:', error)
               setError('处理登录信息时出错，请重试')
@@ -102,8 +104,8 @@ export default function LoginScreen() {
         await AsyncStorage.setItem('token', result.token)
         await AsyncStorage.setItem('user_info', JSON.stringify(result.user))
         
-        // 跳转到仪表板
-        navigation.navigate('Dashboard' as never)
+        // 更新认证状态
+        setIsAuthenticated(true)
       } else {
         setError(result.error || '登录失败')
       }

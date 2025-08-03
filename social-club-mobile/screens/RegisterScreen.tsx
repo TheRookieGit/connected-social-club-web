@@ -15,9 +15,11 @@ import { useNavigation } from '@react-navigation/native'
 import AsyncStorage from '@react-native-async-storage/async-storage'
 import { Ionicons } from '@expo/vector-icons'
 import { UserAPI } from '../lib/api'
+import { useAuth } from '../lib/auth'
 
 export default function RegisterScreen() {
   const navigation = useNavigation()
+  const { setIsAuthenticated } = useAuth()
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -71,9 +73,9 @@ export default function RegisterScreen() {
         await AsyncStorage.setItem('token', result.token)
         await AsyncStorage.setItem('user_info', JSON.stringify(result.user))
         
-        Alert.alert('注册成功', '欢迎加入ConnectEd Elite Social Club！', [
-          { text: '确定', onPress: () => navigation.navigate('Dashboard' as never) }
-        ])
+        // 更新认证状态
+        setIsAuthenticated(true)
+        Alert.alert('注册成功', '欢迎加入ConnectEd Elite Social Club！')
       } else {
         setError(result.error || '注册失败')
       }
