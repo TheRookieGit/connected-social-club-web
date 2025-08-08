@@ -96,7 +96,7 @@ export default function Dashboard() {
                 location: user.location,
                 bio: user.bio,
                 interests: [], // 可以后续添加兴趣获取
-              photos: [user.avatar_url || '/api/placeholder/400/600'],
+              photos: user.photos || [user.avatar_url || '/api/placeholder/400/600'],
                 isOnline: user.isOnline
             }))
             setMatchedUsers(formattedUsers)

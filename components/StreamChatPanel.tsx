@@ -154,12 +154,18 @@ const customStyles = `
     border-top: 1px solid #e5e7eb !important;
   }
   
-  /* 消息气泡样式 */
+  /* 消息气泡样式（修复过窄导致纵向文字的问题） */
   .str-chat__message-bubble {
     border-radius: 18px !important;
     padding: 12px 16px !important;
     margin: 4px 0 !important;
-    max-width: 70% !important;
+    display: inline-block !important;
+    width: auto !important;
+    max-width: 80% !important;
+    min-width: 140px !important; /* 防止宽度过小导致每个字符换行 */
+    white-space: pre-wrap !important; /* 正确保留换行并自动换行 */
+    overflow-wrap: anywhere !important; /* 中英文长词都能换行 */
+    word-break: normal !important;
   }
   
   /* 发送的消息样式 */
@@ -176,51 +182,59 @@ const customStyles = `
     margin-right: auto !important;
   }
   
-  /* 消息文本样式 - 修复垂直文本显示问题 */
+  /* 消息文本样式 - 强制水平文字、优化中英混排 */
   .str-chat__message-text {
-    word-wrap: break-word !important;
-    white-space: normal !important;
     display: block !important;
-    line-height: 1.4 !important;
+    line-height: 1.6 !important;
     font-family: inherit !important;
     font-size: 14px !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
     writing-mode: horizontal-tb !important;
     text-orientation: mixed !important;
     direction: ltr !important;
+    unicode-bidi: plaintext !important; /* 依据文本内容自动确定方向 */
   }
   
   /* 消息内容容器 */
   .str-chat__message-content {
-    word-wrap: break-word !important;
-    white-space: normal !important;
     display: block !important;
-    line-height: 1.4 !important;
+    line-height: 1.6 !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
     writing-mode: horizontal-tb !important;
     text-orientation: mixed !important;
     direction: ltr !important;
+    unicode-bidi: plaintext !important;
   }
   
   /* 确保消息气泡内的文本正确显示 */
   .str-chat__message-bubble .str-chat__message-text,
   .str-chat__message-bubble .str-chat__message-content {
-    word-wrap: break-word !important;
-    white-space: normal !important;
     display: block !important;
-    line-height: 1.4 !important;
+    line-height: 1.6 !important;
     font-family: inherit !important;
     font-size: 14px !important;
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
     writing-mode: horizontal-tb !important;
     text-orientation: mixed !important;
     direction: ltr !important;
+    unicode-bidi: plaintext !important;
   }
   
-  /* 强制修复所有文本显示问题 */
-  .str-chat__message-bubble * {
+  /* 强制修复所有文本显示问题（兜底规则） */
+  .str-chat * {
     writing-mode: horizontal-tb !important;
     text-orientation: mixed !important;
-    direction: ltr !important;
-    word-wrap: break-word !important;
-    white-space: normal !important;
+  }
+  .str-chat__message-bubble * {
+    white-space: pre-wrap !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
   }
   
   /* 隐藏错误状态图标 */
