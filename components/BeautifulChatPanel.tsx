@@ -1,27 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { 
-  X, 
-  Send, 
-  Heart, 
-  Clock, 
-  MapPin, 
-  MoreVertical, 
-  Pin, 
-  Trash2, 
-  Eye, 
-  EyeOff,
-  Search,
-  Filter,
-  Bell,
-  BellOff,
-  Check,
-  CheckCheck,
-  Image as ImageIcon,
-  Smile,
-  Paperclip
-} from 'lucide-react'
+import { X, Send, Smile, Paperclip, Heart, Clock, MapPin, MessageCircle, ChevronDown, ChevronUp } from 'lucide-react'
 
 interface User {
   id: string
@@ -44,131 +24,249 @@ interface Message {
   isRead: boolean
 }
 
-interface ChatConversation {
-  user: User
-  messages: Message[]
-  unreadCount: number
-  isPinned: boolean
-  lastMessage?: Message
-  isMarkedAsUnread: boolean
-}
-
-interface ChatPanelProps {
+interface BeautifulChatPanelProps {
   matchedUsers: User[]
+  initialUserId?: string
+  isOpen: boolean
   onClose: () => void
 }
 
-export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelProps) {
-  const [conversations, setConversations] = useState<ChatConversation[]>([])
-  const [selectedConversation, setSelectedConversation] = useState<ChatConversation | null>(null)
+export default function BeautifulChatPanel({ matchedUsers, initialUserId, isOpen, onClose }: BeautifulChatPanelProps) {
+  const [selectedUser, setSelectedUser] = useState<User | null>(null)
+  const [messages, setMessages] = useState<Message[]>([])
   const [newMessage, setNewMessage] = useState('')
   const [loading, setLoading] = useState(false)
   const [currentUserId, setCurrentUserId] = useState<string>('')
-  // const [searchTerm, setSearchTerm] = useState('')
-  const [showUnreadOnly, setShowUnreadOnly] = useState(false)
-  const [showPinnedOnly, setShowPinnedOnly] = useState(false)
+  const [lastMessageId, setLastMessageId] = useState<string | null>(null)
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false)
+  const [windowHeight, setWindowHeight] = useState(0)
   const messagesEndRef = useRef<HTMLDivElement>(null)
-  const [showUserMenu, setShowUserMenu] = useState<string | null>(null)
+
+  // 确保只在客户端渲染
+  useEffect(() => {
+    setWindowHeight(window.innerHeight)
+    const updateWindowHeight = () => setWindowHeight(window.innerHeight)
+    window.addEventListener('resize', updateWindowHeight)
+    return () => window.removeEventListener('resize', updateWindowHeight)
+  }, [])
 
   // 获取当前用户ID
   useEffect(() => {
-    const user = localStorage.getItem('user')
-    if (user) {
-      const userData = JSON.parse(user)
-      setCurrentUserId(userData.id?.toString() || '')
+    const fetchCurrentUser = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) return
+
+        const response = await fetch('/api/user/profile', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const userData = data.user || data
+          setCurrentUserId(userData.id?.toString() || '')
+        }
+      } catch (error) {
+        console.error('获取用户信息失败:', error)
+      }
     }
+
+    fetchCurrentUser()
   }, [])
 
-  // 初始化对话列表
+  // 如果有初始用户ID，自动选择
   useEffect(() => {
-    if (matchedUsers.length > 0 && currentUserId) {
-      const initialConversations: ChatConversation[] = matchedUsers.map(user => ({
-        user,
-        messages: [],
-        unreadCount: Math.floor(Math.random() * 5), // 模拟未读消息数
-        isPinned: Math.random() > 0.7, // 30%概率置顶
-        isMarkedAsUnread: false
-      }))
-      setConversations(initialConversations)
+    if (initialUserId && matchedUsers.length > 0) {
+      const targetUser = matchedUsers.find(user => user.id === initialUserId)
+      if (targetUser) {
+        setSelectedUser(targetUser)
+      }
     }
-  }, [matchedUsers, currentUserId])
+  }, [initialUserId, matchedUsers])
 
-  // 加载消息
-  const loadMessages = useCallback(async (userId: string) => {
-    if (!userId || !currentUserId) return
+  // 改进的消息加载函数
+  const loadMessages = useCallback(async (userId: string, forceRefresh: boolean = false) => {
+    if (!userId || !currentUserId) {
+      console.log('❌ [聊天面板] 加载消息条件不满足:', {
+        hasUserId: !!userId,
+        hasCurrentUserId: !!currentUserId
+      })
+      return
+    }
     
-    setLoading(true)
+    console.log(`📥 [聊天面板] 开始加载与用户 ${userId} 的聊天记录${forceRefresh ? ' (强制刷新)' : ''}`)
+    
+    if (forceRefresh || isInitialLoad) {
+      setLoading(true)
+    }
+    
     try {
       const token = localStorage.getItem('token')
-      if (!token) return
+      if (!token) {
+        console.error('❌ [聊天面板] 没有找到token')
+        return
+      }
 
       const response = await fetch(`/api/messages/conversation?userId=${userId}&limit=100`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
       })
 
       if (response.ok) {
         const data = await response.json()
+        
         if (data.success) {
           const serverMessages: Message[] = data.messages.map((msg: any) => ({
             id: msg.id.toString(),
-            senderId: msg.senderId,
-            receiverId: msg.receiverId,
+            senderId: msg.senderId.toString(),
+            receiverId: msg.receiverId.toString(),
             content: msg.content,
             timestamp: new Date(msg.timestamp),
             type: msg.messageType || 'text',
             isRead: msg.isRead || false
           }))
           
-          setConversations(prev => prev.map(conv => 
-            conv.user.id === userId 
-              ? { 
-                  ...conv, 
-                  messages: serverMessages,
-                  lastMessage: serverMessages[serverMessages.length - 1],
-                  unreadCount: serverMessages.filter(m => !m.isRead && m.senderId !== currentUserId).length
-                }
-              : conv
-          ))
+          console.log(`✅ [聊天面板] 成功加载 ${serverMessages.length} 条聊天记录`)
+          
+          if (forceRefresh || isInitialLoad) {
+            setMessages(serverMessages)
+            
+            if (serverMessages.length > 0) {
+              const latestMessage = serverMessages[serverMessages.length - 1]
+              setLastMessageId(latestMessage.id)
+            }
+            
+            setIsInitialLoad(false)
+          } else {
+            const existingIds = new Set(messages.map(msg => msg.id))
+            const newMessages = serverMessages.filter(msg => !existingIds.has(msg.id))
+            
+            if (newMessages.length > 0) {
+              console.log(`🆕 [聊天面板] 发现 ${newMessages.length} 条新消息`)
+              setMessages(prev => {
+                const allMessages = [...prev, ...newMessages]
+                const sortedMessages = allMessages.sort((a, b) => 
+                  new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+                )
+                
+                const uniqueMessages = sortedMessages.reduce((acc, msg) => {
+                  if (!acc.find(existing => existing.id === msg.id)) {
+                    acc.push(msg)
+                  }
+                  return acc
+                }, [] as Message[])
+                
+                return uniqueMessages
+              })
+              
+              const latestNew = newMessages[newMessages.length - 1]
+              setLastMessageId(latestNew.id)
+            }
+          }
+        } else {
+          console.error('❌ [聊天面板] 加载聊天记录失败:', data.error)
         }
+      } else {
+        console.error('❌ [聊天面板] 加载聊天记录请求失败，状态:', response.status)
       }
     } catch (error) {
-      console.error('加载消息失败:', error)
+      console.error('❌ [聊天面板] 加载聊天记录异常:', error)
     } finally {
-      setLoading(false)
+      if (forceRefresh || isInitialLoad) {
+        setLoading(false)
+      }
     }
-  }, [currentUserId])
+  }, [currentUserId, isInitialLoad, messages])
 
-  // 发送消息
+  // 监听selectedUser变化，自动加载对应消息
+  useEffect(() => {
+    if (selectedUser && currentUserId) {
+      console.log(`🔄 [聊天面板] selectedUser变化，重新加载消息:`, {
+        selectedUserId: selectedUser.id,
+        currentUserId: currentUserId
+      })
+      setMessages([])
+      setIsInitialLoad(true)
+      loadMessages(selectedUser.id, true)
+    }
+  }, [selectedUser?.id, currentUserId, loadMessages])
+
+  // 实时消息检查
+  useEffect(() => {
+    if (!selectedUser || !currentUserId) return
+
+    const checkForNewMessages = async () => {
+      try {
+        const token = localStorage.getItem('token')
+        if (!token) return
+
+        const response = await fetch(`/api/messages/conversation?userId=${selectedUser.id}&limit=100`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          if (data.success) {
+            const serverMessages = data.messages || []
+            
+            if (serverMessages.length > 0) {
+              const serverLatestMessage = serverMessages[serverMessages.length - 1]
+              
+              if (lastMessageId !== serverLatestMessage.id.toString()) {
+                console.log(`🆕 [聊天面板] 检测到新消息，触发增量更新`)
+                await loadMessages(selectedUser.id, false)
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error('❌ [聊天面板] 检查新消息时出错:', error)
+      }
+    }
+
+    checkForNewMessages()
+    const interval = setInterval(checkForNewMessages, 2000)
+    return () => clearInterval(interval)
+  }, [selectedUser, currentUserId, lastMessageId, loadMessages])
+
+  // 自动滚动到底部
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
   const handleSendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !currentUserId || loading) return
+    if (!newMessage.trim() || !selectedUser || !currentUserId || loading) {
+      return
+    }
 
     const messageContent = newMessage.trim()
     const tempId = `temp_${Date.now()}`
     const optimisticMessage: Message = {
       id: tempId,
-      senderId: currentUserId,
-      receiverId: selectedConversation.user.id,
+      senderId: currentUserId.toString(),
+      receiverId: selectedUser.id.toString(),
       content: messageContent,
       timestamp: new Date(),
       type: 'text',
       isRead: false
     }
 
-    // 乐观更新
-    setConversations(prev => prev.map(conv => 
-      conv.user.id === selectedConversation.user.id
-        ? { 
-            ...conv, 
-            messages: [...conv.messages, optimisticMessage],
-            lastMessage: optimisticMessage
-          }
-        : conv
-    ))
+    setMessages(prev => [...prev, optimisticMessage])
     setNewMessage('')
+    setLoading(true)
 
     try {
       const token = localStorage.getItem('token')
-      if (!token) return
+      if (!token) {
+        console.error('❌ [聊天面板] 没有找到token')
+        alert('请重新登录')
+        setMessages(prev => prev.filter(msg => msg.id !== tempId))
+        setNewMessage(messageContent)
+        setLoading(false)
+        return
+      }
 
       const response = await fetch('/api/messages/send', {
         method: 'POST',
@@ -177,7 +275,7 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
-          receiverId: parseInt(selectedConversation.user.id),
+          receiverId: parseInt(selectedUser.id),
           message: messageContent,
           messageType: 'text'
         })
@@ -185,130 +283,45 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
 
       if (response.ok) {
         const data = await response.json()
+        
         if (data.success) {
           const realMessage: Message = {
             id: data.data.id.toString(),
-            senderId: data.data.senderId,
-            receiverId: data.data.receiverId,
+            senderId: data.data.senderId.toString(),
+            receiverId: data.data.receiverId.toString(),
             content: data.data.content,
             timestamp: new Date(data.data.timestamp),
             type: data.data.messageType || 'text',
             isRead: data.data.isRead
           }
           
-          setConversations(prev => prev.map(conv => 
-            conv.user.id === selectedConversation.user.id
-              ? { 
-                  ...conv, 
-                  messages: conv.messages.map(msg => 
-                    msg.id === tempId ? realMessage : msg
-                  ),
-                  lastMessage: realMessage
-                }
-              : conv
+          setMessages(prev => prev.map(msg => 
+            msg.id === tempId ? realMessage : msg
           ))
+          
+          setLastMessageId(realMessage.id)
+          
+        } else {
+          console.error('❌ [聊天面板] 发送消息失败:', data.error)
+          alert('发送消息失败: ' + data.error)
+          setMessages(prev => prev.filter(msg => msg.id !== tempId))
+          setNewMessage(messageContent)
         }
+      } else {
+        console.error('❌ [聊天面板] 发送消息请求失败，状态:', response.status)
+        alert('发送消息失败，请重试')
+        setMessages(prev => prev.filter(msg => msg.id !== tempId))
+        setNewMessage(messageContent)
       }
     } catch (error) {
-      console.error('发送消息失败:', error)
+      console.error('❌ [聊天面板] 发送消息异常:', error)
+      alert('网络错误，请重试')
+      setMessages(prev => prev.filter(msg => msg.id !== tempId))
+      setNewMessage(messageContent)
+    } finally {
+      setLoading(false)
     }
   }
-
-  // 删除对话
-  const deleteConversation = (userId: string) => {
-    setConversations(prev => prev.filter(conv => conv.user.id !== userId))
-    if (selectedConversation?.user.id === userId) {
-      setSelectedConversation(null)
-    }
-    setShowUserMenu(null)
-  }
-
-  // 置顶/取消置顶对话
-  const togglePinConversation = (userId: string) => {
-    setConversations(prev => prev.map(conv => 
-      conv.user.id === userId 
-        ? { ...conv, isPinned: !conv.isPinned }
-        : conv
-    ))
-    setShowUserMenu(null)
-  }
-
-  // 标为已读/未读
-  const toggleReadStatus = (userId: string) => {
-    setConversations(prev => prev.map(conv => 
-      conv.user.id === userId 
-        ? { 
-            ...conv, 
-            isMarkedAsUnread: !conv.isMarkedAsUnread,
-            unreadCount: conv.isMarkedAsUnread ? conv.unreadCount : 0
-          }
-        : conv
-    ))
-    setShowUserMenu(null)
-  }
-
-  // 标记所有消息为已读
-  const markAllAsRead = (userId: string) => {
-    setConversations(prev => prev.map(conv => 
-      conv.user.id === userId 
-        ? { 
-            ...conv, 
-            unreadCount: 0,
-            messages: conv.messages.map(msg => ({ ...msg, isRead: true }))
-          }
-        : conv
-    ))
-  }
-
-  // 选择对话
-  const selectConversation = (conversation: ChatConversation) => {
-    setSelectedConversation(conversation)
-    if (conversation.unreadCount > 0) {
-      markAllAsRead(conversation.user.id)
-    }
-    loadMessages(conversation.user.id)
-  }
-
-  // 过滤对话列表
-  const filteredConversations = conversations.filter(conv => {
-    // const matchesSearch = conv.user.name.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesUnreadFilter = !showUnreadOnly || conv.unreadCount > 0 || conv.isMarkedAsUnread
-    const matchesPinnedFilter = !showPinnedOnly || conv.isPinned
-    // return matchesSearch && matchesUnreadFilter && matchesPinnedFilter
-    return matchesUnreadFilter && matchesPinnedFilter
-  })
-
-  // 排序对话列表（置顶优先，然后按最后消息时间）
-  const sortedConversations = [...filteredConversations].sort((a, b) => {
-    if (a.isPinned && !b.isPinned) return -1
-    if (!a.isPinned && b.isPinned) return 1
-    if (a.lastMessage && b.lastMessage) {
-      return new Date(b.lastMessage.timestamp).getTime() - new Date(a.lastMessage.timestamp).getTime()
-    }
-    return 0
-  })
-
-  // 格式化时间
-  const formatTime = (date: Date) => {
-    const now = new Date()
-    const diff = now.getTime() - date.getTime()
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-    
-    if (days === 0) {
-      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-    } else if (days === 1) {
-      return '昨天'
-    } else if (days < 7) {
-      return `${days}天前`
-    } else {
-      return date.toLocaleDateString()
-    }
-  }
-
-  // 自动滚动到底部
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [selectedConversation?.messages])
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -317,436 +330,255 @@ export default function BeautifulChatPanel({ matchedUsers, onClose }: ChatPanelP
     }
   }
 
-  return (
-    <div className="fixed inset-0 bg-gradient-to-br from-pink-50 via-rose-50 to-purple-50 flex items-center justify-center z-50 p-2">
-      <div className="bg-white rounded-3xl shadow-2xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden border border-pink-100">
-        {/* 头部 */}
-        <div className="flex items-center justify-between p-6 bg-gradient-to-r from-pink-500 to-rose-500 text-white">
-          <div className="flex items-center space-x-4">
-            <div className="w-12 h-12 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
-              <Heart className="text-white" size={24} />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold">甜蜜聊天</h2>
-              <p className="text-pink-100 text-sm">
-                {conversations.length} 个匹配 • {conversations.filter(c => c.unreadCount > 0).length} 个未读
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-3 text-white hover:bg-white hover:bg-opacity-20 transition-all duration-200 rounded-full"
-          >
-            <X size={24} />
-          </button>
-        </div>
+  const handleManualRefresh = async () => {
+    if (!selectedUser) return
+    console.log('🔄 [聊天面板] 手动强制刷新')
+    await loadMessages(selectedUser.id, true)
+  }
 
-        <div className="flex flex-1 overflow-hidden">
-          {/* 对话列表 */}
-          <div className="w-64 bg-gradient-to-b from-pink-50 to-rose-50 border-r border-pink-200 flex flex-col">
-            {/* 搜索和过滤 */}
-            <div className="p-3 space-y-3">
-              {/* 搜索功能已注释掉 */}
-              {/* <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-pink-400" size={18} />
-                <input
-                  type="text"
-                  placeholder="搜索用户..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 bg-white rounded-xl border border-pink-200 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent"
-                />
-              </div> */}
-              
-              <div className="flex space-x-2">
-                <button
-                  onClick={() => setShowUnreadOnly(!showUnreadOnly)}
-                  className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    showUnreadOnly 
-                      ? 'bg-pink-500 text-white' 
-                      : 'bg-white text-pink-600 border border-pink-200 hover:bg-pink-50'
-                  }`}
-                >
-                  <Bell size={14} className="inline mr-1" />
-                  未读
-                </button>
-                <button
-                  onClick={() => setShowPinnedOnly(!showPinnedOnly)}
-                  className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    showPinnedOnly 
-                      ? 'bg-pink-500 text-white' 
-                      : 'bg-white text-pink-600 border border-pink-200 hover:bg-pink-50'
-                  }`}
-                >
-                  <Pin size={14} className="inline mr-1" />
-                  置顶
-                </button>
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  }
+
+  const ReadStatusIndicator = ({ isRead }: { isRead: boolean }) => {
+    if (isRead) {
+      return (
+        <div className="flex items-center" title="已读">
+          <svg width="16" height="12" viewBox="0 0 16 12" className="text-blue-300">
+            <path
+              d="M15.03 1.47a.75.75 0 010 1.06l-9 9a.75.75 0 01-1.06 0l-4-4a.75.75 0 011.06-1.06L5.5 9.94 13.97 1.47a.75.75 0 011.06 0z"
+              fill="currentColor"
+            />
+            <path
+              d="M12.03 1.47a.75.75 0 010 1.06l-6 6a.75.75 0 01-1.06 0l-1-1a.75.75 0 011.06-1.06L6.5 7.94 10.97 3.47a.75.75 0 011.06 0z"
+              fill="currentColor"
+              opacity="0.6"
+            />
+          </svg>
+        </div>
+      )
+    } else {
+      return (
+        <div className="flex items-center" title="已发送">
+          <svg width="12" height="9" viewBox="0 0 12 9" className="text-gray-400">
+            <path
+              d="M11.03 1.47a.75.75 0 010 1.06l-6 6a.75.75 0 01-1.06 0l-3-3a.75.75 0 011.06-1.06L4.5 6.94 9.97 1.47a.75.75 0 011.06 0z"
+              fill="currentColor"
+            />
+          </svg>
+        </div>
+      )
+    }
+  }
+
+  const formatLastSeen = (user: User) => {
+    if (user.isOnline) return '在线'
+    return '离线'
+  }
+
+  if (!isOpen) return null
+
+  return (
+    <>
+      {/* LinkedIn风格的右侧用户头像列表 */}
+      <div className="fixed bottom-0 right-0 w-80 bg-white shadow-lg border-l border-gray-200 z-40 flex flex-col" 
+           style={{ 
+             maxHeight: isPanelCollapsed ? 'auto' : (windowHeight > 0 ? `${windowHeight * 0.8}px` : '80vh'),
+             minHeight: isPanelCollapsed ? 'auto' : '400px',
+             height: isPanelCollapsed ? 'auto' : (matchedUsers.length > 0 ? `${Math.min(matchedUsers.length * 80 + 100, windowHeight > 0 ? windowHeight * 0.8 : 800)}px` : '400px')
+           }}>
+        {/* 头部 */}
+        <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-4 flex-shrink-0">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <MessageCircle size={18} />
+              <div className="text-sm font-medium">
+                我的匹配
               </div>
             </div>
-
-            {/* 对话列表 */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-2">
-              {sortedConversations.length === 0 ? (
-                <div className="text-center py-12">
-                  <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <Heart className="text-pink-400" size={32} />
-                  </div>
-                  <h3 className="text-lg font-semibold text-gray-700 mb-2">暂无对话</h3>
-                  <p className="text-gray-500 text-sm">开始寻找你的完美匹配吧！</p>
-                </div>
-              ) : (
-                sortedConversations.map((conversation) => (
-                  <div
-                    key={conversation.user.id}
-                    className={`relative group cursor-pointer transition-all duration-200 ${
-                      selectedConversation?.user.id === conversation.user.id
-                        ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white shadow-lg scale-105'
-                        : 'bg-white hover:bg-pink-50 border border-pink-100 hover:border-pink-200'
-                    } rounded-2xl p-4`}
-                    onClick={() => selectConversation(conversation)}
-                  >
-                    {/* 置顶标识 */}
-                    {conversation.isPinned && (
-                      <div className="absolute top-2 right-2">
-                        <Pin size={12} className="text-pink-500" />
-                      </div>
-                    )}
-
-                    <div className="flex items-center space-x-3">
-                      {/* 头像 */}
-                      <div className="relative">
-                        <div className={`w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold overflow-hidden ${
-                          selectedConversation?.user.id === conversation.user.id
-                            ? 'bg-white text-pink-500'
-                            : 'bg-gradient-to-br from-pink-200 to-rose-200 text-pink-600'
-                        }`}>
-                          {conversation.user.photos && conversation.user.photos.length > 0 && conversation.user.photos[0] && conversation.user.photos[0] !== '/api/placeholder/400/600' ? (
-                            <img 
-                              src={conversation.user.photos[0]} 
-                              alt={conversation.user.name}
-                              className="w-full h-full object-cover"
-                              onError={(e) => {
-                                const target = e.currentTarget as HTMLImageElement
-                                target.style.display = 'none'
-                                const fallback = target.nextElementSibling as HTMLElement
-                                if (fallback) {
-                                  fallback.style.display = 'flex'
-                                }
-                              }}
-                            />
-                          ) : null}
-                          <span 
-                            style={{ display: (conversation.user.photos && conversation.user.photos.length > 0 && conversation.user.photos[0] && conversation.user.photos[0] !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
-                          >
-                            {conversation.user.name.charAt(0)}
-                          </span>
-                        </div>
-                        {conversation.user.isOnline && (
-                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full border-2 border-white"></div>
-                        )}
-                      </div>
-
-                      {/* 用户信息 */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h4 className={`font-semibold truncate ${
-                            selectedConversation?.user.id === conversation.user.id
-                              ? 'text-white'
-                              : 'text-gray-900'
-                          }`}>
-                            {conversation.user.name}
-                          </h4>
-                          <span className={`text-xs ${
-                            selectedConversation?.user.id === conversation.user.id
-                              ? 'text-pink-100'
-                              : 'text-gray-500'
-                          }`}>
-                            {conversation.lastMessage ? formatTime(conversation.lastMessage.timestamp) : ''}
-                          </span>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2 mb-1">
-                          <MapPin size={12} className={selectedConversation?.user.id === conversation.user.id ? 'text-pink-200' : 'text-gray-400'} />
-                          <span className={`text-xs truncate ${
-                            selectedConversation?.user.id === conversation.user.id
-                              ? 'text-pink-200'
-                              : 'text-gray-500'
-                          }`}>
-                            {conversation.user.location}
-                          </span>
-                        </div>
-
-                        {/* 最后消息 */}
-                        {conversation.lastMessage && (
-                          <p className={`text-sm truncate ${
-                            selectedConversation?.user.id === conversation.user.id
-                              ? 'text-pink-100'
-                              : 'text-gray-600'
-                          }`}>
-                            {conversation.lastMessage.senderId === currentUserId ? '你: ' : ''}
-                            {conversation.lastMessage.content}
-                          </p>
-                        )}
-                      </div>
-
-                      {/* 未读消息数和操作按钮 */}
-                      <div className="flex flex-col items-end space-y-2">
-                        {(conversation.unreadCount > 0 || conversation.isMarkedAsUnread) && (
-                          <div className="bg-pink-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] text-center">
-                            {conversation.unreadCount || '!'}
-                          </div>
-                        )}
-                        
-                        {/* 操作菜单 */}
-                        <div className="relative">
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              setShowUserMenu(showUserMenu === conversation.user.id ? null : conversation.user.id)
-                            }}
-                            className={`p-1 rounded-full transition-all duration-200 ${
-                              selectedConversation?.user.id === conversation.user.id
-                                ? 'text-white hover:bg-white hover:bg-opacity-20'
-                                : 'text-gray-400 hover:text-pink-500 hover:bg-pink-50'
-                            }`}
-                          >
-                            <MoreVertical size={16} />
-                          </button>
-                          
-                          {showUserMenu === conversation.user.id && (
-                            <div className="absolute right-0 top-8 bg-white rounded-xl shadow-lg border border-pink-100 py-2 z-10 min-w-[160px]">
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  togglePinConversation(conversation.user.id)
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-pink-50 flex items-center space-x-2"
-                              >
-                                <Pin size={14} />
-                                <span>{conversation.isPinned ? '取消置顶' : '置顶对话'}</span>
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  toggleReadStatus(conversation.user.id)
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-pink-50 flex items-center space-x-2"
-                              >
-                                {conversation.isMarkedAsUnread ? <EyeOff size={14} /> : <Eye size={14} />}
-                                <span>{conversation.isMarkedAsUnread ? '标为已读' : '标为未读'}</span>
-                              </button>
-                              <div className="border-t border-pink-100 my-1"></div>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation()
-                                  deleteConversation(conversation.user.id)
-                                }}
-                                className="w-full px-4 py-2 text-left text-sm hover:bg-red-50 text-red-600 flex items-center space-x-2"
-                              >
-                                <Trash2 size={14} />
-                                <span>删除对话</span>
-                              </button>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+            <button
+              onClick={() => setIsPanelCollapsed(!isPanelCollapsed)}
+              className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+            >
+              {isPanelCollapsed ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+            </button>
           </div>
+        </div>
 
-          {/* 聊天区域 */}
-          <div className="flex-1 flex flex-col bg-white p-2">
-            {selectedConversation ? (
-              <>
-                {/* 聊天头部 */}
-                <div className="flex items-center justify-between p-6 border-b border-pink-100 bg-gradient-to-r from-pink-50 to-rose-50">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-br from-pink-200 to-rose-200 rounded-full flex items-center justify-center text-pink-600 font-semibold overflow-hidden">
-                      {selectedConversation.user.photos && selectedConversation.user.photos.length > 0 && selectedConversation.user.photos[0] && selectedConversation.user.photos[0] !== '/api/placeholder/400/600' ? (
-                        <img 
-                          src={selectedConversation.user.photos[0]} 
-                          alt={selectedConversation.user.name}
-                          className="w-full h-full object-cover"
-                          onError={(e) => {
-                            const target = e.currentTarget as HTMLImageElement
-                            target.style.display = 'none'
-                            const fallback = target.nextElementSibling as HTMLElement
-                            if (fallback) {
-                              fallback.style.display = 'flex'
-                            }
-                          }}
-                        />
-                      ) : null}
-                      <span 
-                        style={{ display: (selectedConversation.user.photos && selectedConversation.user.photos.length > 0 && selectedConversation.user.photos[0] && selectedConversation.user.photos[0] !== '/api/placeholder/400/600') ? 'none' : 'flex' }}
-                      >
-                        {selectedConversation.user.name.charAt(0)}
-                      </span>
-                    </div>
-                    <div>
-                      <div className="font-semibold text-gray-900">{selectedConversation.user.name}</div>
-                      <div className="text-sm text-gray-500">
-                        {selectedConversation.user.age}岁 • {selectedConversation.user.location}
-                        {selectedConversation.user.isOnline && (
-                          <span className="ml-2 text-green-500">• 在线</span>
-                        )}
+        {/* 用户头像和名字列表 */}
+        <div className={`flex-1 overflow-y-auto p-4 transition-all duration-300 ${isPanelCollapsed ? 'hidden' : 'block'}`}>
+          {matchedUsers.length > 0 ? (
+            <div className="space-y-4">
+              {matchedUsers.map((user) => (
+                <div
+                  key={user.id}
+                  className="cursor-pointer group"
+                  onClick={() => setSelectedUser(user)}
+                >
+                  <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div className="relative flex-shrink-0">
+                      <div className="w-12 h-12 rounded-full bg-pink-200 flex items-center justify-center text-sm font-bold text-pink-600 overflow-hidden border-2 border-transparent group-hover:border-pink-300 transition-colors">
+                        {user.photos && user.photos.length > 0 ? (
+                          <img 
+                            src={user.photos[0]} 
+                            alt={user.name}
+                            className="w-full h-full object-cover rounded-full"
+                            onError={(e) => {
+                              const target = e.currentTarget as HTMLImageElement
+                              target.style.display = 'none'
+                              const fallback = target.nextElementSibling as HTMLElement
+                              if (fallback) {
+                                fallback.style.display = 'flex'
+                              }
+                            }}
+                          />
+                        ) : null}
+                        <span 
+                          className="text-sm font-bold text-pink-600"
+                          style={{ display: (user.photos && user.photos.length > 0) ? 'none' : 'flex' }}
+                        >
+                          {user.name.charAt(0)}
+                        </span>
                       </div>
+                      
+                      {user.isOnline && (
+                        <div className="absolute -bottom-1 -right-1 w-2.5 h-2.5 bg-green-500 rounded-full border-2 border-white"></div>
+                      )}
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    {selectedConversation.unreadCount > 0 && (
-                      <button
-                        onClick={() => markAllAsRead(selectedConversation.user.id)}
-                        className="px-3 py-1 text-xs bg-pink-100 text-pink-600 rounded-lg hover:bg-pink-200 transition-colors"
-                      >
-                        标为已读
-                      </button>
-                    )}
-                    <span className="px-3 py-1 bg-gradient-to-r from-pink-500 to-rose-500 text-white text-sm rounded-lg">
-                      已匹配
-                    </span>
-                  </div>
-                </div>
-
-                {/* 消息列表 */}
-                <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-gradient-to-b from-pink-25 to-white">
-                  {loading && selectedConversation.messages.length === 0 && (
-                    <div className="flex justify-center py-8">
-                      <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto mb-2"></div>
-                        <div className="text-gray-500 text-sm">加载聊天记录中...</div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {selectedConversation.messages.length === 0 && !loading && (
-                    <div className="text-center py-12">
-                      <div className="w-20 h-20 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <Heart className="text-pink-500" size={32} />
-                      </div>
-                      <h5 className="font-medium text-gray-900 mb-2">开始甜蜜对话</h5>
-                      <p className="text-xs text-gray-500">
-                        你们已经匹配成功了！<br/>
-                        发送第一条消息来打破沉默吧 💕
+                    
+                    <div className="flex-1 min-w-0">
+                      <p className="text-base font-medium text-gray-900 truncate">
+                        {user.name}
+                      </p>
+                      <p className="text-sm text-gray-500 truncate">
+                        {user.bio || '这个人很神秘...'}
                       </p>
                     </div>
-                  )}
-                  
-                  {selectedConversation.messages.map((message) => {
-                    // 确保ID比较的一致性
-                    const isOwnMessage = message.senderId.toString() === currentUserId.toString()
-                    console.log(`🔍 [美丽聊天面板] 消息显示检查:`, {
-                      messageId: message.id,
-                      messageSenderId: message.senderId,
-                      currentUserId: currentUserId,
-                      isOwnMessage: isOwnMessage,
-                      messageContent: message.content?.substring(0, 50)
-                    })
-                    
-                    return (
-                      <div
-                        key={message.id}
-                        className={`flex ${
-                          isOwnMessage ? 'justify-end' : 'justify-start'
-                        }`}
-                      >
-                        <div
-                          className={`max-w-xs lg:max-w-md px-4 py-3 rounded-2xl shadow-sm ${
-                            isOwnMessage
-                              ? 'bg-gradient-to-r from-pink-500 to-rose-500 text-white'
-                              : 'bg-white text-gray-900 border border-pink-100'
-                          } ${
-                            message.id.startsWith('temp_') ? 'opacity-70' : ''
-                          }`}
-                        >
-                          <p className="text-sm leading-relaxed">{message.content}</p>
-                          <div className={`flex items-center justify-between mt-2 text-xs ${
-                            isOwnMessage
-                              ? 'text-pink-100' 
-                              : 'text-gray-500'
-                          }`}>
-                            <span>{formatTime(message.timestamp)}</span>
-                            {isOwnMessage && !message.id.startsWith('temp_') && (
-                              <div className="flex items-center ml-2">
-                                {message.isRead ? (
-                                  <CheckCheck size={14} className="text-blue-300" />
-                                ) : (
-                                  <Check size={14} className="text-gray-300" />
-                                )}
-                              </div>
-                            )}
-                            {message.id.startsWith('temp_') && (
-                              <span className="text-xs opacity-60">发送中...</span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                  <div ref={messagesEndRef} />
-                </div>
-
-                {/* 消息输入区域 */}
-                <div className="p-6 border-t border-pink-100 bg-white">
-                  <div className="flex space-x-3">
-                    <button className="p-2 text-pink-400 hover:bg-pink-50 rounded-lg transition-colors">
-                      <Paperclip size={20} />
-                    </button>
-                    <button className="p-2 text-pink-400 hover:bg-pink-50 rounded-lg transition-colors">
-                      <ImageIcon size={20} />
-                    </button>
-                    <input
-                      type="text"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder={`给 ${selectedConversation.user.name} 发送消息...`}
-                      className="flex-1 px-4 py-3 border border-pink-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent"
-                      disabled={loading}
-                    />
-                    <button className="p-2 text-pink-400 hover:bg-pink-50 rounded-lg transition-colors">
-                      <Smile size={20} />
-                    </button>
-                    <button
-                      onClick={handleSendMessage}
-                      disabled={loading || !newMessage.trim()}
-                      className="px-6 py-3 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl hover:from-pink-600 hover:to-rose-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg hover:shadow-xl"
-                    >
-                      <Send size={18} />
-                    </button>
                   </div>
                 </div>
-              </>
-            ) : (
-              <div className="flex-1 flex items-center justify-center bg-gradient-to-b from-pink-25 to-white">
-                <div className="text-center">
-                  <div className="w-24 h-24 bg-gradient-to-br from-pink-100 to-rose-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                    <Heart className="text-pink-500" size={40} />
-                  </div>
-                  <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                    选择聊天对象
-                  </h3>
-                  <p className="text-gray-500 leading-relaxed text-lg">
-                    从左侧选择一个已匹配的用户<br/>
-                    开始你们的甜蜜对话 💕
-                  </p>
-                  {conversations.length === 0 && (
-                    <button
-                      onClick={onClose}
-                      className="mt-8 px-8 py-4 bg-gradient-to-r from-pink-500 to-rose-500 text-white rounded-xl hover:from-pink-600 hover:to-rose-600 transition-all duration-200 font-medium text-lg shadow-lg hover:shadow-xl"
-                    >
-                      去寻找匹配
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-2 text-center">
+              <Heart size={16} className="text-gray-400 mx-auto mb-1" />
+              <p className="text-xs text-gray-500">暂无匹配</p>
+            </div>
+          )}
         </div>
       </div>
-    </div>
+
+      {/* 聊天框 */}
+      {selectedUser && (
+        <div
+          className="fixed bottom-0 w-96 h-[600px] bg-white rounded-lg shadow-2xl border border-gray-200 z-50 flex flex-col"
+          style={{ right: 336 + 20 }}
+        >
+          {/* 聊天框头部 */}
+          <div className="bg-gradient-to-r from-pink-500 to-rose-500 text-white p-4 rounded-t-lg flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 bg-white bg-opacity-20 rounded-full flex items-center justify-center">
+                <MessageCircle size={14} />
+              </div>
+              <span className="text-base font-medium">
+                {selectedUser.name}
+              </span>
+            </div>
+            <button
+              onClick={() => setSelectedUser(null)}
+              className="p-1 hover:bg-white hover:bg-opacity-20 rounded transition-colors"
+            >
+              <X size={18} />
+            </button>
+          </div>
+
+          {/* 聊天内容 */}
+          <div className="flex-1 flex flex-col min-h-0">
+            {/* 消息列表 */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              {loading && messages.length === 0 && (
+                <div className="flex justify-center py-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500 mx-auto mb-2"></div>
+                    <div className="text-gray-500 text-sm">加载聊天记录中...</div>
+                  </div>
+                </div>
+              )}
+              
+              {messages.length === 0 && !loading && (
+                <div className="text-center py-12">
+                  <div className="w-16 h-16 bg-pink-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Heart className="text-pink-500" size={24} />
+                  </div>
+                  <h5 className="font-medium text-gray-900 mb-2">开始对话</h5>
+                  <p className="text-sm text-gray-500">
+                    你们已经匹配成功了！<br/>
+                    发送第一条消息来打破沉默吧
+                  </p>
+                </div>
+              )}
+              
+              {messages.map((message) => (
+                <div
+                  key={message.id}
+                  className={`flex ${
+                    message.senderId.toString() === currentUserId.toString() ? 'justify-end' : 'justify-start'
+                  }`}
+                >
+                  <div
+                    className={`max-w-xs px-3 py-2 rounded-lg ${
+                      message.senderId.toString() === currentUserId.toString()
+                        ? 'bg-pink-500 text-white rounded-br-sm'
+                        : 'bg-gray-200 text-gray-800 rounded-bl-sm'
+                    } ${
+                      message.id.startsWith('temp_') ? 'opacity-70' : ''
+                    }`}
+                  >
+                    <p className="text-sm leading-relaxed">{message.content}</p>
+                    <div className={`flex items-center justify-between mt-2 text-xs ${
+                      message.senderId.toString() === currentUserId.toString()
+                        ? 'text-pink-100' 
+                        : 'text-gray-500'
+                    }`}>
+                      <span>{formatTime(message.timestamp)}</span>
+                      {message.senderId.toString() === currentUserId.toString() && !message.id.startsWith('temp_') && (
+                        <div className="flex items-center ml-2">
+                          <ReadStatusIndicator isRead={message.isRead} />
+                        </div>
+                      )}
+                      {message.id.startsWith('temp_') && (
+                        <span className="text-xs opacity-60">发送中...</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* 消息输入区域 */}
+            <div className="p-4 border-t bg-white">
+              <div className="flex space-x-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={`给 ${selectedUser.name} 发送消息...`}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  disabled={loading}
+                />
+                <button
+                  onClick={handleSendMessage}
+                  disabled={loading || !newMessage.trim()}
+                  className="px-4 py-2 bg-pink-500 text-white rounded-lg hover:bg-pink-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Send size={16} />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   )
 } 
