@@ -16,8 +16,8 @@ import { UserProfile } from '@/types/user'
 import dynamic from 'next/dynamic'
 import { shouldAutoRequestLocation, recordUserDenial } from '@/lib/locationPermission'
 
-// 动态导入Stream Chat组件，避免SSR问题
-const StreamChatPanel = dynamic(() => import('@/components/StreamChatPanel'), {
+// 动态导入双浮窗聊天组件（左会话/右列表），避免SSR问题
+const DualFloatingChat = dynamic(() => import('@/components/DualFloatingChat'), {
   ssr: false,
   loading: () => <div>加载专业聊天中...</div>
 })
@@ -1328,16 +1328,11 @@ export default function Dashboard() {
         />
       )}
 
-      {/* 专业聊天面板（已替代原来的ChatPanel） */}
+      {/* 左右双浮窗聊天（基于 Stream Chat） */}
       {showChat && (
-        <StreamChatPanel
+        <DualFloatingChat
           matchedUsers={matchedUsers}
-          onClose={() => {
-            setShowChat(false)
-            setInitialChatUserId(null) // 清理初始用户ID
-          }}
           initialUserId={initialChatUserId || undefined}
-          isOpen={showChat}
         />
       )}
 
