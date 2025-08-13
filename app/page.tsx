@@ -51,6 +51,9 @@ export default function Home() {
               <Link href="/news" className="text-gray-600 hover:text-red-500 transition-colors">
                 媒体合作
               </Link>
+              <Link href="/couples" className="text-gray-600 hover:text-red-500 transition-colors">
+                ConnectEd 情侣
+              </Link>
             </div>
           </div>
         </div>

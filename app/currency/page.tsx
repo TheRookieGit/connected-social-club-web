@@ -12,10 +12,22 @@ export default function CurrencyPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // 这里应该从用户认证状态获取用户ID
-    // 暂时使用模拟数据
-    setUserId(1)
-    setUserBalance(150)
+    // 从localStorage获取用户ID
+    const token = localStorage.getItem('token')
+    if (token) {
+      try {
+        // 解析JWT token获取用户ID
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        setUserId(payload.userId || payload.sub)
+      } catch (error) {
+        console.error('解析token失败:', error)
+        // 如果解析失败，尝试从localStorage获取用户ID
+        const userId = localStorage.getItem('userId')
+        if (userId) {
+          setUserId(parseInt(userId))
+        }
+      }
+    }
     setLoading(false)
   }, [])
 

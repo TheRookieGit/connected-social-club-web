@@ -95,6 +95,7 @@ export default function TestBeautifulChat() {
         <BeautifulChatPanel
           matchedUsers={mockMatchedUsers}
           onClose={() => setShowChat(false)}
+          isOpen={showChat}
         />
       )}
     </div>

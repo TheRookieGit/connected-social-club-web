@@ -13,6 +13,7 @@ export default function WalletDisplay({ userId, className = '' }: WalletDisplayP
   const [walletData, setWalletData] = useState<WalletBalanceResponse | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [creatingWallet, setCreatingWallet] = useState(false)
 
   useEffect(() => {
     fetchWalletData()
@@ -27,6 +28,7 @@ export default function WalletDisplay({ userId, className = '' }: WalletDisplayP
 
       if (result.success) {
         setWalletData(result.data)
+        setError(null)
       } else {
         setError(result.message)
       }
@@ -35,6 +37,33 @@ export default function WalletDisplay({ userId, className = '' }: WalletDisplayP
       setError('获取钱包数据失败')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const createWallet = async () => {
+    try {
+      setCreatingWallet(true)
+      const response = await fetch('/api/currency/create-wallet', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userId }),
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        // 创建成功后重新获取钱包数据
+        await fetchWalletData()
+      } else {
+        setError(result.message)
+      }
+    } catch (error) {
+      console.error('创建钱包失败:', error)
+      setError('创建钱包失败')
+    } finally {
+      setCreatingWallet(false)
     }
   }
 
@@ -94,13 +123,23 @@ export default function WalletDisplay({ userId, className = '' }: WalletDisplayP
       <div className={`bg-white rounded-2xl p-6 shadow-sm ${className}`}>
         <div className="text-center text-gray-500">
           <Heart className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-          <p>{error}</p>
-          <button
-            onClick={fetchWalletData}
-            className="mt-3 px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
-          >
-            重试
-          </button>
+          <p className="mb-4">{error}</p>
+          <div className="space-y-3">
+            <button
+              onClick={fetchWalletData}
+              disabled={loading}
+              className="w-full px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors disabled:opacity-50"
+            >
+              重试
+            </button>
+            <button
+              onClick={createWallet}
+              disabled={creatingWallet}
+              className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+            >
+              {creatingWallet ? '创建中...' : '创建钱包'}
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -111,7 +150,14 @@ export default function WalletDisplay({ userId, className = '' }: WalletDisplayP
       <div className={`bg-white rounded-2xl p-6 shadow-sm ${className}`}>
         <div className="text-center text-gray-500">
           <Heart className="h-12 w-12 mx-auto mb-3 text-gray-300" />
-          <p>钱包数据不可用</p>
+          <p className="mb-4">钱包数据不可用</p>
+          <button
+            onClick={createWallet}
+            disabled={creatingWallet}
+            className="w-full px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors disabled:opacity-50"
+          >
+            {creatingWallet ? '创建中...' : '创建钱包'}
+          </button>
         </div>
       </div>
     )

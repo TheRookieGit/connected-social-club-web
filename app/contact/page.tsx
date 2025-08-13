@@ -73,10 +73,7 @@ export default function Contact() {
                   加入我们
                 </Link>
                 <Link href="/news" className="text-gray-600 hover:text-red-500 transition-colors">
-                  新闻
-                </Link>
-                <Link href="/contact" className="text-red-500 font-medium">
-                  联系我们
+                  媒体合作
                 </Link>
               </div>
             </div>
