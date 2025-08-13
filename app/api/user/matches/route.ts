@@ -152,6 +152,8 @@ export async function GET(request: NextRequest) {
         avatar_url,
         bio,
         location,
+        latitude,
+        longitude,
         occupation,
         education,
         relationship_status,
@@ -180,20 +182,30 @@ export async function GET(request: NextRequest) {
       .neq('id', decoded.userId)
       .eq('status', 'active')
 
-    // 根据约会偏好过滤用户
-    if (preferredGenders.length > 0) {
-      // 如果用户选择了具体性别偏好
-      if (preferredGenders.includes('everyone')) {
-        // 如果选择"约会所有人"，不添加性别过滤
-        console.log('🎯 用户选择约会所有人，不进行性别过滤')
-      } else {
-        // 根据选择的性别进行过滤
-        console.log(`🎯 根据用户偏好过滤性别: ${preferredGenders.join(', ')}`)
-        query = query.in('gender', preferredGenders)
-      }
+    // 强制异性推荐（男只看女，女只看男）；若性别未知则回退到偏好
+    const normalizedGender = String(currentUser.gender || '').toLowerCase()
+    let enforcedTargetGender: string | null = null
+    if (normalizedGender === 'male' || normalizedGender === 'm' || normalizedGender === '男' || normalizedGender === '男性') {
+      enforcedTargetGender = 'female'
+    } else if (normalizedGender === 'female' || normalizedGender === 'f' || normalizedGender === '女' || normalizedGender === '女性') {
+      enforcedTargetGender = 'male'
+    }
+
+    if (enforcedTargetGender) {
+      console.log(`🎯 强制异性过滤: 当前性别=${normalizedGender} → 目标性别=${enforcedTargetGender}`)
+      query = query.eq('gender', enforcedTargetGender)
     } else {
-      // 如果用户没有设置偏好，默认推荐所有性别
-      console.log('🎯 用户未设置约会偏好，推荐所有性别')
+      // 回退：使用用户偏好
+      if (preferredGenders.length > 0) {
+        if (preferredGenders.includes('everyone')) {
+          console.log('🎯 用户选择约会所有人，不进行性别过滤')
+        } else {
+          console.log(`🎯 根据用户偏好过滤性别: ${preferredGenders.join(', ')}`)
+          query = query.in('gender', preferredGenders)
+        }
+      } else {
+        console.log('🎯 用户未设置约会偏好，推荐所有性别')
+      }
     }
 
     // 添加分页限制
@@ -213,7 +225,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // 为每个推荐用户获取兴趣并计算匹配分数
+    // 为每个推荐用户获取兴趣并计算匹配分数与距离
     const usersWithScores = await Promise.all(
       recommendedUsers?.map(async (user: any) => {
         // 获取用户兴趣
@@ -257,19 +269,50 @@ export async function GET(request: NextRequest) {
         
         // 如果不是双向匹配，降低匹配分数
         const finalMatchScore = isMutualMatch ? matchScore : matchScore * 0.3
+
+        // 计算距离（如有经纬度）
+        let distance: number | null = null
+        let distance_formatted: string | null = null
+        const hasCurrentUserLocation = typeof currentUser.latitude === 'number' && typeof currentUser.longitude === 'number'
+        const hasUserLocation = typeof user.latitude === 'number' && typeof user.longitude === 'number'
+        if (hasCurrentUserLocation && hasUserLocation) {
+          const R = 6371 // km
+          const dLat = (user.latitude - currentUser.latitude) * Math.PI / 180
+          const dLon = (user.longitude - currentUser.longitude) * Math.PI / 180
+          const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos((currentUser.latitude as number) * Math.PI / 180) * Math.cos((user.latitude as number) * Math.PI / 180) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2)
+          const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+          distance = R * c
+          distance_formatted = distance < 1
+            ? `${Math.round(distance * 1000)} 米`
+            : `${distance.toFixed(1)} 公里`
+        }
         
         return {
           ...user,
           interests: userInterestList,
           relationship_goals: relationshipGoals,
           matchScore: Math.round(finalMatchScore * 100), // 转换为百分比
-          isMutualMatch: isMutualMatch
+          isMutualMatch: isMutualMatch,
+          distance,
+          distance_formatted
         }
       }) || []
     )
 
-    // 按匹配分数排序
-    usersWithScores.sort((a, b) => b.matchScore - a.matchScore)
+    // 优先按距离排序（距离近在前），再按匹配分
+    const hasLocation = typeof currentUser.latitude === 'number' && typeof currentUser.longitude === 'number'
+    if (hasLocation) {
+      usersWithScores.sort((a, b) => {
+        const ad = typeof a.distance === 'number' ? a.distance as number : Number.POSITIVE_INFINITY
+        const bd = typeof b.distance === 'number' ? b.distance as number : Number.POSITIVE_INFINITY
+        if (ad !== bd) return ad - bd
+        return (b.matchScore || 0) - (a.matchScore || 0)
+      })
+    } else {
+      usersWithScores.sort((a, b) => (b.matchScore || 0) - (a.matchScore || 0))
+    }
 
     // 记录活动日志
     await supabase
