@@ -155,8 +155,18 @@ export async function POST(request: NextRequest) {
           )
         }
         
-        userPhotosBucket = newBucket
-        console.log('存储桶创建成功:', userPhotosBucket.name)
+        // 修复类型问题：使用新创建的桶信息
+        if (newBucket) {
+          userPhotosBucket = {
+            name: newBucket.name,
+            id: newBucket.id,
+            owner: newBucket.owner,
+            created_at: newBucket.created_at,
+            updated_at: newBucket.updated_at,
+            public: newBucket.public
+          }
+        }
+        console.log('存储桶创建成功:', userPhotosBucket?.name)
       } catch (bucketError) {
         console.error('创建存储桶异常:', bucketError)
         return new NextResponse(
