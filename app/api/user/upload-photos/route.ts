@@ -155,15 +155,15 @@ export async function POST(request: NextRequest) {
           )
         }
         
-        // 修复类型问题：使用新创建的桶信息
+        // 修复类型问题：createBucket 只返回 name，手动构造完整对象
         if (newBucket) {
           userPhotosBucket = {
             name: newBucket.name,
-            id: newBucket.id,
-            owner: newBucket.owner,
-            created_at: newBucket.created_at,
-            updated_at: newBucket.updated_at,
-            public: newBucket.public
+            id: `bucket_${Date.now()}`, // 生成临时ID
+            owner: 'service_role', // 使用 service role 作为所有者
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            public: true
           }
         }
         console.log('存储桶创建成功:', userPhotosBucket?.name)
