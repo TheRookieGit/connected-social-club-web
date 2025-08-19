@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import jwt from 'jsonwebtoken'
-import { createSupabaseClient } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 
 // 禁用静态生成和缓存
 export const dynamic = 'force-dynamic'
@@ -47,27 +47,44 @@ function createNoCacheHeaders() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createSupabaseClient()
-    if (!supabase) {
+    // 检查是否需要自动创建存储桶
+    const url = new URL(request.url)
+    const shouldAutoCreate = url.searchParams.get('autoCreateBucket') === 'true'
+    
+    console.log('请求参数检查:', {
+      autoCreateBucket: url.searchParams.get('autoCreateBucket'),
+      shouldAutoCreate
+    })
+
+    // 使用 Service Role Key 创建管理员客户端（用于自动建桶）
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
       return new NextResponse(
-        JSON.stringify({ success: false, error: '数据库连接失败' }),
-        { 
-          status: 500,
-          headers: createNoCacheHeaders()
-        }
+        JSON.stringify({ 
+          success: false, 
+          error: '服务器配置错误',
+          details: '缺少必要的环境变量配置',
+          code: 'MISSING_ENV_VARS'
+        }),
+        { status: 500, headers: createNoCacheHeaders() }
       )
     }
+
+    const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
     const authHeader = request.headers.get('authorization')
     const decoded = verifyToken(authHeader)
     
     if (!decoded) {
       return new NextResponse(
-        JSON.stringify({ success: false, error: '未授权访问' }),
-        { 
-          status: 401,
-          headers: createNoCacheHeaders()
-        }
+        JSON.stringify({ 
+          success: false, 
+          error: '未授权访问',
+          code: 'AUTH_FAILED'
+        }),
+        { status: 401, headers: createNoCacheHeaders() }
       )
     }
 
@@ -75,46 +92,124 @@ export async function POST(request: NextRequest) {
 
     const formData = await request.formData()
     const photos = formData.getAll('photos') as File[]
+    const forceAdminMode = formData.get('force_admin_mode') === '1'
+    
+    console.log('FormData检查:', {
+      photoCount: photos.length,
+      forceAdminMode
+    })
     
     if (!photos || photos.length === 0) {
       return new NextResponse(
-        JSON.stringify({ success: false, error: '没有接收到照片文件' }),
-        { 
-          status: 400,
-          headers: createNoCacheHeaders()
-        }
+        JSON.stringify({ 
+          success: false, 
+          error: '没有接收到照片文件',
+          code: 'NO_PHOTOS'
+        }),
+        { status: 400, headers: createNoCacheHeaders() }
       )
     }
 
     console.log('接收到照片数量:', photos.length)
 
-    // 检查存储桶是否存在（不尝试创建）
+    // 检查存储桶是否存在
     console.log('检查用户照片存储桶...')
     const { data: buckets, error: listError } = await supabase.storage.listBuckets()
     
     if (listError) {
       console.error('获取存储桶列表失败:', listError)
       return new NextResponse(
-        JSON.stringify({ success: false, error: '无法访问存储服务', details: listError.message }),
+        JSON.stringify({ 
+          success: false, 
+          error: '无法访问存储服务', 
+          details: listError.message,
+          code: 'STORAGE_LIST_ERROR'
+        }),
         { status: 500, headers: createNoCacheHeaders() }
       )
     }
 
-    const userPhotosBucket = buckets?.find(bucket => bucket.name === 'user-photos')
+    let userPhotosBucket = buckets?.find(bucket => bucket.name === 'user-photos')
+    
+    // 如果存储桶不存在且需要自动创建
+    if (!userPhotosBucket && (shouldAutoCreate || forceAdminMode)) {
+      console.log('存储桶不存在，开始自动创建...')
+      
+      try {
+        const { data: newBucket, error: bucketError } = await supabase.storage.createBucket('user-photos', {
+          public: true,
+          fileSizeLimit: 5242880, // 5MB
+          allowedMimeTypes: ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+        })
+        
+        if (bucketError) {
+          console.error('创建存储桶失败:', bucketError)
+          return new NextResponse(
+            JSON.stringify({ 
+              success: false, 
+              error: '存储桶创建失败', 
+              details: bucketError.message,
+              code: 'BUCKET_CREATE_ERROR'
+            }),
+            { status: 500, headers: createNoCacheHeaders() }
+          )
+        }
+        
+        userPhotosBucket = newBucket
+        console.log('存储桶创建成功:', userPhotosBucket.name)
+      } catch (bucketError) {
+        console.error('创建存储桶异常:', bucketError)
+        return new NextResponse(
+          JSON.stringify({ 
+            success: false, 
+            error: '存储桶创建失败',
+            details: '存储服务异常',
+            code: 'BUCKET_CREATE_EXCEPTION'
+          }),
+          { status: 500, headers: createNoCacheHeaders() }
+        )
+      }
+    }
+    
+    // 如果仍然没有存储桶，返回错误
     if (!userPhotosBucket) {
       console.error('user-photos 存储桶不存在')
       return new NextResponse(
         JSON.stringify({ 
           success: false, 
           error: '存储桶不存在', 
-          details: '请在 Supabase 控制台中手动创建 user-photos 存储桶',
-          setup_guide: '请参考 SUPABASE_STORAGE_SETUP.md 文件'
+          details: '请在 Supabase 控制台中手动创建 user-photos 存储桶，或使用自动创建参数',
+          setup_guide: '请参考 SUPABASE_STORAGE_SETUP.md 文件',
+          code: 'BUCKET_NOT_FOUND'
         }),
         { status: 500, headers: createNoCacheHeaders() }
       )
     }
 
     console.log('存储桶检查通过:', userPhotosBucket.name)
+
+    // 获取用户现有照片
+    const { data: existingUser, error: fetchError } = await supabase
+      .from('users')
+      .select('photos')
+      .eq('id', decoded.userId)
+      .single()
+
+    if (fetchError) {
+      console.error('获取用户现有照片失败:', fetchError)
+      return new NextResponse(
+        JSON.stringify({ 
+          success: false, 
+          error: '获取用户照片失败',
+          details: fetchError.message,
+          code: 'FETCH_USER_ERROR'
+        }),
+        { status: 500, headers: createNoCacheHeaders() }
+      )
+    }
+
+    const existingPhotos = existingUser?.photos || []
+    console.log('用户现有照片数量:', existingPhotos.length)
 
     const uploadedPhotoUrls: string[] = []
 
@@ -177,19 +272,24 @@ export async function POST(request: NextRequest) {
 
     if (uploadedPhotoUrls.length === 0) {
       return new NextResponse(
-        JSON.stringify({ success: false, error: '没有照片上传成功' }),
-        { 
-          status: 400,
-          headers: createNoCacheHeaders()
-        }
+        JSON.stringify({ 
+          success: false, 
+          error: '没有照片上传成功',
+          code: 'NO_UPLOAD_SUCCESS'
+        }),
+        { status: 400, headers: createNoCacheHeaders() }
       )
     }
 
-    // 更新用户资料中的照片URL
+    // 合并现有照片和新上传的照片
+    const allPhotos = [...existingPhotos, ...uploadedPhotoUrls]
+    console.log('合并后的照片总数:', allPhotos.length)
+
+    // 更新用户资料中的照片URL（追加而不是替换）
     const { data: updatedUser, error: updateError } = await supabase
       .from('users')
       .update({
-        photos: uploadedPhotoUrls,
+        photos: allPhotos,
         updated_at: new Date().toISOString()
       })
       .eq('id', decoded.userId)
@@ -199,11 +299,13 @@ export async function POST(request: NextRequest) {
     if (updateError) {
       console.error('更新用户照片失败:', updateError)
       return new NextResponse(
-        JSON.stringify({ success: false, error: '更新用户照片失败' }),
-        { 
-          status: 500,
-          headers: createNoCacheHeaders()
-        }
+        JSON.stringify({ 
+          success: false, 
+          error: '更新用户照片失败',
+          details: updateError.message,
+          code: 'UPDATE_ERROR'
+        }),
+        { status: 500, headers: createNoCacheHeaders() }
       )
     }
 
@@ -216,11 +318,13 @@ export async function POST(request: NextRequest) {
         activity_data: { 
           photo_count: uploadedPhotoUrls.length,
           photo_urls: uploadedPhotoUrls,
+          total_photos: allPhotos.length,
+          auto_created_bucket: shouldAutoCreate || forceAdminMode,
           timestamp: new Date().toISOString()
         }
       })
 
-    console.log('照片上传完成，成功上传:', uploadedPhotoUrls.length, '张')
+    console.log('照片上传完成，成功上传:', uploadedPhotoUrls.length, '张，总照片数:', allPhotos.length)
 
     return new NextResponse(
       JSON.stringify({
@@ -228,6 +332,8 @@ export async function POST(request: NextRequest) {
         message: '照片上传成功',
         photos: uploadedPhotoUrls,
         photo_count: uploadedPhotoUrls.length,
+        total_photos: allPhotos.length,
+        bucket_created: shouldAutoCreate || forceAdminMode,
         timestamp: new Date().toISOString()
       }),
       {
@@ -242,12 +348,13 @@ export async function POST(request: NextRequest) {
       JSON.stringify({ 
         success: false, 
         error: '服务器错误', 
-        details: error instanceof Error ? error.message : String(error)
+        details: error instanceof Error ? error.message : String(error),
+        code: 'INTERNAL_ERROR'
       }),
       { 
         status: 500,
-        headers: createNoCacheHeaders()
+        headers: createNoCacheHeaders() 
       }
     )
   }
-} 
+}
